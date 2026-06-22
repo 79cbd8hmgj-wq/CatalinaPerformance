@@ -1,2 +1,6 @@
 # Runtime state captured by CatalinaPerformance scripts.
 .catalina_performance_state/
+
+# Swift Package Manager build output.
+.build/
+app/CatalinaPerformance/.build/
