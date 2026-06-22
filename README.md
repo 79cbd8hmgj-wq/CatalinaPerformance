@@ -41,7 +41,7 @@ CatalinaPerformance must be conservative by default:
 - Do not disable services permanently.
 - Prefer temporary sessions and explicit user consent over persistent changes.
 
-See [docs/SAFETY_RULES.md](docs/SAFETY_RULES.md) for the detailed safety contract.
+See [docs/SAFETY_RULES.md](docs/SAFETY_RULES.md) for the detailed safety contract. See [docs/GUI_TESTING.md](docs/GUI_TESTING.md) for the current manual GUI test flow and [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) for current limitations.
 
 ## Repository Layout
 
@@ -52,6 +52,8 @@ See [docs/SAFETY_RULES.md](docs/SAFETY_RULES.md) for the detailed safety contrac
 ├── docs/
 │   ├── APP_CONCEPT.md
 │   ├── FEATURE_PLAN.md
+│   ├── GUI_TESTING.md
+│   ├── KNOWN_ISSUES.md
 │   ├── SAFETY_RULES.md
 │   └── TESTING_CHECKLIST.md
 ├── app/
@@ -100,7 +102,7 @@ CATALINA_PERFORMANCE_SCRIPTS_DIR=/path/to/Catilinaperformance-/scripts swift run
 
 ### GUI Test Instructions
 
-Use a macOS development machine for GUI behavior because the AppKit executable does not launch on non-macOS systems. To test the output and state handling safely during development:
+See [docs/GUI_TESTING.md](docs/GUI_TESTING.md) for the current manual GUI test flow. Use a macOS development machine for GUI behavior because the AppKit executable does not launch on non-macOS systems. To test the output and state handling safely during development:
 
 1. Start from the package directory and point the GUI at the repository scripts if needed:
 
