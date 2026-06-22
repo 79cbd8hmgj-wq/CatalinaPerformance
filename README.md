@@ -28,7 +28,7 @@ Planned status indicators include:
 
 ## Non-Goals for Early Patches
 
-This repository now includes a minimal local macOS GUI shell. It does **not** implement a privileged helper, fan control, system-changing Advanced options, launch daemon toggles, cache cleaning, undervolting, MSR changes, kext changes, SIP changes, or irreversible system tweaks. Future behavior should be built in small, reviewable patches after the safety model is documented.
+This repository now includes a minimal local macOS GUI shell. It does **not** implement a privileged helper, fan control, launch daemon toggles, cache cleaning, undervolting, MSR changes, kext changes, SIP changes, or irreversible system tweaks. Advanced currently exposes only conservative Background Services and Power Behavior preferences backed by the reviewed scripts. Future behavior should be built in small, reviewable patches after the safety model is documented.
 
 ## Safety Principles
 
@@ -83,12 +83,23 @@ The GUI is intentionally thin:
 
 - It displays the CatalinaPerformance app name, a Performance Mode ON/OFF switch, a small detected-state label, a success/failure status area, script output, and buttons for status refresh, Performance ON, Performance OFF, Emergency Restore, and Advanced.
 - The Advanced window is now a planning/configuration UI organized into Background Services, Power Behavior, App Priority, Memory / Storage, Thermal / Fan, Experimental, and Emergency / Restore sections.
-- Most Advanced controls are disabled placeholders clearly labeled `Not implemented yet`; the few selectable planning checkboxes save local UserDefaults preferences only and do not affect `performance_on.sh`, `performance_off.sh`, `emergency_restore.sh`, or `status_report.sh`.
+- Most Advanced controls are disabled placeholders clearly labeled `Not implemented yet`. Background Services and Power Behavior checkboxes save known keys to `.catalina_performance_preferences/advanced.conf` so `performance_on.sh` can read them without unsafe shell evaluation.
 - It calls the existing scripts in `scripts/` instead of duplicating system-changing logic.
 - It detects Performance Mode by checking `.catalina_performance_state/performance_mode_on`, then disables Performance ON while the marker exists and disables Performance OFF while the marker is absent. Emergency Restore remains available.
 - It prints the exact `/bin/sh ...` command for each script, captures stdout and stderr in the scrollable output area, auto-scrolls after each run, and updates the status label with success or failure.
 - It does not implement fan control, cache cleaning, SIP changes, launch daemon toggles, undervolting, MSR changes, kext loading, or experimental features.
 - It shows warning confirmations before running Performance ON or Emergency Restore.
+
+## Advanced Power Behavior
+
+The Advanced window includes a **Power Behavior** section. These options are saved as explicit `0`/`1` values in `.catalina_performance_preferences/advanced.conf`, alongside the existing Background Services preferences, so the shell scripts read only known preference keys.
+
+Enabled by default:
+
+- **Prevent plugged-in system sleep while Performance Mode is ON**: when enabled, `performance_on.sh` saves the current `pmset` state and runs `pmset -c sleep 0`; `performance_off.sh` restores the saved value only when that change was recorded.
+- **Prevent display sleep while Performance Mode is ON**: when enabled, `performance_on.sh` saves the current `pmset` state and runs `pmset -c displaysleep 0`; `performance_off.sh` restores the saved value only when that change was recorded.
+
+If either option is disabled, `performance_on.sh` logs that the matching power-management action was skipped. The script still avoids unsafe `eval`, still records pmset state before selected power changes, and does not change disk sleep, Power Nap, or network wake settings. The **Prevent disk sleep**, **Disable Power Nap**, and **Keep network awake** controls remain disabled and labeled **Not implemented yet**.
 
 ### Building the GUI
 
@@ -151,7 +162,7 @@ The packaged `.app` is for local development only:
 - It is not installed into `/Applications` automatically.
 - The repository checkout must remain available because the app launcher points the GUI at the repo's `scripts/` directory.
 - If the repository is moved after packaging, re-run `scripts/package_app.sh` so the generated launcher records the new scripts path.
-- Advanced options remain planning/configuration-only; most controls are disabled placeholders, and no new system-changing behavior has been added. There is no fan control, cache cleaning, launch daemon control, privileged helper, SIP modification, undervolting, MSR access, kext loading, or experimental CPU feature control.
+- Advanced options are limited to reviewed Background Services and Power Behavior preferences; most controls remain disabled placeholders. There is no fan control, cache cleaning, launch daemon control, privileged helper, SIP modification, undervolting, MSR access, kext loading, or experimental CPU feature control.
 
 ### Xcode 12.4 and Catalina Notes
 
@@ -190,7 +201,7 @@ See [docs/GUI_TESTING.md](docs/GUI_TESTING.md) for the current manual GUI test f
 3. With `.catalina_performance_state/performance_mode_on` absent, confirm the state label says **Performance Mode appears OFF**, **Run Performance OFF** is disabled, **Run Performance ON** is enabled, and **Emergency Restore** remains enabled.
 4. Create or preserve the marker file only through the reviewed scripts when possible. After running **Run Performance ON**, confirm the GUI refreshes the switch and state label from `.catalina_performance_state/performance_mode_on`, disables **Run Performance ON**, and keeps output scrolled to the latest exit-status line.
 5. After running **Run Performance OFF** or **Emergency Restore**, confirm the marker is removed, the switch and label show OFF, **Run Performance OFF** is disabled, and **Emergency Restore** remains enabled.
-6. Open **Advanced** and confirm the panel shows planning sections for Background Services, Power Behavior, App Priority, Memory / Storage, Thermal / Fan, Experimental, and Emergency / Restore. Confirm disabled controls are labeled **Not implemented yet** and any selectable planning preferences do not run scripts or affect Performance ON/OFF behavior.
+6. Open **Advanced** and confirm the panel shows Background Services and Power Behavior working preferences plus placeholder sections for App Priority, Memory / Storage, Thermal / Fan, Experimental, and Emergency / Restore. Confirm disabled controls are labeled **Not implemented yet**. The Power Behavior defaults should be enabled, preserving the current plugged-in system sleep and display sleep prevention unless the user turns them off before running Performance Mode ON.
 7. Repeat an ON/OFF cycle and verify each run reports a clear success or failure in the status label without adding fan control, cache cleaning, SIP changes, launch daemon controls, privileged helpers, or system-changing Advanced behavior.
 
 Future packaged `.app` work should keep the same app/script boundary: the GUI may collect user intent and display output, while reversible system behavior and restore paths remain in reviewed scripts.

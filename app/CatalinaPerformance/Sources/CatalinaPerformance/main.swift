@@ -394,14 +394,85 @@ final class MainWindowController: NSWindowController {
 }
 
 
-final class AdvancedWindowController: NSWindowController {
-    private let preferences = UserDefaults.standard
-    private let preferenceKeys = [
+
+final class AdvancedPreferencesStore {
+    static let keys = [
         "advanced.pauseSpotlightWhileOn",
         "advanced.pauseTimeMachineWhileOn",
         "advanced.preventPluggedInSleepWhileOn",
         "advanced.preventDisplaySleepWhileOn"
     ]
+
+    private let defaults = UserDefaults.standard
+    private let fileManager = FileManager.default
+    private let preferencesURL: URL
+
+    init(environment: [String: String] = ProcessInfo.processInfo.environment) {
+        let rootURL: URL
+        if let configured = environment["CATALINA_PERFORMANCE_SCRIPTS_DIR"], !configured.isEmpty {
+            rootURL = URL(fileURLWithPath: configured, isDirectory: true)
+                .deletingLastPathComponent()
+                .standardizedFileURL
+        } else {
+            let currentDirectory = URL(fileURLWithPath: fileManager.currentDirectoryPath, isDirectory: true)
+            let packageRoot = currentDirectory.appendingPathComponent("../..", isDirectory: true).standardizedFileURL
+            if fileManager.fileExists(atPath: packageRoot.appendingPathComponent("scripts/performance_on.sh").path) {
+                rootURL = packageRoot
+            } else {
+                rootURL = currentDirectory.standardizedFileURL
+            }
+        }
+        preferencesURL = rootURL
+            .appendingPathComponent(".catalina_performance_preferences", isDirectory: true)
+            .appendingPathComponent("advanced.conf")
+        registerDefaults()
+        loadFilePreferencesIntoDefaults()
+        save()
+    }
+
+    func bool(forKey key: String) -> Bool {
+        defaults.bool(forKey: key)
+    }
+
+    func set(_ value: Bool, forKey key: String) {
+        guard AdvancedPreferencesStore.keys.contains(key) else { return }
+        defaults.set(value, forKey: key)
+        save()
+    }
+
+    private func registerDefaults() {
+        defaults.register(defaults: Dictionary(uniqueKeysWithValues: AdvancedPreferencesStore.keys.map { ($0, true) }))
+    }
+
+    private func loadFilePreferencesIntoDefaults() {
+        guard let contents = try? String(contentsOf: preferencesURL, encoding: .utf8) else { return }
+        for line in contents.split(separator: "\n", omittingEmptySubsequences: false) {
+            if line.isEmpty || line.hasPrefix("#") { continue }
+            let parts = line.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+            guard parts.count == 2 else { continue }
+            let key = String(parts[0])
+            let value = String(parts[1])
+            guard AdvancedPreferencesStore.keys.contains(key), value == "0" || value == "1" else { continue }
+            defaults.set(value == "1", forKey: key)
+        }
+    }
+
+    private func save() {
+        do {
+            try fileManager.createDirectory(at: preferencesURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
+            let contents = AdvancedPreferencesStore.keys
+                .map { "\($0)=\(defaults.bool(forKey: $0) ? "1" : "0")" }
+                .joined(separator: "\n") + "\n"
+            try contents.write(to: preferencesURL, atomically: true, encoding: .utf8)
+        } catch {
+            NSLog("Failed to save Advanced preferences to %@: %@", preferencesURL.path, error.localizedDescription)
+        }
+    }
+}
+
+final class AdvancedWindowController: NSWindowController {
+    private let preferences = AdvancedPreferencesStore()
+    private let preferenceKeys = AdvancedPreferencesStore.keys
 
     convenience init() {
         let window = NSWindow(
@@ -420,7 +491,7 @@ final class AdvancedWindowController: NSWindowController {
 
         let title = NSTextField(labelWithString: "Advanced")
         title.font = NSFont.boldSystemFont(ofSize: 24)
-        let description = wrappedLabel("Planning and configuration UI only. These controls do not run scripts or change system behavior yet; Performance Mode remains controlled by the main Run Performance ON/OFF buttons.")
+        let description = wrappedLabel("Advanced preferences configure reviewed Performance Mode script behavior. Changes are saved locally and only take effect when the main Run Performance ON button is used.")
 
         let stack = NSStackView()
         stack.orientation = .vertical
@@ -436,10 +507,11 @@ final class AdvancedWindowController: NSWindowController {
             disabledCheckbox("Pause selected launch agents — Not implemented yet")
         ]))
         stack.addArrangedSubview(section("Power Behavior", controls: [
-            plannedCheckbox("Prevent plugged-in sleep while Performance Mode is ON", key: preferenceKeys[2]),
+            plannedCheckbox("Prevent plugged-in system sleep while Performance Mode is ON", key: preferenceKeys[2]),
             plannedCheckbox("Prevent display sleep while Performance Mode is ON", key: preferenceKeys[3]),
             disabledCheckbox("Prevent disk sleep — Not implemented yet"),
-            disabledCheckbox("Disable Power Nap — Not implemented yet")
+            disabledCheckbox("Disable Power Nap — Not implemented yet"),
+            disabledCheckbox("Keep network awake — Not implemented yet")
         ]))
         stack.addArrangedSubview(section("App Priority", controls: [
             disabledCheckbox("Boost selected foreground app — Not implemented yet"),
@@ -497,7 +569,7 @@ final class AdvancedWindowController: NSWindowController {
     }
 
     private func plannedCheckbox(_ title: String, key: String) -> NSButton {
-        let checkbox = NSButton(checkboxWithTitle: title + " — preference only; no system changes yet", target: self, action: #selector(savePreference(_:)))
+        let checkbox = NSButton(checkboxWithTitle: title, target: self, action: #selector(savePreference(_:)))
         checkbox.identifier = NSUserInterfaceItemIdentifier(rawValue: key)
         checkbox.state = preferences.bool(forKey: key) ? .on : .off
         return checkbox

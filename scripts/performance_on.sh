@@ -22,6 +22,13 @@ PMSET_RESTORE_FILE="$STATE_DIR/pmset_restore_commands.sh"
 TMUTIL_STATE_FILE="$STATE_DIR/timemachine_before.txt"
 MDUTIL_STATE_FILE="$STATE_DIR/spotlight_boot_before.txt"
 ACTIONS_FILE="$STATE_DIR/actions_taken.txt"
+PREFERENCES_DIR="$REPO_ROOT/.catalina_performance_preferences"
+ADVANCED_PREFERENCES_FILE="$PREFERENCES_DIR/advanced.conf"
+
+PREF_PAUSE_SPOTLIGHT=1
+PREF_PAUSE_TIME_MACHINE=1
+PREF_PREVENT_PLUGGED_IN_SLEEP=1
+PREF_PREVENT_DISPLAY_SLEEP=1
 
 FORCE=0
 ASSUME_YES=0
@@ -83,6 +90,33 @@ run_privileged() {
     fi
 }
 
+read_advanced_preferences() {
+    if [ ! -f "$ADVANCED_PREFERENCES_FILE" ]; then
+        log "Advanced preferences file not found; using safe default enabled settings."
+        return 0
+    fi
+
+    while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+            ""|\#*) continue ;;
+            advanced.pauseSpotlightWhileOn=0) PREF_PAUSE_SPOTLIGHT=0 ;;
+            advanced.pauseSpotlightWhileOn=1) PREF_PAUSE_SPOTLIGHT=1 ;;
+            advanced.pauseTimeMachineWhileOn=0) PREF_PAUSE_TIME_MACHINE=0 ;;
+            advanced.pauseTimeMachineWhileOn=1) PREF_PAUSE_TIME_MACHINE=1 ;;
+            advanced.preventPluggedInSleepWhileOn=0) PREF_PREVENT_PLUGGED_IN_SLEEP=0 ;;
+            advanced.preventPluggedInSleepWhileOn=1) PREF_PREVENT_PLUGGED_IN_SLEEP=1 ;;
+            advanced.preventDisplaySleepWhileOn=0) PREF_PREVENT_DISPLAY_SLEEP=0 ;;
+            advanced.preventDisplaySleepWhileOn=1) PREF_PREVENT_DISPLAY_SLEEP=1 ;;
+            advanced.*=*) log "Ignored unknown Advanced preference key: ${line%%=*}" ;;
+            *) log "Ignored malformed Advanced preference line." ;;
+        esac
+    done < "$ADVANCED_PREFERENCES_FILE"
+}
+
+preference_enabled() {
+    [ "$1" = "1" ]
+}
+
 read_pmset_value() {
     key=$1
     file=$2
@@ -102,10 +136,11 @@ confirm_intent() {
 CatalinaPerformance will turn Performance Mode ON.
 
 Planned reversible changes on macOS, when the required commands exist:
-- Save current pmset settings, then prevent system sleep while plugged in.
-- Prevent display sleep while Performance Mode is active.
-- Pause Time Machine automatic backups.
-- Pause Spotlight indexing on the boot volume.
+- Save current pmset settings before any selected power-management change.
+- Prevent system sleep while plugged in, if enabled in Advanced preferences.
+- Prevent display sleep while Performance Mode is active, if enabled in Advanced preferences.
+- Pause Time Machine automatic backups, if enabled in Advanced preferences.
+- Pause Spotlight indexing on the boot volume, if enabled in Advanced preferences.
 
 This script will not modify SIP, delete caches, permanently disable services,
 touch fan control, undervolt, use MSR code, load kexts, or install third-party tools.
@@ -143,10 +178,10 @@ save_pmset_state() {
     {
         printf '#!/bin/sh\n'
         printf '# Generated before enabling Performance Mode. Intended for performance_off.sh.\n'
-        if [ -n "$current_sleep" ]; then
+        if preference_enabled "$PREF_PREVENT_PLUGGED_IN_SLEEP" && [ -n "$current_sleep" ]; then
             printf 'pmset -c sleep %s\n' "$current_sleep"
         fi
-        if [ -n "$current_displaysleep" ]; then
+        if preference_enabled "$PREF_PREVENT_DISPLAY_SLEEP" && [ -n "$current_displaysleep" ]; then
             printf 'pmset -c displaysleep %s\n' "$current_displaysleep"
         fi
     } > "$PMSET_RESTORE_FILE"
@@ -159,8 +194,19 @@ apply_pmset_changes() {
         return 0
     fi
 
-    run_privileged "prevent system and display sleep while plugged in" pmset -c sleep 0 displaysleep 0
-    record_action "Changed pmset AC power settings: sleep=0, displaysleep=0."
+    if preference_enabled "$PREF_PREVENT_PLUGGED_IN_SLEEP"; then
+        run_privileged "prevent system sleep while plugged in" pmset -c sleep 0
+        record_action "Changed pmset AC power setting: sleep=0."
+    else
+        record_action "Skipped plugged-in system sleep change: disabled in Advanced preferences."
+    fi
+
+    if preference_enabled "$PREF_PREVENT_DISPLAY_SLEEP"; then
+        run_privileged "prevent display sleep while Performance Mode is on" pmset -c displaysleep 0
+        record_action "Changed pmset AC power setting: displaysleep=0."
+    else
+        record_action "Skipped display sleep change: disabled in Advanced preferences."
+    fi
 }
 
 save_time_machine_state() {
@@ -183,6 +229,10 @@ save_time_machine_state() {
 }
 
 pause_time_machine() {
+    if ! preference_enabled "$PREF_PAUSE_TIME_MACHINE"; then
+        record_action "Skipped Time Machine pause: disabled in Advanced preferences."
+        return 0
+    fi
     if ! command_exists tmutil || [ ! -s "$TMUTIL_STATE_FILE" ]; then
         return 0
     fi
@@ -202,6 +252,10 @@ save_spotlight_state() {
 }
 
 pause_spotlight() {
+    if ! preference_enabled "$PREF_PAUSE_SPOTLIGHT"; then
+        record_action "Skipped Spotlight pause: disabled in Advanced preferences."
+        return 0
+    fi
     if ! command_exists mdutil || [ ! -s "$MDUTIL_STATE_FILE" ]; then
         return 0
     fi
@@ -235,6 +289,7 @@ if ! is_macos; then
     log "Non-macOS platform detected; macOS-specific changes will be skipped if commands are unavailable."
 fi
 
+read_advanced_preferences
 confirm_intent
 save_pmset_state
 save_time_machine_state

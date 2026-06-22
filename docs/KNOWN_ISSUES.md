@@ -15,7 +15,7 @@ This page tracks current limitations and development notes for CatalinaPerforman
 ## Feature Gaps
 
 - Fan control is not implemented yet.
-- Advanced options are placeholder-only.
+- Most Advanced options are still placeholder-only. Background Services and Power Behavior preferences are implemented, but disk sleep, Power Nap, network wake, app priority, memory/storage automation, thermal/fan features, and experimental CPU features remain unimplemented.
 
 ## Safety Boundaries
 
