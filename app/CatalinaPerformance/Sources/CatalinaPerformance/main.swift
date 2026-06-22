@@ -26,33 +26,87 @@ final class ScriptRunner {
     func run(_ script: ScriptKind, completion: @escaping (ScriptResult) -> Void) {
         let scriptURL = resolveScript(named: script.fileName)
         let launchCommand = scriptCommand(for: script)
-        guard fileManager.isExecutableFile(atPath: scriptURL.path) || fileManager.fileExists(atPath: scriptURL.path) else {
-            completion(ScriptResult(command: launchCommand, output: "Script not found: \(scriptURL.path)\nSet CATALINA_PERFORMANCE_SCRIPTS_DIR to the repository scripts directory during development.", exitStatus: nil))
+        guard scriptExists(at: scriptURL) else {
+            completion(ScriptResult(command: launchCommand, output: missingScriptMessage(scriptURL), exitStatus: nil, timedOut: false, cancelled: false))
             return
         }
 
+        if script.requiresAdministratorPrivileges {
+            runWithAdministratorPrivileges(script, scriptURL: scriptURL, launchCommand: launchCommand, completion: completion)
+        } else {
+            runDirect(script, scriptURL: scriptURL, launchCommand: launchCommand, completion: completion)
+        }
+    }
+
+    private func runDirect(_ script: ScriptKind, scriptURL: URL, launchCommand: String, completion: @escaping (ScriptResult) -> Void) {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/sh")
         process.arguments = [scriptURL.path] + script.arguments
+        finish(process, script: script, launchCommand: launchCommand, timeout: 60, completion: completion)
+    }
 
+    private func runWithAdministratorPrivileges(_ script: ScriptKind, scriptURL: URL, launchCommand: String, completion: @escaping (ScriptResult) -> Void) {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        process.arguments = ["-e", administratorAppleScript(for: scriptURL, arguments: script.arguments)]
+        finish(process, script: script, launchCommand: launchCommand, timeout: 300, completion: completion)
+    }
+
+    private func finish(_ process: Process, script: ScriptKind, launchCommand: String, timeout: TimeInterval, completion: @escaping (ScriptResult) -> Void) {
         let pipe = Pipe()
         process.standardOutput = pipe
         process.standardError = pipe
+        var didFinish = false
+
+        func complete(_ result: ScriptResult) {
+            DispatchQueue.main.async {
+                if didFinish { return }
+                didFinish = true
+                completion(result)
+            }
+        }
 
         do {
             try process.run()
         } catch {
-            completion(ScriptResult(command: launchCommand, output: "Failed to start \(script.fileName): \(error.localizedDescription)", exitStatus: nil))
+            completion(ScriptResult(command: launchCommand, output: "Failed to start \(script.fileName): \(error.localizedDescription)", exitStatus: nil, timedOut: false, cancelled: false))
             return
+        }
+
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + timeout) {
+            if process.isRunning {
+                process.terminate()
+                complete(ScriptResult(command: launchCommand, output: "Timed out after \(Int(timeout)) seconds. The script was stopped so the UI would not remain stuck.", exitStatus: nil, timedOut: true, cancelled: false))
+            }
         }
 
         process.terminationHandler = { process in
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             let output = String(data: data, encoding: .utf8) ?? ""
-            DispatchQueue.main.async(execute: {
-                completion(ScriptResult(command: launchCommand, output: output, exitStatus: process.terminationStatus))
-            })
+            let cancelled = script.requiresAdministratorPrivileges && process.terminationStatus != 0 && output.localizedCaseInsensitiveContains("User canceled")
+            complete(ScriptResult(command: launchCommand, output: cancelled ? "Cancelled by user" : output, exitStatus: process.terminationStatus, timedOut: false, cancelled: cancelled))
         }
+    }
+
+    private func scriptExists(at scriptURL: URL) -> Bool {
+        fileManager.isExecutableFile(atPath: scriptURL.path) || fileManager.fileExists(atPath: scriptURL.path)
+    }
+
+    private func missingScriptMessage(_ scriptURL: URL) -> String {
+        "Script not found: \(scriptURL.path)\nSet CATALINA_PERFORMANCE_SCRIPTS_DIR to the repository scripts directory during development."
+    }
+
+    private func administratorAppleScript(for scriptURL: URL, arguments: [String]) -> String {
+        let command = (["/bin/sh", scriptURL.path] + arguments).map(shellQuote).joined(separator: " ")
+        return "do shell script \(appleScriptString(command)) with administrator privileges"
+    }
+
+    private func shellQuote(_ value: String) -> String {
+        "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
+    }
+
+    private func appleScriptString(_ value: String) -> String {
+        "\"" + value.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"") + "\""
     }
 
     func performanceModeIsOn() -> Bool {
@@ -98,9 +152,11 @@ struct ScriptResult {
     let command: String
     let output: String
     let exitStatus: Int32?
+    let timedOut: Bool
+    let cancelled: Bool
 
     var succeeded: Bool {
-        exitStatus == 0
+        exitStatus == 0 && !timedOut && !cancelled
     }
 }
 
@@ -128,6 +184,15 @@ enum ScriptKind {
             return ["--yes"]
         case .status, .performanceOff:
             return []
+        }
+    }
+
+    var requiresAdministratorPrivileges: Bool {
+        switch self {
+        case .performanceOn, .performanceOff, .emergencyRestore:
+            return true
+        case .status:
+            return false
         }
     }
 }
@@ -173,9 +238,7 @@ final class MainWindowController: NSWindowController {
         offButton.action = #selector(runPerformanceOff)
         restoreButton.target = self
         restoreButton.action = #selector(runEmergencyRestore)
-        let advancedButton = NSButton(title: "Advanced", target: self, action: #selector(showAdvancedPlaceholder))
-
-        let buttons = NSStackView(views: [refreshButton, onButton, offButton, restoreButton, advancedButton])
+        let buttons = NSStackView(views: [refreshButton, onButton, offButton, restoreButton])
         buttons.orientation = .horizontal
         buttons.spacing = 8
         buttons.distribution = .fillProportionally
@@ -183,6 +246,9 @@ final class MainWindowController: NSWindowController {
         outputTextView.isEditable = false
         outputTextView.isSelectable = true
         outputTextView.font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
+        outputTextView.textColor = .textColor
+        outputTextView.backgroundColor = .textBackgroundColor
+        outputTextView.insertionPointColor = .textColor
         outputTextView.minSize = NSSize(width: 0, height: 0)
         outputTextView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         outputTextView.isVerticallyResizable = true
@@ -196,12 +262,10 @@ final class MainWindowController: NSWindowController {
         scrollView.hasHorizontalScroller = false
         scrollView.borderType = .bezelBorder
         scrollView.drawsBackground = true
+        scrollView.backgroundColor = .textBackgroundColor
         scrollView.documentView = outputTextView
 
-        let advancedPlaceholder = NSTextField(labelWithString: "Advanced options are not implemented yet.")
-        advancedPlaceholder.textColor = .secondaryLabelColor
-
-        let layout = NSStackView(views: [title, switchRow, modeStateLabel, statusLabel, buttons, scrollView, advancedPlaceholder])
+        let layout = NSStackView(views: [title, switchRow, modeStateLabel, statusLabel, buttons, scrollView])
         layout.orientation = .vertical
         layout.spacing = 14
         layout.alignment = .leading
@@ -227,7 +291,7 @@ final class MainWindowController: NSWindowController {
     @objc private func runPerformanceOn() {
         confirm(
             title: "Turn Performance Mode ON?",
-            message: "This will run the reviewed performance_on.sh script. It may ask macOS for administrator authorization through sudo, records prior state before changes, and does not implement fan control, cache deletion, SIP changes, kexts, undervolting, or experimental features."
+            message: "This will run the reviewed performance_on.sh script using the macOS administrator authorization prompt. It records prior state before changes and does not implement fan control, cache deletion, SIP changes, kexts, undervolting, or experimental features."
         ) { [weak self] in
             self?.run(.performanceOn, status: "Performance Mode ON requested...")
         }
@@ -244,10 +308,6 @@ final class MainWindowController: NSWindowController {
         ) { [weak self] in
             self?.run(.emergencyRestore, status: "Emergency Restore requested...")
         }
-    }
-
-    @objc private func showAdvancedPlaceholder() {
-        appendOutput("\nAdvanced options are not implemented yet.\n")
     }
 
     private func confirm(title: String, message: String, then action: @escaping () -> Void) {
@@ -273,15 +333,19 @@ final class MainWindowController: NSWindowController {
 
             if let exitStatus = result.exitStatus {
                 self.appendOutput("[\(script.fileName) exited with status \(exitStatus)]\n")
-                self.statusLabel.stringValue = result.succeeded
-                    ? "Status: Success running \(script.fileName)."
-                    : "Status: Failed running \(script.fileName) (exit \(exitStatus))."
+                if result.cancelled {
+                    self.statusLabel.stringValue = "Status: Cancelled by user."
+                } else {
+                    self.statusLabel.stringValue = result.succeeded
+                        ? "Status: Success running \(script.fileName)."
+                        : "Status: Failed running \(script.fileName) (exit \(exitStatus))."
+                }
             } else {
-                self.appendOutput("[\(script.fileName) did not start]\n")
-                self.statusLabel.stringValue = "Status: Failed running \(script.fileName) before exit."
+                self.appendOutput(result.timedOut ? "[\(script.fileName) timed out]\n" : "[\(script.fileName) did not start]\n")
+                self.statusLabel.stringValue = result.timedOut ? "Status: Timed out running \(script.fileName)." : "Status: Failed running \(script.fileName) before exit."
             }
 
-            self.updateModeControls()
+            self.setRunButtonsEnabled(true)
             self.outputTextView.scrollToEndOfDocument(nil)
         }
     }
@@ -296,13 +360,21 @@ final class MainWindowController: NSWindowController {
     }
 
     private func setRunButtonsEnabled(_ enabled: Bool) {
-        onButton.isEnabled = enabled
-        offButton.isEnabled = enabled
-        restoreButton.isEnabled = true
+        if enabled {
+            updateModeControls()
+        } else {
+            onButton.isEnabled = false
+            offButton.isEnabled = false
+            restoreButton.isEnabled = false
+        }
     }
 
     private func appendOutput(_ text: String) {
-        outputTextView.textStorage?.append(NSAttributedString(string: text))
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: outputTextView.font ?? NSFont.monospacedSystemFont(ofSize: 12, weight: .regular),
+            .foregroundColor: NSColor.textColor
+        ]
+        outputTextView.textStorage?.append(NSAttributedString(string: text, attributes: attributes))
         outputTextView.needsDisplay = true
         outputTextView.scrollRangeToVisible(NSRange(location: outputTextView.string.count, length: 0))
     }
