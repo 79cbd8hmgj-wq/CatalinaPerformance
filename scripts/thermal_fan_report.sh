@@ -56,14 +56,14 @@ fi
 
 print_section 'Thermally Constrained Assessment'
 if [ -n "$PMSET_THERM_OUTPUT" ]; then
-    parsed_limits=$(printf '%s\n' "$PMSET_THERM_OUTPUT" | awk -F '=' '
+    percentage_limits=$(printf '%s\n' "$PMSET_THERM_OUTPUT" | awk -F '=' '
         function trim(value) {
             gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
             return value
         }
         {
             key = trim($1)
-            if (key == "CPU_Speed_Limit" || key == "GPU_Speed_Limit" || key == "CPU_Available_CPUs") {
+            if (key == "CPU_Speed_Limit" || key == "GPU_Speed_Limit") {
                 value = trim($2)
                 if (value ~ /^[0-9]+$/) {
                     print key "=" value
@@ -72,21 +72,49 @@ if [ -n "$PMSET_THERM_OUTPUT" ]; then
         }
     ' 2>/dev/null || true)
 
-    if [ -z "$parsed_limits" ]; then
-        printf 'Thermal constraint status unavailable from pmset output.\n'
+    if [ -z "$percentage_limits" ]; then
+        printf 'Thermal constraint status unavailable from percentage limits.\n'
     else
-        printf 'Parsed pmset thermal limit values:\n'
-        printf '%s\n' "$parsed_limits" | awk -F '=' '{ printf "%s = %s%%\n", $1, $2 }'
-        constrained_lines=$(printf '%s\n' "$parsed_limits" | awk -F '=' '$2 + 0 < 100 { printf "%s = %s%%\n", $1, $2 }' 2>/dev/null || true)
+        printf 'Parsed pmset percentage thermal limit values:\n'
+        printf '%s\n' "$percentage_limits" | awk -F '=' '{ printf "%s = %s%%\n", $1, $2 }'
+        constrained_lines=$(printf '%s\n' "$percentage_limits" | awk -F '=' '$2 + 0 < 100 { printf "%s = %s%%\n", $1, $2 }' 2>/dev/null || true)
         if [ -n "$constrained_lines" ]; then
-            warn 'The Mac appears thermally constrained based on parsed pmset thermal limit values below 100%:'
+            warn 'The Mac appears thermally constrained based on parsed pmset percentage thermal limit values below 100%:'
             printf '%s\n' "$constrained_lines"
         else
-            ok 'Parsed pmset thermal limit values are all 100%; no thermal constraint was detected.'
+            ok 'Parsed pmset percentage thermal limit values are all 100%; no thermal constraint was detected.'
         fi
     fi
 else
-    printf 'Thermal constraint status unavailable from pmset output.\n'
+    printf 'Thermal constraint status unavailable from percentage limits.\n'
+fi
+
+print_section 'CPU Availability (informational)'
+if [ -n "$PMSET_THERM_OUTPUT" ]; then
+    available_cpus=$(printf '%s\n' "$PMSET_THERM_OUTPUT" | awk -F '=' '
+        function trim(value) {
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+            return value
+        }
+        {
+            key = trim($1)
+            if (key == "CPU_Available_CPUs") {
+                value = trim($2)
+                if (value ~ /^[0-9]+$/) {
+                    print value
+                }
+            }
+        }
+    ' 2>/dev/null | head -n 1)
+
+    if [ -n "$available_cpus" ]; then
+        printf 'CPU_Available_CPUs = %s\n' "$available_cpus"
+        printf 'CPU_Available_CPUs is a CPU count, not a percentage thermal limit, so it is not used as a warning threshold.\n'
+    else
+        printf 'CPU_Available_CPUs not present in pmset output.\n'
+    fi
+else
+    printf 'CPU availability unavailable from pmset output.\n'
 fi
 
 print_section 'CPU Temperature'
