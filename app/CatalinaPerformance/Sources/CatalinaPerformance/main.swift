@@ -44,6 +44,8 @@ final class ScriptRunner {
         process.arguments = [scriptURL.path] + script.arguments
         var environment = ProcessInfo.processInfo.environment
         environment["CATALINA_PERFORMANCE_PREFERENCES_FILE"] = AdvancedPreferences.configFileURL.path
+        environment["CATALINA_PERFORMANCE_USER_HOME"] = FileManager.default.homeDirectoryForCurrentUser.path
+        environment["CATALINA_PERFORMANCE_USER_NAME"] = NSUserName()
         process.environment = environment
         finish(process, script: script, launchCommand: launchCommand, timeout: 60, completion: completion)
     }
@@ -86,7 +88,7 @@ final class ScriptRunner {
         process.terminationHandler = { process in
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             let output = String(data: data, encoding: .utf8) ?? ""
-            let cancelled = script.requiresAdministratorPrivileges && process.terminationStatus != 0 && output.localizedCaseInsensitiveContains("User canceled")
+            let cancelled = process.terminationStatus != 0 && output.localizedCaseInsensitiveContains("User canceled")
             complete(ScriptResult(command: launchCommand, output: cancelled ? "Cancelled by user" : output, exitStatus: process.terminationStatus, timedOut: false, cancelled: cancelled))
         }
     }
@@ -100,10 +102,12 @@ final class ScriptRunner {
     }
 
     private func administratorAppleScript(for scriptURL: URL, arguments: [String]) -> String {
-        let environmentPrefix = "CATALINA_PERFORMANCE_PREFERENCES_FILE=" + shellQuote(AdvancedPreferences.configFileURL.path)
-        let command = ([environmentPrefix, "/bin/sh", scriptURL.path] + arguments).map { value in
-            value == environmentPrefix ? value : shellQuote(value)
-        }.joined(separator: " ")
+        let environmentPrefixes = [
+            "CATALINA_PERFORMANCE_PREFERENCES_FILE=" + shellQuote(AdvancedPreferences.configFileURL.path),
+            "CATALINA_PERFORMANCE_USER_HOME=" + shellQuote(FileManager.default.homeDirectoryForCurrentUser.path),
+            "CATALINA_PERFORMANCE_USER_NAME=" + shellQuote(NSUserName())
+        ]
+        let command = (environmentPrefixes + ["/bin/sh", scriptURL.path].map { shellQuote($0) } + arguments.map { shellQuote($0) }).joined(separator: " ")
         return "do shell script \(appleScriptString(command)) with administrator privileges"
     }
 
@@ -164,6 +168,11 @@ struct AdvancedPreferences {
     static let showLowDiskSpaceWarningKey = "advanced.showLowDiskSpaceWarning"
     static let showMemoryPressureSummaryKey = "advanced.showMemoryPressureSummary"
     static let showTopMemoryProcessesKey = "advanced.showTopMemoryProcesses"
+    static let appPriorityLastPIDKey = "advanced.appPriorityLastPID"
+    static let appPriorityLastNameKey = "advanced.appPriorityLastName"
+    static let appPriorityLastOwnerKey = "advanced.appPriorityLastOwner"
+    static let appPriorityLastStartKey = "advanced.appPriorityLastStart"
+    static let appPriorityLastFullCommandKey = "advanced.appPriorityLastFullCommand"
     static let configFileName = "advanced_preferences.env"
 
     static func registerDefaults(in defaults: UserDefaults = .standard) {
@@ -225,12 +234,26 @@ struct ScriptResult {
     }
 }
 
+struct AppPriorityProcess {
+    let pid: String
+    let name: String
+    let nice: String
+    let cpu: String
+    let memory: String
+    let owner: String
+    let startTime: String
+    let fullCommand: String
+}
+
 enum ScriptKind {
     case status
     case performanceOn
     case performanceOff
     case emergencyRestore
     case memoryStorageReport
+    case appPriorityReport
+    case appPriorityApply(process: AppPriorityProcess)
+    case appPriorityRestore
 
     var fileName: String {
         switch self {
@@ -239,6 +262,9 @@ enum ScriptKind {
         case .performanceOff: return "performance_off.sh"
         case .emergencyRestore: return "emergency_restore.sh"
         case .memoryStorageReport: return "memory_storage_report.sh"
+        case .appPriorityReport: return "app_priority_report.sh"
+        case .appPriorityApply: return "app_priority_apply.sh"
+        case .appPriorityRestore: return "app_priority_restore.sh"
         }
     }
 
@@ -249,16 +275,27 @@ enum ScriptKind {
             // these scripts, then passes --yes so script output can be captured
             // in the app instead of blocking on terminal input.
             return ["--yes"]
-        case .status, .performanceOff, .memoryStorageReport:
+        case .status, .performanceOff, .memoryStorageReport, .appPriorityReport:
             return []
+        case .appPriorityApply(let process):
+            var args = ["--pid", process.pid, "--yes", "--expected-owner", process.owner, "--expected-command", process.name]
+            if !process.startTime.isEmpty {
+                args += ["--expected-start", process.startTime]
+            }
+            if !process.fullCommand.isEmpty {
+                args += ["--expected-full-command", process.fullCommand]
+            }
+            return args
+        case .appPriorityRestore:
+            return ["--yes"]
         }
     }
 
     var requiresAdministratorPrivileges: Bool {
         switch self {
-        case .performanceOn, .performanceOff, .emergencyRestore:
+        case .performanceOn, .performanceOff, .emergencyRestore, .appPriorityRestore:
             return true
-        case .status, .memoryStorageReport:
+        case .status, .memoryStorageReport, .appPriorityReport, .appPriorityApply:
             return false
         }
     }
@@ -394,6 +431,20 @@ final class MainWindowController: NSWindowController {
                 onRunMemoryStorageCheck: { [weak self] in
                     self?.run(.memoryStorageReport, status: "Running Memory / Storage check...")
                 },
+                onRunAppPriorityReport: { [weak self] completion in
+                    self?.run(.appPriorityReport, status: "Refreshing App Priority process list...", completion: completion)
+                },
+                onRunAppPriorityApply: { [weak self] process, completion in
+                    self?.confirm(
+                        title: "Apply Priority Boost?",
+                        message: "CatalinaPerformance will try to renice only the selected PID to a conservative nice value (-5), after saving the original nice value for restore. Administrator authorization may be required. System and protected processes are blocked by the script."
+                    ) {
+                        self?.run(.appPriorityApply(process: process), status: "Applying App Priority boost...", completion: completion)
+                    }
+                },
+                onRunAppPriorityRestore: { [weak self] completion in
+                    self?.run(.appPriorityRestore, status: "Restoring App Priority changes...", completion: completion)
+                },
                 onPreferenceWriteFailure: { [weak self] message in
                     self?.showPreferenceWriteFailure(message)
                 }
@@ -421,7 +472,7 @@ final class MainWindowController: NSWindowController {
         }
     }
 
-    private func run(_ script: ScriptKind, status: String) {
+    private func run(_ script: ScriptKind, status: String, completion: ((ScriptResult) -> Void)? = nil) {
         guard !isScriptRunning else {
             statusLabel.stringValue = "Status: Another CatalinaPerformance action is already running."
             appendOutput("\nAnother CatalinaPerformance action is already running. Wait for the active script to finish before starting \(script.fileName).\n")
@@ -454,6 +505,7 @@ final class MainWindowController: NSWindowController {
 
             self.activeScriptCount = max(0, self.activeScriptCount - 1)
             self.updateRunControls()
+            completion?(result)
             self.outputTextView.scrollToEndOfDocument(nil)
         }
     }
@@ -491,10 +543,25 @@ final class MainWindowController: NSWindowController {
 final class AdvancedWindowController: NSWindowController {
     private let preferences = UserDefaults.standard
     private var memoryStorageButton: NSButton?
+    private var appPriorityRefreshButton: NSButton?
+    private var appPriorityApplyButton: NSButton?
+    private var appPriorityRestoreButton: NSButton?
+    private let appPriorityPopup = NSPopUpButton(frame: .zero, pullsDown: false)
+    private let appPriorityDetailsLabel = NSTextField(wrappingLabelWithString: "No process selected. Refresh the list, then choose one user-owned process.")
+    private var appPriorityProcesses: [AppPriorityProcess] = []
     private var onRunMemoryStorageCheck: (() -> Void)?
+    private var onRunAppPriorityReport: (((ScriptResult) -> Void) -> Void)?
+    private var onRunAppPriorityApply: ((AppPriorityProcess, @escaping (ScriptResult) -> Void) -> Void)?
+    private var onRunAppPriorityRestore: ((@escaping (ScriptResult) -> Void) -> Void)?
     private var onPreferenceWriteFailure: ((String) -> Void)?
 
-    convenience init(onRunMemoryStorageCheck: (() -> Void)? = nil, onPreferenceWriteFailure: ((String) -> Void)? = nil) {
+    convenience init(
+        onRunMemoryStorageCheck: (() -> Void)? = nil,
+        onRunAppPriorityReport: (((ScriptResult) -> Void) -> Void)? = nil,
+        onRunAppPriorityApply: ((AppPriorityProcess, @escaping (ScriptResult) -> Void) -> Void)? = nil,
+        onRunAppPriorityRestore: ((@escaping (ScriptResult) -> Void) -> Void)? = nil,
+        onPreferenceWriteFailure: ((String) -> Void)? = nil
+    ) {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 680, height: 720),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
@@ -504,6 +571,9 @@ final class AdvancedWindowController: NSWindowController {
         window.title = "CatalinaPerformance Advanced"
         self.init(window: window)
         self.onRunMemoryStorageCheck = onRunMemoryStorageCheck
+        self.onRunAppPriorityReport = onRunAppPriorityReport
+        self.onRunAppPriorityApply = onRunAppPriorityApply
+        self.onRunAppPriorityRestore = onRunAppPriorityRestore
         self.onPreferenceWriteFailure = onPreferenceWriteFailure
         AdvancedPreferences.registerDefaults(in: preferences)
         reportPreferenceWriteResult(AdvancedPreferences.writeScriptConfig(defaults: preferences))
@@ -537,10 +607,7 @@ final class AdvancedWindowController: NSWindowController {
             disabledCheckbox("Disable Power Nap — Not implemented yet"),
             disabledCheckbox("Keep network awake — Not implemented yet")
         ]))
-        stack.addArrangedSubview(section("App Priority", controls: [
-            disabledCheckbox("Boost selected foreground app — Not implemented yet"),
-            disabledCheckbox("Lower background app priority — Not implemented yet")
-        ]))
+        stack.addArrangedSubview(section("App Priority", controls: appPriorityControls()))
         let memoryStorageButton = NSButton(title: "Run Memory / Storage Check", target: self, action: #selector(runMemoryStorageCheck))
         self.memoryStorageButton = memoryStorageButton
         stack.addArrangedSubview(section("Memory / Storage", controls: [
@@ -617,6 +684,42 @@ final class AdvancedWindowController: NSWindowController {
 
     func setScriptActionsEnabled(_ enabled: Bool) {
         memoryStorageButton?.isEnabled = enabled
+        appPriorityRefreshButton?.isEnabled = enabled
+        appPriorityApplyButton?.isEnabled = enabled && selectedAppPriorityProcess() != nil
+        appPriorityRestoreButton?.isEnabled = enabled
+    }
+
+    private func appPriorityControls() -> [NSView] {
+        let refresh = NSButton(title: "Refresh Running Apps / Processes", target: self, action: #selector(refreshAppPriorityProcesses))
+        let apply = NSButton(title: "Apply Priority Boost Now", target: self, action: #selector(applyAppPriorityBoost))
+        let restore = NSButton(title: "Restore Priority", target: self, action: #selector(restoreAppPriorityBoost))
+        appPriorityRefreshButton = refresh
+        appPriorityApplyButton = apply
+        appPriorityRestoreButton = restore
+        appPriorityPopup.target = self
+        appPriorityPopup.action = #selector(appPrioritySelectionChanged)
+        appPriorityPopup.addItem(withTitle: "Refresh to load running user processes")
+        apply.isEnabled = false
+        return [
+            wrappedLabel("App Priority is manual-only in this version. Select exactly one user-owned process, then use Apply Priority Boost Now. Performance Mode OFF will attempt to restore any successfully applied manual boost."),
+            refresh,
+            appPriorityPopup,
+            appPriorityDetailsLabel,
+            apply,
+            restore,
+            disabledCheckbox("Auto-boost selected app when Performance Mode turns ON — Not implemented yet"),
+            disabledCheckbox("Lower background app priority — Not implemented yet"),
+            disabledCheckbox("Auto-detect emulator/game/browser — Not implemented yet"),
+            disabledCheckbox("Boost process tree — Not implemented yet"),
+            disabledCheckbox("Force CPU affinity / core pinning — Not available on macOS")
+        ]
+    }
+
+    private func selectedAppPriorityProcess() -> AppPriorityProcess? {
+        let index = appPriorityPopup.indexOfSelectedItem
+        let processIndex = index - 1
+        guard processIndex >= 0 && processIndex < appPriorityProcesses.count else { return nil }
+        return appPriorityProcesses[processIndex]
     }
 
     private func wrappedLabel(_ text: String) -> NSTextField {
@@ -628,6 +731,99 @@ final class AdvancedWindowController: NSWindowController {
     @objc private func runMemoryStorageCheck() {
         reportPreferenceWriteResult(AdvancedPreferences.writeScriptConfig(defaults: preferences))
         onRunMemoryStorageCheck?()
+    }
+
+    @objc private func refreshAppPriorityProcesses() {
+        onRunAppPriorityReport? { [weak self] result in
+            self?.loadAppPriorityProcesses(from: result.output)
+        }
+    }
+
+    @objc private func appPrioritySelectionChanged() {
+        updateAppPrioritySelectionDetails()
+    }
+
+    @objc private func applyAppPriorityBoost() {
+        guard let process = selectedAppPriorityProcess() else { return }
+        guard !process.startTime.isEmpty || !process.fullCommand.isEmpty else {
+            appPriorityDetailsLabel.stringValue = "Selected process identity is incomplete. Refresh the process list and select the target again."
+            return
+        }
+        preferences.set(process.pid, forKey: AdvancedPreferences.appPriorityLastPIDKey)
+        preferences.set(process.name, forKey: AdvancedPreferences.appPriorityLastNameKey)
+        preferences.set(process.owner, forKey: AdvancedPreferences.appPriorityLastOwnerKey)
+        preferences.set(process.startTime, forKey: AdvancedPreferences.appPriorityLastStartKey)
+        preferences.set(process.fullCommand, forKey: AdvancedPreferences.appPriorityLastFullCommandKey)
+        reportPreferenceWriteResult(AdvancedPreferences.writeScriptConfig(defaults: preferences))
+        onRunAppPriorityApply?(process) { [weak self] _ in self?.refreshAppPriorityProcesses() }
+    }
+
+    @objc private func restoreAppPriorityBoost() {
+        onRunAppPriorityRestore? { [weak self] _ in self?.refreshAppPriorityProcesses() }
+    }
+
+    private func loadAppPriorityProcesses(from output: String) {
+        let rows = output.split(separator: "\n").compactMap { line -> AppPriorityProcess? in
+            let fields = line.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
+            guard fields.count >= 6, fields[0] != "PID", Int(fields[0]) != nil else { return nil }
+            return AppPriorityProcess(
+                pid: fields[0],
+                name: fields[1],
+                nice: fields[2],
+                cpu: fields[3],
+                memory: fields[4],
+                owner: fields[5],
+                startTime: fields.count > 6 ? fields[6] : "",
+                fullCommand: fields.count > 7 ? fields[7] : ""
+            )
+        }
+        appPriorityProcesses = rows
+        appPriorityPopup.removeAllItems()
+        appPriorityPopup.addItem(withTitle: "Select one running user process")
+        if rows.isEmpty {
+            appPriorityPopup.addItem(withTitle: "No user processes found")
+            appPriorityPopup.selectItem(at: 0)
+            preferences.removeObject(forKey: AdvancedPreferences.appPriorityLastPIDKey)
+            appPriorityDetailsLabel.stringValue = "No selectable user-owned processes were found. Refresh again after launching the target app."
+        } else {
+            for process in rows {
+                appPriorityPopup.addItem(withTitle: "\(process.name) — PID \(process.pid) — nice \(process.nice) — owner \(process.owner)")
+            }
+            let lastPID = preferences.string(forKey: AdvancedPreferences.appPriorityLastPIDKey)
+            let lastName = preferences.string(forKey: AdvancedPreferences.appPriorityLastNameKey)
+            let lastOwner = preferences.string(forKey: AdvancedPreferences.appPriorityLastOwnerKey)
+            let lastStart = preferences.string(forKey: AdvancedPreferences.appPriorityLastStartKey)
+            let lastFullCommand = preferences.string(forKey: AdvancedPreferences.appPriorityLastFullCommandKey)
+            if let lastPID = lastPID, let index = rows.firstIndex(where: { process in
+                process.pid == lastPID &&
+                    process.name == lastName &&
+                    process.owner == lastOwner &&
+                    (lastStart?.isEmpty ?? true || process.startTime == lastStart) &&
+                    (lastFullCommand?.isEmpty ?? true || process.fullCommand == lastFullCommand)
+            }) {
+                appPriorityPopup.selectItem(at: index + 1)
+            } else if lastPID != nil {
+                preferences.removeObject(forKey: AdvancedPreferences.appPriorityLastPIDKey)
+                preferences.removeObject(forKey: AdvancedPreferences.appPriorityLastNameKey)
+                preferences.removeObject(forKey: AdvancedPreferences.appPriorityLastOwnerKey)
+                preferences.removeObject(forKey: AdvancedPreferences.appPriorityLastStartKey)
+                preferences.removeObject(forKey: AdvancedPreferences.appPriorityLastFullCommandKey)
+                appPriorityPopup.selectItem(at: 0)
+                appPriorityDetailsLabel.stringValue = "Previous App Priority selection is no longer valid; select a process again."
+            } else {
+                appPriorityPopup.selectItem(at: 0)
+            }
+        }
+        updateAppPrioritySelectionDetails()
+    }
+
+    private func updateAppPrioritySelectionDetails() {
+        if let process = selectedAppPriorityProcess() {
+            appPriorityDetailsLabel.stringValue = "Selected: \(process.name) | PID: \(process.pid) | nice: \(process.nice) | CPU: \(process.cpu)% | memory: \(process.memory)% | owner: \(process.owner)"
+            appPriorityApplyButton?.isEnabled = true
+        } else {
+            appPriorityApplyButton?.isEnabled = false
+        }
     }
 
     @objc private func savePreference(_ sender: NSButton) {

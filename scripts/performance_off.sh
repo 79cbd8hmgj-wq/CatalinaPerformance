@@ -20,6 +20,7 @@ TMUTIL_STATE_FILE="$STATE_DIR/timemachine_before.txt"
 MDUTIL_STATE_FILE="$STATE_DIR/spotlight_boot_before.txt"
 ACTIONS_FILE="$STATE_DIR/actions_taken.txt"
 RESTORE_ACTIONS_FILE="$STATE_DIR/restore_actions_taken.txt"
+APP_PRIORITY_RESTORE_SCRIPT="$SCRIPT_DIR/app_priority_restore.sh"
 
 FORCE=0
 DRY_RUN=0
@@ -203,6 +204,29 @@ restore_spotlight() {
     fi
 }
 
+restore_app_priority() {
+    if [ ! -x "$APP_PRIORITY_RESTORE_SCRIPT" ] && [ ! -f "$APP_PRIORITY_RESTORE_SCRIPT" ]; then
+        mark_failure "App Priority restore script is missing: $APP_PRIORITY_RESTORE_SCRIPT"
+        return 1
+    fi
+
+    if [ "$DRY_RUN" -eq 1 ]; then
+        record_restore_action "Running App Priority restore dry run."
+        if ! /bin/sh "$APP_PRIORITY_RESTORE_SCRIPT" --dry-run --yes; then
+            mark_failure "App Priority restore dry run failed."
+            return 1
+        fi
+        return 0
+    fi
+
+    record_restore_action "Running App Priority restore for saved selected-process priority changes."
+    if ! /bin/sh "$APP_PRIORITY_RESTORE_SCRIPT" --yes; then
+        mark_failure "App Priority restore failed. Continuing with other Performance Mode OFF restore actions."
+        return 1
+    fi
+    record_restore_action "App Priority restore completed."
+}
+
 remove_on_marker_after_success() {
     if [ "$DRY_RUN" -eq 1 ]; then
         record_restore_action "DRY RUN: would keep ON marker unchanged: $MARKER_FILE"
@@ -269,6 +293,7 @@ fi
 restore_pmset
 restore_time_machine
 restore_spotlight
+restore_app_priority || true
 remove_on_marker_after_success || true
 print_summary
 
