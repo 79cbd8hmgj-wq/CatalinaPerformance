@@ -72,9 +72,23 @@ for file in "$STATE_DIR"/*.state; do
     PID=$(read_key PID "$file")
     ORIGINAL_NICE=$(read_key ORIGINAL_NICE "$file")
     SAVED_COMMAND=$(read_key COMMAND "$file")
+    APPLY_STATUS=$(read_key APPLY_STATUS "$file")
     case "$PID" in ''|*[!0-9]*) log "Skipped malformed state file $file: invalid PID."; SKIPPED=$((SKIPPED+1)); continue ;; esac
     case "$ORIGINAL_NICE" in -[0-9]|-[0-9][0-9]|[0-9]|[0-9][0-9]) ;; *) log "Skipped PID=$PID ($SAVED_COMMAND): saved original nice value is invalid."; SKIPPED=$((SKIPPED+1)); continue ;; esac
     ATTEMPTED=$((ATTEMPTED+1))
+    case "$APPLY_STATUS" in
+        applied) ;;
+        pending|failed|cancelled)
+            log "Skipped PID=$PID ($SAVED_COMMAND): APPLY_STATUS=$APPLY_STATUS means no confirmed successful boost should be restored; state preserved for troubleshooting."
+            SKIPPED=$((SKIPPED+1))
+            continue
+            ;;
+        ''|*)
+            log "Skipped PID=$PID ($SAVED_COMMAND): missing or malformed APPLY_STATUS; only APPLY_STATUS=applied is restored."
+            SKIPPED=$((SKIPPED+1))
+            continue
+            ;;
+    esac
     INFO=$(ps -p "$PID" -o comm= 2>/dev/null || true)
     if [ -z "$INFO" ]; then log "Skipped PID=$PID ($SAVED_COMMAND): process no longer exists; saved state retained for troubleshooting."; SKIPPED=$((SKIPPED+1)); continue; fi
     identity_mismatch "$file" "$PID"

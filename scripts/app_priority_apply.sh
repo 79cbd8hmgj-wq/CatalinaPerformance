@@ -103,6 +103,14 @@ write_state() {
     } > "$STATE_FILE"
 }
 
+mark_state_status() {
+    status=$1
+    if [ -f "$STATE_FILE" ] && state_matches_current "$STATE_FILE"; then
+        tmp_file="$STATE_FILE.tmp.$$"
+        awk -v status="$status" 'BEGIN{done=0} /^APPLY_STATUS=/ {print "APPLY_STATUS=" status; done=1; next} {print} END{if(!done) print "APPLY_STATUS=" status}' "$STATE_FILE" > "$tmp_file" && mv "$tmp_file" "$STATE_FILE"
+    fi
+}
+
 mkdir -p "$STATE_DIR"
 STATE_FILE="$STATE_DIR/$PID.state"
 if [ -f "$STATE_FILE" ]; then
@@ -123,7 +131,15 @@ fi
 if [ "$ASSUME_YES" -ne 1 ]; then
     printf 'Apply conservative priority boost to PID %s (%s), owner %s, nice %s -> %s? [y/N] ' "$PID" "$COMMAND_NAME" "$OWNER" "$ORIGINAL_NICE" "$TARGET_NICE"
     read answer || answer=no
-    case "$answer" in y|Y|yes|YES) ;; *) printf 'Cancelled by user.\n'; exit 1 ;; esac
+    case "$answer" in
+        y|Y|yes|YES) ;;
+        *)
+            mark_state_status cancelled
+            log "Cancelled app priority boost before renice for PID=$PID. No successful boost was applied."
+            printf 'Cancelled by user.\n'
+            exit 1
+            ;;
+    esac
 fi
 
 run_renice() {
@@ -149,18 +165,12 @@ run_renice() {
 
 log "Applying app priority boost: PID=$PID command=$COMMAND_NAME owner=$OWNER start_time=$START_TIME nice=$ORIGINAL_NICE -> $TARGET_NICE"
 if ! run_renice; then
-    if [ -f "$STATE_FILE" ] && state_matches_current "$STATE_FILE"; then
-        tmp_file="$STATE_FILE.tmp.$$"
-        awk 'BEGIN{done=0} /^APPLY_STATUS=/ {print "APPLY_STATUS=failed"; done=1; next} {print} END{if(!done) print "APPLY_STATUS=failed"}' "$STATE_FILE" > "$tmp_file" && mv "$tmp_file" "$STATE_FILE"
-    fi
-    log "FAILED to apply app priority boost to PID=$PID. State is preserved for troubleshooting."
-    printf 'Failed to apply priority boost to PID %s. Saved state remains for restore/troubleshooting.\n' "$PID" >&2
+    mark_state_status failed
+    log "FAILED to apply app priority boost to PID=$PID. No successful boost was applied; diagnostic state is preserved for troubleshooting."
+    printf 'Failed to apply priority boost to PID %s. No successful boost was applied; saved state remains for troubleshooting and will be skipped by restore.\n' "$PID" >&2
     exit 1
 fi
 
-if [ -f "$STATE_FILE" ] && state_matches_current "$STATE_FILE"; then
-    tmp_file="$STATE_FILE.tmp.$$"
-    awk 'BEGIN{done=0} /^APPLY_STATUS=/ {print "APPLY_STATUS=applied"; done=1; next} {print} END{if(!done) print "APPLY_STATUS=applied"}' "$STATE_FILE" > "$tmp_file" && mv "$tmp_file" "$STATE_FILE"
-fi
+mark_state_status applied
 log "Applied app priority boost to PID=$PID. Restore with scripts/app_priority_restore.sh --yes."
 printf 'Priority boost applied to PID %s (%s). Original nice value is saved in %s.\n' "$PID" "$COMMAND_NAME" "$STATE_FILE"
