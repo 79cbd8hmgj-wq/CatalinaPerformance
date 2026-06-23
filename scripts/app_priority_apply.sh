@@ -50,6 +50,8 @@ INFO=$(ps -p "$PID" -o user=,nice=,comm= 2>/dev/null || true)
 OWNER=$(printf '%s\n' "$INFO" | awk '{print $1; exit}')
 ORIGINAL_NICE=$(printf '%s\n' "$INFO" | awk '{print $2; exit}')
 COMMAND_NAME=$(printf '%s\n' "$INFO" | awk '{$1=""; $2=""; sub(/^[[:space:]]+/, ""); print; exit}')
+FULL_COMMAND=$(ps -p "$PID" -o args= 2>/dev/null | sed -n '1p' || printf '')
+START_TIME=$(ps -p "$PID" -o lstart= 2>/dev/null | sed -n '1p' || printf '')
 CURRENT_USER=$(id -un 2>/dev/null || printf '')
 
 case "$COMMAND_NAME" in
@@ -75,22 +77,26 @@ if [ ! -f "$STATE_FILE" ]; then
         printf 'PID=%s\n' "$PID"
         printf 'OWNER=%s\n' "$OWNER"
         printf 'COMMAND=%s\n' "$COMMAND_NAME"
+        printf 'FULL_COMMAND=%s\n' "$FULL_COMMAND"
+        printf 'START_TIME=%s\n' "$START_TIME"
         printf 'ORIGINAL_NICE=%s\n' "$ORIGINAL_NICE"
         printf 'TARGET_NICE=%s\n' "$TARGET_NICE"
         printf 'APPLIED_AT=%s\n' "$(date '+%Y-%m-%d %H:%M:%S %z' 2>/dev/null || printf unknown-time)"
     } > "$STATE_FILE"
 fi
 
-log "Applying app priority boost: PID=$PID command=$COMMAND_NAME owner=$OWNER nice=$ORIGINAL_NICE -> $TARGET_NICE"
+log "Applying app priority boost: PID=$PID command=$COMMAND_NAME owner=$OWNER start_time=$START_TIME nice=$ORIGINAL_NICE -> $TARGET_NICE"
 if [ "$(id -u 2>/dev/null || printf 1)" = "0" ]; then
-    if ! renice -n "$TARGET_NICE" -p "$PID"; then
+    printf 'Running: renice %s -p %s\n' "$TARGET_NICE" "$PID"
+    if ! renice "$TARGET_NICE" -p "$PID"; then
         log "FAILED to apply app priority boost to PID=$PID."
         printf 'Failed to apply priority boost to PID %s. Saved state remains for troubleshooting.\n' "$PID" >&2
         exit 1
     fi
 else
     printf 'Administrator authorization may be required to set a negative nice value.\n'
-    if ! sudo renice -n "$TARGET_NICE" -p "$PID"; then
+    printf 'Running: sudo renice %s -p %s\n' "$TARGET_NICE" "$PID"
+    if ! sudo renice "$TARGET_NICE" -p "$PID"; then
         log "FAILED to apply app priority boost to PID=$PID."
         printf 'Failed to apply priority boost to PID %s. Saved state remains for troubleshooting.\n' "$PID" >&2
         exit 1
