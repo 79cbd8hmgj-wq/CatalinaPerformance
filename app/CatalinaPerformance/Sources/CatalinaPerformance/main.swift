@@ -273,8 +273,14 @@ final class MainWindowController: NSWindowController {
     private let onButton = NSButton(title: "Run Performance ON", target: nil, action: nil)
     private let offButton = NSButton(title: "Run Performance OFF", target: nil, action: nil)
     private let restoreButton = NSButton(title: "Emergency Restore", target: nil, action: nil)
+    private let refreshButton = NSButton(title: "Refresh Status", target: nil, action: nil)
     private let advancedButton = NSButton(title: "Advanced", target: nil, action: nil)
+    private var activeScriptCount = 0
     private var advancedWindowController: AdvancedWindowController?
+
+    private var isScriptRunning: Bool {
+        activeScriptCount > 0
+    }
 
     convenience init() {
         let window = NSWindow(
@@ -300,7 +306,8 @@ final class MainWindowController: NSWindowController {
         switchRow.spacing = 12
         switchRow.alignment = .centerY
 
-        let refreshButton = NSButton(title: "Refresh Status", target: self, action: #selector(refreshStatus))
+        refreshButton.target = self
+        refreshButton.action = #selector(refreshStatus)
         onButton.target = self
         onButton.action = #selector(runPerformanceOn)
         offButton.target = self
@@ -392,6 +399,7 @@ final class MainWindowController: NSWindowController {
                 }
             )
         }
+        advancedWindowController?.setScriptActionsEnabled(!isScriptRunning)
         advancedWindowController?.showWindow(nil)
         advancedWindowController?.window?.makeKeyAndOrderFront(nil)
     }
@@ -414,8 +422,16 @@ final class MainWindowController: NSWindowController {
     }
 
     private func run(_ script: ScriptKind, status: String) {
+        guard !isScriptRunning else {
+            statusLabel.stringValue = "Status: Another CatalinaPerformance action is already running."
+            appendOutput("\nAnother CatalinaPerformance action is already running. Wait for the active script to finish before starting \(script.fileName).\n")
+            outputTextView.scrollToEndOfDocument(nil)
+            return
+        }
+
+        activeScriptCount += 1
         statusLabel.stringValue = "Status: \(status)"
-        setRunButtonsEnabled(false)
+        updateRunControls()
         appendOutput("\n$ \(runner.scriptCommand(for: script))\n")
         runner.run(script) { [weak self] result in
             guard let self = self else { return }
@@ -436,29 +452,28 @@ final class MainWindowController: NSWindowController {
                 self.statusLabel.stringValue = result.timedOut ? "Status: Timed out running \(script.fileName)." : "Status: Failed running \(script.fileName) before exit."
             }
 
-            self.setRunButtonsEnabled(true)
+            self.activeScriptCount = max(0, self.activeScriptCount - 1)
+            self.updateRunControls()
             self.outputTextView.scrollToEndOfDocument(nil)
         }
     }
 
     private func updateModeControls() {
+        updateRunControls()
+    }
+
+    private func updateRunControls() {
         let isOn = runner.performanceModeIsOn()
         modeSwitch.state = isOn ? .on : .off
         modeStateLabel.stringValue = "Performance Mode appears \(isOn ? "ON" : "OFF")."
-        onButton.isEnabled = !isOn
-        offButton.isEnabled = isOn
-        restoreButton.isEnabled = true
-    }
 
-    private func setRunButtonsEnabled(_ enabled: Bool) {
-        if enabled {
-            updateModeControls()
-        } else {
-            onButton.isEnabled = false
-            offButton.isEnabled = false
-            restoreButton.isEnabled = false
-        }
+        let canStartScript = !isScriptRunning
+        refreshButton.isEnabled = canStartScript
+        onButton.isEnabled = canStartScript && !isOn
+        offButton.isEnabled = canStartScript && isOn
+        restoreButton.isEnabled = canStartScript
         advancedButton.isEnabled = true
+        advancedWindowController?.setScriptActionsEnabled(canStartScript)
     }
 
     private func appendOutput(_ text: String) {
@@ -475,6 +490,7 @@ final class MainWindowController: NSWindowController {
 
 final class AdvancedWindowController: NSWindowController {
     private let preferences = UserDefaults.standard
+    private var memoryStorageButton: NSButton?
     private var onRunMemoryStorageCheck: (() -> Void)?
     private var onPreferenceWriteFailure: ((String) -> Void)?
 
@@ -526,6 +542,7 @@ final class AdvancedWindowController: NSWindowController {
             disabledCheckbox("Lower background app priority — Not implemented yet")
         ]))
         let memoryStorageButton = NSButton(title: "Run Memory / Storage Check", target: self, action: #selector(runMemoryStorageCheck))
+        self.memoryStorageButton = memoryStorageButton
         stack.addArrangedSubview(section("Memory / Storage", controls: [
             wrappedLabel("Read-only warnings use conservative thresholds: swap above 1024 MB, disk free space below 10% or 10 GB, and macOS memory_pressure warn/critical output. These checks do not require sudo and do not modify the system."),
             advancedCheckbox("Show swap usage warning", key: AdvancedPreferences.showSwapUsageWarningKey),
@@ -596,6 +613,10 @@ final class AdvancedWindowController: NSWindowController {
         checkbox.isEnabled = false
         checkbox.state = .off
         return checkbox
+    }
+
+    func setScriptActionsEnabled(_ enabled: Bool) {
+        memoryStorageButton?.isEnabled = enabled
     }
 
     private func wrappedLabel(_ text: String) -> NSTextField {
