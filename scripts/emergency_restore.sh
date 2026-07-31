@@ -12,7 +12,7 @@ set -u
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd -P)
 REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." 2>/dev/null && pwd -P)
-STATE_DIR="$REPO_ROOT/.catalina_performance_state"
+STATE_DIR=${CATALINA_PERFORMANCE_STATE_DIR:-"$REPO_ROOT/.catalina_performance_state"}
 LOG_FILE="$STATE_DIR/emergency_restore.log"
 MARKER_FILE="$STATE_DIR/performance_mode_on"
 

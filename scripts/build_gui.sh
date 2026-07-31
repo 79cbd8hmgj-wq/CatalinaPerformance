@@ -51,4 +51,5 @@ fi
 printf 'Using developer directory: %s\n' "$XCODE_PATH"
 printf 'Building CatalinaPerformance GUI package: %s\n' "$PACKAGE_DIR"
 cd "$PACKAGE_DIR" || exit 1
-swift build
+swift build --product CatalinaPerformance || exit 1
+swift build --product CatalinaPerformancePriorityAgent || exit 1

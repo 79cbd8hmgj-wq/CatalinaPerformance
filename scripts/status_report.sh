@@ -5,6 +5,10 @@
 
 set -u
 
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd -P)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." 2>/dev/null && pwd -P)
+STATE_DIR=${CATALINA_PERFORMANCE_STATE_DIR:-"$REPO_ROOT/.catalina_performance_state"}
+
 print_section() {
     printf '\n== %s ==\n' "$1"
 }
@@ -142,3 +146,11 @@ if is_macos && command_exists mdutil; then
 else
     printf 'Unavailable (requires macOS mdutil)\n'
 fi
+
+print_section "Performance Mode State"
+if [ -f "$STATE_DIR/performance_mode_on" ]; then
+    printf 'Performance Mode: ON\n'
+else
+    printf 'Performance Mode: OFF\n'
+fi
+printf 'State directory: %s\n' "$STATE_DIR"
