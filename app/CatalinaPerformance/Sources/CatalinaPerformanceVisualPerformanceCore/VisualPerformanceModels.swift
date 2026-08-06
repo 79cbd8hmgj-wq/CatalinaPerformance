@@ -215,11 +215,8 @@ public enum VisualPerformanceAggregateStatus: String, Codable {
         let hasApplyFailure = records.contains(where: {
             $0.outcome == .applyFailed
         })
-        let hasUnsupported = records.contains(where: {
-            $0.outcome == .unsupported
-        })
 
-        if hasApplyFailure || hasUnsupported {
+        if hasApplyFailure {
             return hasApplied ? .appliedWithLimitations : .failed
         }
         if hasApplied {

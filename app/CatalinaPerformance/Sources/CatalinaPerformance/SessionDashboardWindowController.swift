@@ -197,7 +197,15 @@ final class SessionDashboardWindowController: NSWindowController, NSWindowDelega
             metadata.append("Completed: \(completed)")
         }
         if let restore = viewModel.restoreResultText {
-            metadata.append("Restore result: \(restore)")
+            let visualRestoreIsIncomplete = visualRows.contains { row in
+                row.current == "Restore failed" ||
+                    row.current == "Recovery required" ||
+                    row.current == "Partially restored"
+            }
+            let displayedRestore = visualRestoreIsIncomplete
+                ? "Incomplete or unverified"
+                : restore
+            metadata.append("Restore result: \(displayedRestore)")
         }
         if let target = viewModel.priorityTargetText {
             metadata.append("Priority target: \(target)")
@@ -257,13 +265,16 @@ final class SessionDashboardWindowController: NSWindowController, NSWindowDelega
                 section(title: heading, metricRows: visualRows)
             )
         }
-        if !viewModel.subsystemRows.isEmpty {
+        let subsystemRows = viewModel.subsystemRows.filter { row in
+            row.label != "UI Responsiveness"
+        }
+        if !subsystemRows.isEmpty {
             let heading = viewModel.screenKind == .completed ||
                 viewModel.screenKind == .interrupted
                 ? "Restoration"
                 : "Active Changes"
             addFullWidthArrangedSubview(
-                section(title: heading, metricRows: viewModel.subsystemRows)
+                section(title: heading, metricRows: subsystemRows)
             )
         }
 

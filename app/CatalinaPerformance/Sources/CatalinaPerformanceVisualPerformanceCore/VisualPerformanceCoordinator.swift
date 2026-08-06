@@ -186,7 +186,8 @@ public final class VisualPerformanceCoordinator {
 
         do {
             try stateStore.writeActive(session)
-            guard let verified = try stateStore.loadActive(), verified == session else {
+            guard let verified = try stateStore.loadActive(),
+                  persistenceEquivalent(verified, session) else {
                 throw VisualPerformanceStateStoreError.unsupportedOrMalformedState
             }
         } catch {
@@ -382,6 +383,21 @@ public final class VisualPerformanceCoordinator {
             VisualSettingRecord(id: entry.id, displayName: entry.displayName, priorWasPresent: false, priorValue: nil, appliedValue: entry.appliedValue, outcome: .recoveryRequired, note: message, updatedAt: date)
         }
         return VisualPerformanceStatusSnapshot(sessionIdentifier: nil, aggregateStatus: .recoveryRequired, settings: records, updatedAt: date)
+    }
+
+    private func persistenceEquivalent(
+        _ left: VisualPerformanceSessionRecord,
+        _ right: VisualPerformanceSessionRecord
+    ) -> Bool {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.sortedKeys]
+
+        guard let leftData = try? encoder.encode(left),
+              let rightData = try? encoder.encode(right) else {
+            return false
+        }
+        return leftData == rightData
     }
 
     private func publish(_ snapshot: VisualPerformanceStatusSnapshot, completion: @escaping SnapshotHandler) {

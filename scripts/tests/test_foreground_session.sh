@@ -260,12 +260,12 @@ run_ui_tests() {
     write_preferences
     printf 'com.apple.finder\tDisableAllAnimations\tbool\tfalse\ncom.apple.dock\tlaunchanim\tbool\ttrue\ncom.apple.dock\texpose-animation-duration\tfloat\t0.35\nNSGlobalDomain\tNSAutomaticWindowAnimationsEnabled\tbool\ttrue\n' > "$FAKE_DEFAULTS_STORE"
     before=$(cat "$FAKE_DEFAULTS_STORE")
-    dry=$(/bin/sh "$REPO_ROOT/scripts/ui_responsiveness_apply.sh" --dry-run)
+    dry=$(/bin/sh "$REPO_ROOT/scripts/ui_responsiveness_apply.sh" --legacy-test --dry-run)
     assert_contains "$dry" 'no preferences were changed' 'UI dry run reports no changes'
     assert_equal "$before" "$(cat "$FAKE_DEFAULTS_STORE")" 'UI dry run leaves defaults unchanged'
 
-    applied=$(/bin/sh "$REPO_ROOT/scripts/ui_responsiveness_apply.sh" --yes)
-    assert_contains "$applied" 'Applied 4 reversible' 'UI apply changes four known preferences'
+    applied=$(/bin/sh "$REPO_ROOT/scripts/ui_responsiveness_apply.sh" --legacy-test --yes)
+    assert_contains "$applied" 'Applied 4 legacy reversible' 'UI apply changes four known preferences'
     finder_value=$(awk -F '\t' '$1 == "com.apple.finder" && $2 == "DisableAllAnimations" { print $4 }' "$FAKE_DEFAULTS_STORE")
     dock_duration=$(awk -F '\t' '$1 == "com.apple.dock" && $2 == "expose-animation-duration" { print $4 }' "$FAKE_DEFAULTS_STORE")
     assert_equal true "$finder_value" 'UI apply disables Finder animations'
@@ -280,7 +280,7 @@ run_ui_tests() {
     reset_fixture
     write_preferences
     : > "$FAKE_DEFAULTS_STORE"
-    /bin/sh "$REPO_ROOT/scripts/ui_responsiveness_apply.sh" --yes >/dev/null
+    /bin/sh "$REPO_ROOT/scripts/ui_responsiveness_apply.sh" --legacy-test --yes >/dev/null
     /bin/sh "$REPO_ROOT/scripts/ui_responsiveness_restore.sh" --yes >/dev/null
     assert_equal '' "$(cat "$FAKE_DEFAULTS_STORE")" 'UI restore deletes keys that were previously absent'
 }
@@ -333,7 +333,7 @@ DISABLE_WINDOW_ANIMATIONS=1
 PREFS
     printf 'com.apple.finder\tDisableAllAnimations\tbool\tfalse\n' > "$FAKE_DEFAULTS_STORE"
     before=$(cat "$FAKE_DEFAULTS_STORE")
-    disabled_output=$(/bin/sh "$REPO_ROOT/scripts/ui_responsiveness_apply.sh" --yes)
+    disabled_output=$(/bin/sh "$REPO_ROOT/scripts/ui_responsiveness_apply.sh" --legacy-test --yes)
     assert_contains "$disabled_output" 'disabled' 'disabled feature skips UI mutation'
     assert_equal "$before" "$(cat "$FAKE_DEFAULTS_STORE")" 'disabled feature preserves defaults'
     assert_file_missing "$CATALINA_PERFORMANCE_FOREGROUND_DIR/runtime/ui_preferences.tsv" 'disabled feature writes no UI runtime state'
@@ -342,7 +342,7 @@ PREFS
     write_preferences
     printf 'com.apple.finder\tDisableAllAnimations\tint\t7\ncom.apple.dock\tlaunchanim\tstring\tlegacy\ncom.apple.dock\texpose-animation-duration\tint\t4\nNSGlobalDomain\tNSAutomaticWindowAnimationsEnabled\tstring\tlegacy-window\n' > "$FAKE_DEFAULTS_STORE"
     before=$(LC_ALL=C sort "$FAKE_DEFAULTS_STORE")
-    /bin/sh "$REPO_ROOT/scripts/ui_responsiveness_apply.sh" --yes >/dev/null
+    /bin/sh "$REPO_ROOT/scripts/ui_responsiveness_apply.sh" --legacy-test --yes >/dev/null
     /bin/sh "$REPO_ROOT/scripts/ui_responsiveness_restore.sh" --yes >/dev/null
     assert_equal "$before" "$(LC_ALL=C sort "$FAKE_DEFAULTS_STORE")" 'UI restore preserves prior int and string scalar types'
 
@@ -355,7 +355,7 @@ DISABLE_WINDOW_ANIMATIONS=0
 PREFS
     printf 'com.apple.finder\tDisableAllAnimations\tdictionary\tlegacy-complex-value\n' > "$FAKE_DEFAULTS_STORE"
     before=$(cat "$FAKE_DEFAULTS_STORE")
-    output=$(/bin/sh "$REPO_ROOT/scripts/ui_responsiveness_apply.sh" --yes 2>&1)
+    output=$(/bin/sh "$REPO_ROOT/scripts/ui_responsiveness_apply.sh" --legacy-test --yes 2>&1)
     assert_contains "$output" 'Skipping com.apple.finder DisableAllAnimations' 'unsupported prior type is reported and skipped'
     assert_equal "$before" "$(cat "$FAKE_DEFAULTS_STORE")" 'unsupported prior type is not mutated'
 }

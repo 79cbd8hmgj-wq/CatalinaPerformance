@@ -56,10 +56,20 @@ public enum VisualRestoreDecision {
         guard let applied = record.appliedValue else {
             return .cannotSafelyDecide("No verified applied value was recorded.")
         }
+        guard scalarValueIsFiniteWhenRequired(applied) else {
+            return .cannotSafelyDecide(
+                "The verified applied value is not a finite scalar."
+            )
+        }
         switch current {
         case .absent, .unsupportedType:
             return .preserveManualChange
         case .present(let currentValue):
+            guard scalarValueIsFiniteWhenRequired(currentValue) else {
+                return .cannotSafelyDecide(
+                    "The current preference value is not a finite scalar."
+                )
+            }
             guard currentValue.scalarType == applied.scalarType else {
                 return .preserveManualChange
             }
@@ -70,6 +80,11 @@ public enum VisualRestoreDecision {
                 guard let prior = record.priorValue else {
                     return .cannotSafelyDecide(
                         "The prior value was marked present but was not recorded."
+                    )
+                }
+                guard scalarValueIsFiniteWhenRequired(prior) else {
+                    return .cannotSafelyDecide(
+                        "The recorded prior value is not a finite scalar."
                     )
                 }
                 return .restorePrior(prior)
@@ -114,6 +129,17 @@ public enum VisualRestoreDecision {
             return first == second
         default:
             return false
+        }
+    }
+
+    private static func scalarValueIsFiniteWhenRequired(
+        _ value: VisualScalarValue
+    ) -> Bool {
+        switch value {
+        case .floatingPoint(let number):
+            return number.isFinite
+        case .boolean, .integer, .string:
+            return true
         }
     }
 }

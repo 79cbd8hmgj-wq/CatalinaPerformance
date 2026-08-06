@@ -115,6 +115,50 @@ final class VisualPerformanceCoordinatorTests: XCTestCase {
         wait(for: [restored], timeout: 2)
     }
 
+    func testFractionalSecondTimestampsDoNotCauseFalsePersistenceFailure() {
+        let operatorFake = FakeOperator()
+        operatorFake.autoHideEnabled = false
+
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "visual-performance-fractional-date-\(UUID().uuidString)",
+                isDirectory: true
+            )
+        defer {
+            try? FileManager.default.removeItem(at: rootURL)
+        }
+
+        let store = VisualPerformanceStateStore(directoryURL: rootURL)
+        let coordinator = VisualPerformanceCoordinator(
+            preferenceOperator: operatorFake,
+            stateStore: store,
+            requestingUID: 501,
+            workQueue: DispatchQueue(label: "test.visual.fractional.work"),
+            callbackQueue: DispatchQueue(label: "test.visual.fractional.callback"),
+            nowProvider: { Date(timeIntervalSince1970: 100.625) },
+            sessionIdentifierProvider: { "fractional-session" }
+        )
+        let expectation = self.expectation(description: "fractional persistence")
+
+        coordinator.prepareForPerformanceOn { snapshot in
+            XCTAssertEqual(snapshot.aggregateStatus, .applied)
+            XCTAssertEqual(
+                snapshot.settings.filter {
+                    $0.outcome == .applied || $0.outcome == .appliedDeferred
+                }.count,
+                7
+            )
+            XCTAssertEqual(
+                snapshot.settings.filter { $0.outcome == .notApplicable }.count,
+                2
+            )
+            XCTAssertNotNil(try? store.loadActive())
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 2)
+    }
+
     private func makeCoordinator(operatorFake: FakeOperator, store: FakeStore) -> VisualPerformanceCoordinator {
         store.mutationCountProvider = { operatorFake.mutationCount }
         return VisualPerformanceCoordinator(

@@ -128,11 +128,11 @@ public final class VisualPerformanceStateStore: VisualPerformanceStateStoring {
             )
 
             let verificationData = try Data(contentsOf: temporary, options: [.mappedIfSafe])
-            let verificationRecord = try decode(verificationData)
-            try validate(verificationRecord)
-            guard verificationRecord == record else {
+            guard verificationData == data else {
                 throw VisualPerformanceStateStoreError.unsupportedOrMalformedState
             }
+            let verificationRecord = try decode(verificationData)
+            try validate(verificationRecord)
 
             let descriptor = open(temporary.path, O_RDONLY)
             if descriptor >= 0 {

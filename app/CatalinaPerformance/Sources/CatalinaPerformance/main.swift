@@ -3,6 +3,7 @@ import CatalinaPerformanceCore
 import CatalinaPerformancePriorityCore
 import CatalinaPerformanceDashboardCore
 import CatalinaPerformanceBackgroundServicesCore
+import CatalinaPerformanceVisualPerformanceCore
 #if os(Linux)
 import Glibc
 #else
@@ -450,7 +451,9 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
     private lazy var backgroundServiceActivityObserver: BackgroundServiceActivityObserving = BackgroundServiceActivityObserver(
         coordinator: backgroundServiceSuppressionCoordinator
     )
+    private lazy var visualPerformanceLifecycleController: VisualPerformanceLifecycleController = makeVisualPerformanceLifecycleController()
     private var latestBackgroundServiceSnapshot: BackgroundServiceStatusSnapshot?
+    private var latestVisualPerformanceSnapshot: VisualPerformanceStatusSnapshot?
     private var activeSequenceCoordinator: ScriptSequenceCoordinator?
     private var activeSequenceExecutor: AppScriptSequenceExecutor?
 
@@ -477,8 +480,14 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
             self.backgroundServiceSuppressionCoordinator.recoverStaleSession { [weak self] snapshot in
                 guard let self = self else { return }
                 self.handleBackgroundServiceSnapshot(snapshot, announceRecovery: true)
-                self.isDashboardTransitionInProgress = false
-                self.updateRunControls()
+                self.visualPerformanceLifecycleController.recoverAtLaunch(
+                    performanceModeIsOn: self.runner.performanceModeIsOn()
+                ) { [weak self] visualSnapshot in
+                    guard let self = self else { return }
+                    self.handleVisualPerformanceSnapshot(visualSnapshot, announceRecovery: true)
+                    self.isDashboardTransitionInProgress = false
+                    self.updateRunControls()
+                }
             }
         }
     }
@@ -565,39 +574,70 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
     @objc private func runPerformanceOn() {
         confirm(
             title: "Turn Performance Mode ON?",
-            message: "This will run the reviewed Performance Mode scripts using the macOS administrator authorization prompt. Automatic update settings and verified nonessential user workers may be paused for the session; opening an associated app resumes its category for the remainder of that session. Protected account, Keychain, AirDrop, networking, diagnostic, crash-reporting, and essential macOS services are excluded. App Priority remains optional: stable Firefox uses a focused nice -1 policy for its parent/UI process, GPU helper, and one activity-selected content process; other known browsers use main-process-only nice -2; sustained non-browser workloads use the verified process family at nice -5. Fan control, cache deletion, SIP changes, kexts, undervolting, and experimental features remain excluded."
+            message: "This applies the automatic reversible Visual Performance bundle before the existing Performance Mode changes. Finder, Dock, Mission Control, window animations, Reduce Motion, Reduce Transparency, the Scale minimize effect, and applicable Dock auto-hide timing are handled with exact typed state capture. Manual visual-setting changes made during the session are preserved on OFF. Automatic update settings and verified nonessential user workers may also be paused. App Priority remains optional: stable Firefox uses a focused nice -1 policy for its parent/UI process, GPU helper, and one activity-selected content process; other known browsers use main-process-only nice -2; sustained non-browser workloads use the verified process family at nice -5. Fan control, cache deletion, SIP changes, kexts, undervolting, and experimental features remain excluded."
         ) { [weak self] in
             guard let self = self, self.beginDashboardWrappedAction() else { return }
             let foregroundEnabled = ForegroundSessionPreferences.load().featureEnabled
             let prioritySelection = AppPriorityPreferences.load()
             let selectedApplication = prioritySelection.enabled ? prioritySelection.application : nil
-            let iCloudDriveEnabled = UserDefaults.standard.bool(forKey: AdvancedPreferences.pauseICloudDriveKey)
+            let iCloudDriveEnabled = UserDefaults.standard.bool(
+                forKey: AdvancedPreferences.pauseICloudDriveKey
+            )
 
-            self.backgroundServiceSuppressionCoordinator.prepareForPerformanceOn(
-                iCloudDriveEnabled: iCloudDriveEnabled
-            ) { [weak self] snapshot in
+            self.visualPerformanceLifecycleController.prepareForPerformanceOn { [weak self] visualSnapshot in
                 guard let self = self else { return }
-                self.handleBackgroundServiceSnapshot(snapshot)
-                self.performanceSessionCoordinator.prepareForOn(selectedApplication: selectedApplication) { [weak self] in
-                    guard let self = self else { return }
+                self.handleVisualPerformanceSnapshot(visualSnapshot)
+                if visualSnapshot.aggregateStatus == .recoveryRequired {
+                    self.statusLabel.stringValue = "Status: Visual Performance recovery is required before a new session."
+                    self.appendOutput("\n[Visual Performance] A previous visual session still requires restoration. Performance Mode ON was not started.\n")
                     self.isDashboardTransitionInProgress = false
-                    self.runSequence(
-                        PerformanceSequenceFactory.performanceOn(featureEnabled: foregroundEnabled),
-                        status: "Performance Mode ON requested..."
-                    ) { [weak self] result in
+                    self.updateRunControls()
+                    return
+                }
+
+                self.backgroundServiceSuppressionCoordinator.prepareForPerformanceOn(
+                    iCloudDriveEnabled: iCloudDriveEnabled
+                ) { [weak self] snapshot in
+                    guard let self = self else { return }
+                    self.handleBackgroundServiceSnapshot(snapshot)
+                    self.performanceSessionCoordinator.prepareForOn(
+                        selectedApplication: selectedApplication
+                    ) { [weak self] in
                         guard let self = self else { return }
-                        if result.succeeded {
-                            self.backgroundServiceSuppressionCoordinator.performanceOnSucceeded { [weak self] snapshot in
-                                guard let self = self else { return }
-                                self.handleBackgroundServiceSnapshot(snapshot)
-                                self.backgroundServiceActivityObserver.start()
-                                self.performanceSessionCoordinator.onSequenceCompleted(succeeded: true)
-                            }
-                        } else {
-                            self.backgroundServiceSuppressionCoordinator.performanceOnFailed { [weak self] snapshot in
-                                guard let self = self else { return }
-                                self.handleBackgroundServiceSnapshot(snapshot)
-                                self.performanceSessionCoordinator.onSequenceCompleted(succeeded: false)
+                        self.isDashboardTransitionInProgress = false
+                        self.runSequence(
+                            PerformanceSequenceFactory.performanceOn(
+                                featureEnabled: foregroundEnabled
+                            ),
+                            status: "Performance Mode ON requested..."
+                        ) { [weak self] result in
+                            guard let self = self else { return }
+                            if result.succeeded {
+                                self.backgroundServiceSuppressionCoordinator.performanceOnSucceeded { [weak self] snapshot in
+                                    guard let self = self else { return }
+                                    self.handleBackgroundServiceSnapshot(snapshot)
+                                    self.backgroundServiceActivityObserver.start()
+                                    self.performanceSessionCoordinator.onSequenceCompleted(
+                                        succeeded: true
+                                    )
+                                }
+                            } else {
+                                self.visualPerformanceLifecycleController.restore(
+                                    reason: .onRollback
+                                ) { [weak self] rollbackSnapshot in
+                                    guard let self = self else { return }
+                                    self.handleVisualPerformanceSnapshot(
+                                        rollbackSnapshot,
+                                        announceRecovery: true
+                                    )
+                                    self.backgroundServiceSuppressionCoordinator.performanceOnFailed { [weak self] snapshot in
+                                        guard let self = self else { return }
+                                        self.handleBackgroundServiceSnapshot(snapshot)
+                                        self.performanceSessionCoordinator.onSequenceCompleted(
+                                            succeeded: false
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -607,33 +647,63 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
     }
 
     @objc private func runPerformanceOff() {
-        // Restore scripts are intentionally attempted even when the feature is
-        // currently disabled; they are safe no-ops when no session state exists.
         guard beginDashboardWrappedAction() else { return }
         backgroundServiceActivityObserver.stop()
         backgroundServiceSuppressionCoordinator.prepareForPerformanceOff { [weak self] snapshot in
             guard let self = self else { return }
             self.handleBackgroundServiceSnapshot(snapshot)
-            self.performanceSessionCoordinator.prepareForFinalization(reason: .normalOff) { [weak self] in
+            self.performanceSessionCoordinator.prepareForFinalization(
+                reason: .normalOff
+            ) { [weak self] in
                 guard let self = self else { return }
-                self.isDashboardTransitionInProgress = false
                 self.runSequence(
-                    PerformanceSequenceFactory.performanceOff(featureEnabled: true),
-                    status: "Performance Mode OFF and foreground restoration requested..."
-                ) { [weak self] result in
+                    PerformanceSequenceFactory.performanceOffCore(),
+                    status: "Restoring core Performance Mode state..."
+                ) { [weak self] coreResult in
                     guard let self = self else { return }
-                    let evidence = result.commandResults.map { command in
-                        DashboardCommandEvidence(identifier: command.script.rawValue, succeeded: command.succeeded, output: command.output)
-                    }
-                    self.backgroundServiceSuppressionCoordinator.performanceOffFinished(
-                        settingsStatus: self.loadBackgroundServiceSettingsStatus()
-                    ) { [weak self] snapshot in
-                        guard let self = self else { return }
-                        self.handleBackgroundServiceSnapshot(snapshot, announceRecovery: true)
-                        self.performanceSessionCoordinator.finalizationCompleted(
-                            commandEvidence: evidence,
-                            performanceModeStillOn: self.runner.performanceModeIsOn()
+                    var evidence = coreResult.commandResults.map { command in
+                        DashboardCommandEvidence(
+                            identifier: command.script.rawValue,
+                            succeeded: command.succeeded,
+                            output: command.output
                         )
+                    }
+                    self.visualPerformanceLifecycleController.restore(
+                        reason: .normalOff
+                    ) { [weak self] visualSnapshot in
+                        guard let self = self else { return }
+                        self.handleVisualPerformanceSnapshot(
+                            visualSnapshot,
+                            announceRecovery: true
+                        )
+                        self.runSequence(
+                            PerformanceSequenceFactory.foregroundRestore(),
+                            status: "Relaunching applications closed by CatalinaPerformance..."
+                        ) { [weak self] foregroundResult in
+                            guard let self = self else { return }
+                            evidence.append(contentsOf: foregroundResult.commandResults.map { command in
+                                DashboardCommandEvidence(
+                                    identifier: command.script.rawValue,
+                                    succeeded: command.succeeded,
+                                    output: command.output
+                                )
+                            })
+                            self.backgroundServiceSuppressionCoordinator.performanceOffFinished(
+                                settingsStatus: self.loadBackgroundServiceSettingsStatus()
+                            ) { [weak self] snapshot in
+                                guard let self = self else { return }
+                                self.handleBackgroundServiceSnapshot(
+                                    snapshot,
+                                    announceRecovery: true
+                                )
+                                self.isDashboardTransitionInProgress = false
+                                self.updateRunControls()
+                                self.performanceSessionCoordinator.finalizationCompleted(
+                                    commandEvidence: evidence,
+                                    performanceModeStillOn: self.runner.performanceModeIsOn()
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -643,32 +713,65 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
     @objc private func runEmergencyRestore() {
         confirm(
             title: "Run Emergency Restore?",
-            message: "Emergency Restore is a fallback path for recoverable state. It stops App Priority and background-service monitoring, attempts exact restoration of recorded update settings and verified user workers, then restores normal Performance Mode state. It will not delete caches, modify SIP, touch fan control, unload arbitrary services, install kexts, undervolt, or use experimental CPU/MSR changes."
+            message: "Emergency Restore stops App Priority and background-service monitoring, restores recorded core settings, then performs compare-before-restore for Visual Performance and relaunches only applications CatalinaPerformance confirmed closed. Manual visual changes are preserved. It will not delete caches, modify SIP, touch fan control, unload arbitrary services, install kexts, undervolt, or use experimental CPU/MSR changes."
         ) { [weak self] in
             guard let self = self, self.beginDashboardWrappedAction() else { return }
             self.backgroundServiceActivityObserver.stop()
             self.backgroundServiceSuppressionCoordinator.prepareForPerformanceOff { [weak self] snapshot in
                 guard let self = self else { return }
                 self.handleBackgroundServiceSnapshot(snapshot)
-                self.performanceSessionCoordinator.prepareForFinalization(reason: .emergencyRestore) { [weak self] in
+                self.performanceSessionCoordinator.prepareForFinalization(
+                    reason: .emergencyRestore
+                ) { [weak self] in
                     guard let self = self else { return }
-                    self.isDashboardTransitionInProgress = false
-                    self.run(.emergencyRestore, status: "Emergency Restore requested...") { [weak self] result in
+                    self.run(
+                        .emergencyRestore,
+                        status: "Emergency Restore requested..."
+                    ) { [weak self] result in
                         guard let self = self else { return }
-                        let evidence = DashboardCommandEvidence(
-                            identifier: "emergencyRestore",
-                            succeeded: result.succeeded,
-                            output: result.output
-                        )
-                        self.backgroundServiceSuppressionCoordinator.performanceOffFinished(
-                            settingsStatus: self.loadBackgroundServiceSettingsStatus()
-                        ) { [weak self] snapshot in
-                            guard let self = self else { return }
-                            self.handleBackgroundServiceSnapshot(snapshot, announceRecovery: true)
-                            self.performanceSessionCoordinator.finalizationCompleted(
-                                commandEvidence: [evidence],
-                                performanceModeStillOn: self.runner.performanceModeIsOn()
+                        var evidence = [
+                            DashboardCommandEvidence(
+                                identifier: "emergencyRestore",
+                                succeeded: result.succeeded,
+                                output: result.output
                             )
+                        ]
+                        self.visualPerformanceLifecycleController.restore(
+                            reason: .emergencyRestore
+                        ) { [weak self] visualSnapshot in
+                            guard let self = self else { return }
+                            self.handleVisualPerformanceSnapshot(
+                                visualSnapshot,
+                                announceRecovery: true
+                            )
+                            self.runSequence(
+                                PerformanceSequenceFactory.foregroundRestore(),
+                                status: "Relaunching applications closed by CatalinaPerformance..."
+                            ) { [weak self] foregroundResult in
+                                guard let self = self else { return }
+                                evidence.append(contentsOf: foregroundResult.commandResults.map { command in
+                                    DashboardCommandEvidence(
+                                        identifier: command.script.rawValue,
+                                        succeeded: command.succeeded,
+                                        output: command.output
+                                    )
+                                })
+                                self.backgroundServiceSuppressionCoordinator.performanceOffFinished(
+                                    settingsStatus: self.loadBackgroundServiceSettingsStatus()
+                                ) { [weak self] snapshot in
+                                    guard let self = self else { return }
+                                    self.handleBackgroundServiceSnapshot(
+                                        snapshot,
+                                        announceRecovery: true
+                                    )
+                                    self.isDashboardTransitionInProgress = false
+                                    self.updateRunControls()
+                                    self.performanceSessionCoordinator.finalizationCompleted(
+                                        commandEvidence: evidence,
+                                        performanceModeStillOn: self.runner.performanceModeIsOn()
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -682,6 +785,34 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
         }
         sessionDashboardWindowController?.showWindow(nil)
         sessionDashboardWindowController?.window?.makeKeyAndOrderFront(nil)
+    }
+
+    private func makeVisualPerformanceLifecycleController() -> VisualPerformanceLifecycleController {
+        let controller = VisualPerformanceLifecycleController(runner: runner)
+        controller.onSnapshot = { [weak self] snapshot in
+            self?.handleVisualPerformanceSnapshot(snapshot)
+        }
+        controller.onLegacyRecoveryResult = { [weak self] result in
+            guard let self = self, result.hasUnresolvedWork else { return }
+            self.statusLabel.stringValue = "Status: Legacy visual restoration remains unresolved."
+            self.appendOutput("\n[Legacy UI recovery] \(result.output)\n")
+        }
+        return controller
+    }
+
+    private func handleVisualPerformanceSnapshot(
+        _ snapshot: VisualPerformanceStatusSnapshot,
+        announceRecovery: Bool = false
+    ) {
+        let previousStatus = latestVisualPerformanceSnapshot?.aggregateStatus
+        latestVisualPerformanceSnapshot = snapshot
+        advancedWindowController?.updateVisualPerformanceStatus(snapshot)
+        if snapshot.hasUnresolvedRestoration {
+            statusLabel.stringValue = "Status: Visual Performance recovery required."
+            if announceRecovery && previousStatus != .recoveryRequired {
+                appendOutput("\n[Visual Performance] Recorded visual settings still require restoration. Use Retry Visual Restoration or Emergency Restore.\n")
+            }
+        }
     }
 
     private var backgroundServiceStateDirectoryURL: URL {
@@ -820,7 +951,19 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
                     self?.runSequence(PerformanceSequenceFactory.manualRestore(), status: "Restoring Foreground Performance Session...")
                 },
                 onForegroundViewState: { [weak self] in
-                    self?.run(.foregroundState, status: "Reading Foreground Session state...")
+                    self?.run(.foregroundState, status: "Reading app-closing state...")
+                },
+                onVisualViewCurrentSettings: { [weak self] in
+                    guard let self = self else { return }
+                    self.visualPerformanceLifecycleController.inspectCurrentSettings { [weak self] settings in
+                        self?.advancedWindowController?.presentCurrentVisualSettings(settings)
+                    }
+                },
+                onVisualRetryRestoration: { [weak self] in
+                    guard let self = self, !self.isScriptRunning else { return }
+                    self.visualPerformanceLifecycleController.restore(reason: .retry) { [weak self] snapshot in
+                        self?.handleVisualPerformanceSnapshot(snapshot, announceRecovery: true)
+                    }
                 },
                 onPreferenceWriteFailure: { [weak self] message in
                     self?.showPreferenceWriteFailure(message)
@@ -830,6 +973,9 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
         advancedWindowController?.setScriptActionsEnabled(!isScriptRunning, performanceModeIsOn: runner.performanceModeIsOn())
         if let snapshot = latestBackgroundServiceSnapshot {
             advancedWindowController?.updateBackgroundServiceStatus(snapshot)
+        }
+        if let visualSnapshot = latestVisualPerformanceSnapshot {
+            advancedWindowController?.updateVisualPerformanceStatus(visualSnapshot)
         }
         advancedWindowController?.showWindow(nil)
         advancedWindowController?.window?.makeKeyAndOrderFront(nil)
@@ -970,6 +1116,7 @@ final class AdvancedWindowController: NSWindowController, NSWindowDelegate {
     private var memoryStorageButton: NSButton?
     private var appPriorityPanelController: AppPriorityPanelController?
     private var backgroundServicePanelController: BackgroundServiceSuppressionPanelController?
+    private var visualPerformancePanelController: VisualPerformancePanelController?
     private var thermalFanButton: NSButton?
     private var foregroundPanelController: ForegroundSessionPanelController?
     private weak var advancedScrollView: NSScrollView?
@@ -988,6 +1135,8 @@ final class AdvancedWindowController: NSWindowController, NSWindowDelegate {
         onForegroundApply: (() -> Void)? = nil,
         onForegroundRestore: (() -> Void)? = nil,
         onForegroundViewState: (() -> Void)? = nil,
+        onVisualViewCurrentSettings: (() -> Void)? = nil,
+        onVisualRetryRestoration: (() -> Void)? = nil,
         onPreferenceWriteFailure: ((String) -> Void)? = nil
     ) {
         let window = NSWindow(
@@ -1027,6 +1176,11 @@ final class AdvancedWindowController: NSWindowController, NSWindowDelegate {
         backgroundServicePanel.onPreferenceWriteFailure = onPreferenceWriteFailure
         self.backgroundServicePanelController = backgroundServicePanel
 
+        let visualPerformancePanel = VisualPerformancePanelController()
+        visualPerformancePanel.onViewCurrentSettings = onVisualViewCurrentSettings
+        visualPerformancePanel.onRetryRestoration = onVisualRetryRestoration
+        self.visualPerformancePanelController = visualPerformancePanel
+
         AdvancedPreferences.registerDefaults(in: preferences)
         ForegroundSessionPreferences.registerDefaults(in: preferences)
         reportPreferenceWriteResult(AdvancedPreferences.writeScriptConfig(defaults: preferences))
@@ -1065,6 +1219,9 @@ final class AdvancedWindowController: NSWindowController, NSWindowDelegate {
             disabledCheckbox("Disable Power Nap — Not implemented yet"),
             disabledCheckbox("Keep network awake — Not implemented yet")
         ]))
+        if let visualPerformanceView = visualPerformancePanelController?.makeSectionView() {
+            stack.addArrangedSubview(visualPerformanceView)
+        }
         if let foregroundView = foregroundPanelController?.makeSectionView() {
             stack.addArrangedSubview(foregroundView)
         }
@@ -1249,10 +1406,18 @@ final class AdvancedWindowController: NSWindowController, NSWindowDelegate {
         memoryStorageButton?.isEnabled = enabled
         appPriorityPanelController?.setInteractionState(actionsEnabled: enabled, performanceModeIsOn: performanceModeIsOn)
         backgroundServicePanelController?.setInteractionState(actionsEnabled: enabled, performanceModeIsOn: performanceModeIsOn)
+        visualPerformancePanelController?.setActionsEnabled(enabled)
         thermalFanButton?.isEnabled = enabled
         foregroundPanelController?.setActionsEnabled(enabled)
     }
 
+    func updateVisualPerformanceStatus(_ snapshot: VisualPerformanceStatusSnapshot) {
+        visualPerformancePanelController?.updateStatus(snapshot)
+    }
+
+    func presentCurrentVisualSettings(_ settings: [VisualCurrentSetting]) {
+        visualPerformancePanelController?.presentCurrentSettings(settings, from: window)
+    }
 
     func updateBackgroundServiceStatus(_ snapshot: BackgroundServiceStatusSnapshot) {
         backgroundServicePanelController?.update(snapshot: snapshot)

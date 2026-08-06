@@ -34,15 +34,19 @@ grep -F 'view.widthAnchor.constraint(equalTo: contentStack.widthAnchor).isActive
 ! grep -F 'CatalinaPerformance.SessionDashboard' "$MAIN" >/dev/null
 grep -F 'View Session Dashboard' "$MAIN" >/dev/null
 grep -F 'prepareForOn' "$MAIN" >/dev/null
-grep -F 'onSequenceCompleted(succeeded:' "$MAIN" >/dev/null
+grep -F 'onSequenceCompleted(' "$MAIN" >/dev/null
+grep -F 'succeeded: true' "$MAIN" >/dev/null
+grep -F 'succeeded: false' "$MAIN" >/dev/null
 grep -F 'prepareForFinalization' "$MAIN" >/dev/null
 grep -F 'finalizationCompleted(' "$MAIN" >/dev/null
 grep -F 'commandEvidence:' "$MAIN" >/dev/null
 grep -F 'recoverAtLaunch { [weak self]' "$MAIN" >/dev/null
 grep -F 'isDashboardTransitionInProgress' "$MAIN" >/dev/null
 grep -F 'beginDashboardWrappedAction' "$MAIN" >/dev/null
-grep -F 'PerformanceSequenceFactory.performanceOn(featureEnabled:' "$MAIN" >/dev/null
-grep -F 'PerformanceSequenceFactory.performanceOff(featureEnabled:' "$MAIN" >/dev/null
+grep -F 'PerformanceSequenceFactory.performanceOn(' "$MAIN" >/dev/null
+grep -F 'featureEnabled: foregroundEnabled' "$MAIN" >/dev/null
+grep -F 'PerformanceSequenceFactory.performanceOffCore()' "$MAIN" >/dev/null
+grep -F 'PerformanceSequenceFactory.foregroundRestore()' "$MAIN" >/dev/null
 ! grep -F 'session_dashboard.sh' "$MAIN" >/dev/null
 
 test -f "$PACKAGE"
