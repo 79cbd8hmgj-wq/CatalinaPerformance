@@ -143,7 +143,19 @@ final class VisualPerformanceDefaultsOperator: VisualPreferenceOperating {
     func delete(_ entry: VisualSettingCatalogEntry) throws {
         try validate(entry)
         let result = try runner.run(arguments: ["delete", entry.domain, entry.key])
-        try requireSuccess(result, operation: "defaults delete")
+        if result.timedOut {
+            throw VisualPerformanceDefaultsOperatorError.commandTimedOut
+        }
+        if result.exitStatus == 0 {
+            return
+        }
+        let current = try read(entry)
+        if case .absent = current {
+            return
+        }
+        throw VisualPerformanceDefaultsOperatorError.commandFailed(
+            nonempty(result.standardError, fallback: "defaults delete failed.")
+        )
     }
 
     func isDockAutoHideEnabled() throws -> Bool {
