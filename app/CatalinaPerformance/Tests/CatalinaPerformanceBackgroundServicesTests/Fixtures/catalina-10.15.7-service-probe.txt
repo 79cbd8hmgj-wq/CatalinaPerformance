@@ -1,0 +1,5508 @@
+
+===== PROBE METADATA =====
+schema=2
+requesting_uid=501
+captured_at_utc=2026-08-01T14:29:23Z
+
+===== MACOS VERSION =====
+ProductName:	Mac OS X
+ProductVersion:	10.15.7
+BuildVersion:	19H15
+
+===== KERNEL =====
+Darwin Evans-MacBook-Pro.local 19.6.0 Darwin Kernel Version 19.6.0: Thu Oct 29 22:56:45 PDT 2020; root:xnu-6153.141.2.2~1/RELEASE_X86_64 x86_64
+
+===== HARDWARE MODEL =====
+MacBookPro9,2
+
+===== USER LAUNCH DOMAIN =====
+com.apple.xpc.launchd.user.domain.501.100006.Aqua = {
+	type = user login
+	handle = 100006
+	active count = 267
+	on-demand count = 0
+	service count = 266
+	active service count = 73
+	activity ratio = 0.27
+	creator = loginwindow.161
+	creator euid = 0
+	external activation count = 0
+	session = Aqua
+	endpoint destination = com.apple.xpc.launchd.domain.user.501
+	auxilliary bootstrapper = com.apple.xpc.otherbsd
+	security context = {
+		uid = 501
+		asid = 100006
+	}
+
+	bringup time = 42 ms
+	death port = 0x2e203
+
+	in-progress bootstraps = 0
+	pended requests = 0
+	pending requests = {
+	}
+	subdomains = {
+	}
+	pending attachments = {
+	}
+
+	environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.VAKBzAjoWo/Listeners
+	}
+
+	services = {
+		       0      0 	com.apple.syncdefaultsd
+		       0      - 	com.apple.DataDetectorsLocalSources
+		       0      - 	com.apple.unmountassistant.useragent
+		       0      - 	com.apple.SafariHistoryServiceAgent
+		       0      - 	com.apple.preference.displays.MirrorDisplays
+		       0      - 	com.apple.sidecar-display-agent
+		       0      - 	com.apple.contacts.donation-agent
+		       0      - 	com.apple.accessibility.heard
+		     387      - 	com.apple.corespeechd
+		       0      - 	com.apple.java.InstallOnDemand
+		       0      - 	com.apple.ServicesUIAgent
+		       0      - 	com.apple.progressd
+		     612      - 	org.mozilla.firefox.2260.C5FC4CB6-0B73-4579-86B1-24E1B3091720
+		   28272   (pe) 	com.apple.neagent.878568F8-CCE5-4157-8315-22F20DC8FB0A
+		   28481   (pe) 	com.apple.cloudphotod
+		       0      - 	com.apple.ctkbind
+		       0      - 	com.apple.studentd
+		       0      - 	com.apple.mediastream.mstreamd
+		       0      - 	com.apple.FollowUpUI
+		       0      - 	com.apple.videoconference.camera
+		   29122   (pe) 	com.apple.keyboardservicesd
+		   28483   (pe) 	com.apple.cache_delete
+		       0      - 	com.apple.scrod
+		     312      - 	com.apple.accountsd
+		   28268   (pe) 	com.apple.cdpd
+		       0      - 	com.apple.corespotlightservice
+		   28368   (pe) 	com.apple.routined
+		       0      - 	com.apple.alf.useragent
+		       0      - 	com.apple.uikitsystemapp
+		       0      0 	com.apple.Finder
+		   29333   (pe) 	com.apple.quicklook.ThumbnailsAgent
+		       0      - 	com.apple.homed
+		       0      - 	com.apple.csuseragent
+		       0      - 	com.apple.controlstrip
+		       0      - 	com.apple.KeyboardAccessAgent
+		       0   (pe) 	com.apple.SafeEjectGPUAgent
+		       0      - 	com.apple.quicklook
+		       0      - 	com.apple.spindump_agent
+		   28223   (pe) 	com.apple.ContextStoreAgent
+		       0      - 	com.apple.AOSPushRelay
+		     321      - 	com.apple.AMPDeviceDiscoveryAgent
+		       0      - 	com.apple.accessibility.dfrhud
+		       0   (pe) 	com.apple.CallHistorySyncHelper
+		    (dp)      0 	com.apple.parentalcontrols.check
+		       0      - 	com.apple.AquaAppearanceHelper
+		       0      - 	com.apple.PackageKit.InstallStatus
+		     370      - 	com.apple.mediaremoteagent
+		     389      - 	com.apple.SocialPushAgent
+		       0      - 	com.apple.colorsync.useragent
+		     454      0 	com.apple.FontWorker
+		       0      - 	com.apple.DiskArbitrationAgent
+		   28258   (pe) 	com.apple.tccd
+		       0      - 	com.apple.security.keychain-circle-notification
+		   29008   (pe) 	com.apple.bird
+		       0      - 	com.apple.storelegacy
+		       0   (pe) 	com.apple.OSDUIHelper
+		       0      - 	com.apple.assessmentagent
+		       0      - 	com.apple.accessibility.AXVisualSupportAgent
+		     301      - 	com.apple.Dock.agent
+		    (dp)      0 	com.apple.amp.mediasharingd
+		       0   (pe) 	com.apple.audio.AudioComponentRegistrar
+		       0      - 	com.apple.icloud.findmydeviced.findmydevice-user-agent
+		       0      0 	com.apple.parsec-fbf
+		   28342   (pe) 	com.apple.dmd
+		       0      - 	com.apple.xpc.loginitemregisterd
+		   28273   (pe) 	com.apple.AssetCacheLocatorService
+		       0      - 	com.apple.AssetCache.agent
+		     336      - 	com.apple.lockoutagent
+		       0      - 	com.apple.exchange.exchangesyncd
+		       0      - 	com.apple.locationmenu
+		       0   (pe) 	com.apple.replayd
+		       0      - 	com.apple.videosubscriptionsd
+		       0   (pe) 	com.apple.transparencyd
+		   29014   (pe) 	com.apple.pbs
+		   28637      0 	com.apple.coreservices.uiagent
+		       0      - 	com.apple.universalaccessAuthWarn
+		       0   (pe) 	com.apple.icloud.searchpartyuseragent
+		     316      - 	com.apple.nsurlsessiond
+		       0      - 	com.apple.ap.adservicesd
+		   28309   (pe) 	com.apple.AppSSOAgent
+		     342      - 	com.apple.notificationcenterui.agent
+		       0   (pe) 	com.apple.devicecheckd
+		       0      - 	com.apple.protectedcloudstorage.protectedcloudkeysyncing
+		       0      - 	com.apple.mbuseragent
+		   29075   (pe) 	com.apple.applespell
+		   28474   (pe) 	com.apple.scopedbookmarksagent.xpc
+		       0      - 	com.apple.coreservices.UASharedPasteboardProgressUI
+		   28269   (pe) 	com.apple.security.cloudkeychainproxy3
+		     391      - 	com.apple.imklaunchagent
+		       0      - 	com.apple.AccessibilityVisualsAgent
+		     293      - 	com.apple.UserEventAgent-Aqua
+		       0   (pe) 	com.apple.FileProvider
+		       0      - 	com.apple.installd.user
+		       0   (pe) 	com.apple.followupd
+		       0      - 	com.apple.AirPortBaseStationAgent
+		       0      0 	com.apple.proactiveeventtrackerd
+		       0   (pe) 	com.apple.ReportCrash
+		    (dp)      0 	com.apple.universalaccessd
+		       0      0 	com.apple.imcore.imtransferagent
+		   28274   (pe) 	com.apple.akd
+		       0      - 	com.apple.ReportPanic
+		       0      - 	com.apple.btsa
+		     332      - 	com.apple.identityservicesd
+		       0   (pe) 	com.apple.CallHistoryPluginHelper
+		       0      - 	com.apple.accessibility.MotionTrackingAgent
+		     392      - 	com.apple.icdd
+		       0   (pe) 	com.apple.telephonyutilities.callservicesd
+		       0      - 	com.apple.DwellControl
+		       0      - 	com.apple.neagent
+		       0      - 	com.apple.syncservices.uihandler
+		   28303   (pe) 	com.apple.iconservices.iconservicesagent
+		       0      - 	com.apple.SafariLaunchAgent
+		       0      - 	com.apple.ContactsAgent
+		       0   (pe) 	com.apple.EscrowSecurityAlert
+		       0      - 	com.apple.idsfoundation.IDSRemoteURLConnectionAgent
+		       0   (pe) 	com.apple.SafariBookmarksSyncAgent
+		       0   (pe) 	com.apple.recentsd
+		    1733      - 	com.apple.Terminal.784
+		       0      - 	com.apple.screensharing.menuextra
+		     408      - 	com.apple.storeaccountd
+		   28261   (pe) 	com.apple.AddressBook.ContactsAccountsService
+		       0   (pe) 	com.apple.UsageTrackingAgent
+		   28308   (pe) 	com.apple.WiFiVelocityAgent
+		       0      - 	com.apple.email.maild
+		    1690      - 	com.apple.metadata.mdwrite
+		       0      - 	com.apple.ManagedClientAgent.agent
+		     334      - 	com.apple.usernoted
+		       0      - 	com.apple.localizationswitcherd
+		       0      - 	com.apple.security.DiskUnmountWatcher
+		       0      - 	com.apple.screensharing.agent
+		       0      - 	com.apple.AddressBook.AssistantService
+		       0      - 	com.apple.warmd_agent
+		       0      - 	com.apple.SafariPlugInUpdateNotifier
+		     384      - 	com.apple.commerce
+		       0   (pe) 	com.apple.CoreLocationAgent
+		       0      0 	com.apple.loginwindow.LWWeeklyMessageTracer
+		       0      - 	com.apple.PIPAgent
+		       0      - 	com.apple.mbfloagent
+		       0      0 	com.apple.AddressBook.abd
+		       0      0 	com.apple.TMHelperAgent.SetupOffer
+		       0      - 	com.apple.printtool.agent
+		       0      0 	com.apple.AddressBook.SourceSync
+		       0   (pe) 	com.apple.SecureBackupDaemon
+		       0      0 	com.apple.security.agent
+		   28253   (pe) 	com.apple.CalendarAgent
+		       0      - 	com.apple.installerauthagent
+		   28263   (pe) 	com.apple.nsurlstoraged
+		    (dp)   (pe) 	com.apple.askpermissiond
+		       0      - 	com.apple.universalaccesscontrol
+		       0      0 	com.apple.securityuploadd
+		       0      - 	com.apple.ScreenReaderUIServer
+		       0      0 	com.apple.menuextra.battery.helper
+		       0      - 	com.apple.Safari.SafeBrowsing.Service
+		       0      - 	com.apple.cfnetwork.AuthBrokerAgent
+		       0      - 	com.apple.USBAgent
+		       0      - 	com.apple.RapportUIAgent
+		       0      - 	com.apple.siriknowledged
+		   28397   (pe) 	com.apple.Maps.mapspushd
+		       0      - 	com.apple.findmymacmessenger
+		       0      0 	com.apple.powerchime
+		       0      - 	com.apple.languageassetd
+		       0      - 	com.apple.FilesystemUI
+		       0      - 	com.apple.voicememod
+		       0      - 	com.apple.gamed
+		     373      - 	com.apple.sharingd
+		       0      - 	com.apple.STMUIHelper
+		       0      - 	com.apple.familynotificationd
+		       0      - 	com.apple.ssinvitationagent
+		       0      - 	com.apple.webinspectord
+		       0      - 	com.apple.iCloudUserNotificationsd
+		   29007   (pe) 	com.apple.swcd
+		       0      - 	com.apple.storeassetd
+		       0      - 	com.apple.speech.synthesisserver
+		       0      - 	com.apple.WebKit.PluginAgent
+		   28470   (pe) 	com.apple.photolibraryd
+		       0      0 	com.apple.DiagnosticReportCleanup.plist
+		       0      0 	com.apple.pluginkit.pkreporter
+		     394      - 	com.apple.AirPlayUIAgent
+		       0      - 	com.apple.FontRegistryUIAgent
+		       0      - 	com.apple.storeuid
+		       0      - 	com.apple.midiserver
+		       0      - 	com.apple.RemoteManagementAgent
+		     395      - 	com.apple.cloudpaird
+		       0      - 	com.apple.TextInputSwitcher
+		       0      - 	com.apple.systemprofiler
+		     313      - 	com.apple.backgroundtaskmanagementagent
+		       0      - 	com.apple.AMPArtworkAgent
+		     349      - 	com.apple.imagent
+		    1755      - 	com.apple.storedownloadd
+		       0      - 	com.apple.mobiledeviceupdater
+		       0      0 	com.apple.xpc.otherbsd
+		   28245   (pe) 	com.apple.sidecar-relay
+		       0      - 	com.apple.rcd
+		     314      - 	com.apple.cloudd
+		       0   (pe) 	com.apple.noticeboard.agent
+		       0      - 	com.apple.SpacesTouchBarAgent.app
+		       0      - 	com.apple.UserNotificationCenterAgent
+		       0      - 	com.apple.sysdiagnose_agent
+		       0      - 	com.apple.printuitool.agent
+		       0      0 	com.apple.helpd
+		   28349   (pe) 	com.apple.cmfsyncagent
+		       0      - 	com.apple.dt.CommandLineTools.installondemand
+		       0      - 	com.apple.NVMeAgent
+		       0      - 	com.apple.quicklook.ui.helper
+		       0      - 	com.apple.speech.speechdatainstallerd
+		       0      0 	com.apple.AOSHeartbeat
+		       0      - 	com.apple.ATS.FontValidator
+		     431      - 	com.apple.corespotlightd
+		     343      - 	com.apple.wifi.WiFiAgent
+		     403      - 	com.apple.CryptoTokenKit.ahp.agent
+		       0      - 	com.apple.screensharing.MessagesAgent
+		       0   (pe) 	com.apple.coreparsec.silhouette
+		       0      - 	com.apple.diskspaced
+		       0      - 	com.apple.syncservices.SyncServer
+		     320      - 	com.apple.coreservices.sharedfilelistd
+		     325      - 	com.apple.pboard
+		       0      - 	com.apple.netauth.user.gui
+		     402      - 	com.crystalidea.macsfancontrol.2024
+		    3993      - 	com.apple.imautomatichistorydeletionagent
+		     304      - 	com.apple.SystemUIServer.agent
+		       0      0 	com.apple.appleseed.seedusaged
+		       0      - 	com.apple.ATS.FontValidatorConduit
+		   28215   (pe) 	com.apple.TextInputMenuAgent
+		       0      - 	com.apple.passd
+		       0   (pe) 	com.apple.talagent
+		     323      - 	com.apple.xtyped
+		       0      - 	com.apple.SafariNotificationAgent
+		       0      - 	com.apple.coredatad
+		       0      - 	com.apple.LocalAuthentication.UIAgent
+		       0      - 	com.apple.bluetoothUIServer
+		       0      - 	com.apple.navd
+		       0      - 	com.apple.nowplayingtouchui
+		       0   (pe) 	com.apple.ap.adprivacyd
+		    (dp)      0 	com.apple.remindd
+		       0      - 	com.apple.TMHelperAgent
+		       0      0 	com.apple.MobileAccessoryUpdater.fudHelperAgent
+		       0      - 	com.apple.universalaccessHUD
+		       0      - 	com.apple.PhotoLibraryMigrationUtility.XPC
+		       0      - 	com.apple.reversetemplated
+		       0      - 	com.apple.appsleep
+		       0   (pe) 	com.apple.apfsuseragent
+		       0      - 	com.apple.SafariCloudHistoryPushAgent
+		       0      - 	com.apple.RemoteDesktop.agent
+		       0   (pe) 	com.apple.networkserviceproxy
+		       0      - 	com.apple.DictationIM
+		    (dp)   (pe) 	com.apple.amsaccountsd
+		       0      - 	com.apple.AMPLibraryAgent
+		       0      - 	com.apple.AskPermissionUI
+		       0      - 	com.apple.VoiceOver
+		       0      - 	com.apple.thermaltrap
+		       0      - 	com.openssh.ssh-agent
+		       0      - 	com.apple.assistant_service
+		     329      - 	com.apple.rapportd
+		    (dp)      0 	com.apple.MRTa
+		       0      0 	com.apple.touristd
+		     331      - 	com.apple.Spotlight
+		     369      - 	com.apple.coreservices.useractivityd
+		       0      - 	com.apple.atsd
+		   27942   (pe) 	com.apple.SoftwareUpdateNotificationManager
+		       0      - 	com.apple.screencaptureui.agent
+		   28467   (pe) 	com.apple.appstoreagent
+		       0      - 	com.apple.AssistiveControl
+		    3319   (pe) 	com.apple.icloud.fmfd
+		   27970   (pe) 	com.apple.CommCenter
+		       0      - 	com.apple.AMPDevicesAgent
+		       0      0 	com.apple.mdmclient.agent
+	}
+
+	unmanaged processes = {
+		com.apple.xpc.launchd.unmanaged.crashhelper.614 = {
+			active count = 2
+			dynamic endpoints = {
+				"gecko-crash-server-pipe.612" = {
+					port = 0x9fd43
+					active = 1
+					managed = 0
+					reset = 0
+					hide = 0
+				}
+			}
+			pid-local endpoints = {
+			}
+		}
+		com.apple.xpc.launchd.unmanaged.PAH_Extension.406 = {
+			active count = 4
+			dynamic endpoints = {
+				"com.apple.PressAndHold_Connection" = {
+					port = 0x76e07
+					active = 1
+					managed = 0
+					reset = 0
+					hide = 0
+				}
+			}
+			pid-local endpoints = {
+				"com.apple.tsm.portname" = {
+					port = 0x8435b
+					active = 1
+					managed = 0
+					reset = 0
+					hide = 0
+				}
+				"com.apple.axserver" = {
+					port = 0x8428f
+					active = 1
+					managed = 0
+					reset = 0
+					hide = 0
+				}
+			}
+		}
+		com.apple.xpc.launchd.unmanaged.QuickLookUIServ.29330 = {
+			active count = 3
+			dynamic endpoints = {
+			}
+			pid-local endpoints = {
+				"com.apple.tsm.portname" = {
+					port = 0x16a47
+					active = 1
+					managed = 0
+					reset = 0
+					hide = 0
+				}
+				"com.apple.axserver" = {
+					port = 0x7c787
+					active = 1
+					managed = 0
+					reset = 0
+					hide = 0
+				}
+			}
+		}
+		com.apple.xpc.launchd.unmanaged.loginwindow.161 = {
+			active count = 6
+			dynamic endpoints = {
+				"com.apple.SchedulerUpdateNotificationPort" = {
+					port = 0x3151f
+					active = 1
+					managed = 0
+					reset = 0
+					hide = 0
+				}
+				"com.apple.BezelServices" = {
+					port = 0x49503
+					active = 1
+					managed = 0
+					reset = 0
+					hide = 0
+				}
+			}
+			pid-local endpoints = {
+				"com.apple.coredrag" = {
+					port = 0x78617
+					active = 1
+					managed = 0
+					reset = 0
+					hide = 0
+				}
+				"com.apple.tsm.portname" = {
+					port = 0x417f7
+					active = 1
+					managed = 0
+					reset = 0
+					hide = 0
+				}
+				"com.apple.axserver" = {
+					port = 0x42203
+					active = 1
+					managed = 0
+					reset = 0
+					hide = 0
+				}
+			}
+		}
+		com.apple.xpc.launchd.unmanaged.com.apple.appki.29329 = {
+			active count = 4
+			dynamic endpoints = {
+			}
+			pid-local endpoints = {
+				"com.apple.coredrag" = {
+					port = 0x9995b
+					active = 1
+					managed = 0
+					reset = 0
+					hide = 0
+				}
+				"com.apple.tsm.portname" = {
+					port = 0x90f2f
+					active = 1
+					managed = 0
+					reset = 0
+					hide = 0
+				}
+				"com.apple.axserver" = {
+					port = 0x50d2f
+					active = 1
+					managed = 0
+					reset = 0
+					hide = 0
+				}
+			}
+		}
+	}
+
+	endpoints = {
+	}
+
+	externally-hosted endpoints = {
+		 0x99503    M   D   com.apple.BKAgentService
+		 0x58907    M   D   com.apple.SpeechRecognitionCore.brokerd
+		 0x6ad03    M   D   com.apple.private.alloy.willow.stream-idswake
+		 0x65403    M   A   com.apple.coreservices.lsuseractivityadministration.xpc
+		 0x64003    M   D   com.apple.bird.push
+		 0x66a03    M   D   com.apple.FontObjectsServer
+		 0x68803    M   D   com.apple.corefollowup.agent
+		 0x6a603    M   D   com.apple.private.alloy.amsaccountsync-idswake
+		 0x59a03    M   A   com.apple.BTServer.le
+		 0x36a0b    M   A   com.apple.corespeech.corespeechd.xpc
+		 0x4f503    M   A   com.apple.nsurlsessiond-launchondemand
+		 0x8e91b    M   D   com.apple.universalaccessd.running
+		 0x53b03    M   D   com.apple.protectedcloudstorage.protectedcloudkeysyncing.pairedsync
+		 0x54503    M   D   com.apple.mdmclient.agent.unrestricted
+		 0x45103    M   A   com.apple.fonts
+		 0x487e7    M   D   com.apple.CallHistorySyncHelper
+		 0x3de07    M   A   com.apple.usernoted.web_client
+		 0x48c7b    M   D   com.apple.rapport.remote-text-input
+		 0x46b03    M   D   com.apple.lsd.openurl
+		 0xa853f    U   A   cs (Apple)_OpenStep
+		 0x6c403    M   D   com.apple.linkedin.xpc
+		 0x61467    M   D   com.apple.FCiCloudPrefUpdater
+		 0x67f03    M   D   com.apple.storeagent.storekit.receiptrenewal
+		 0x5a903    M   D   com.apple.private.alloy.facetime.video-idswake
+		 0x5b303    M   D   com.apple.callkit.callsourcehost
+		 0x52d03    M   A   com.apple.coreservices.sharedfilelistd.xpc
+		 0x4cd03    M   A   com.apple.AppSSO.service-xpc
+		 0x4bd03    M   D   com.apple.mbuseragent
+		 0x4b403    M   A   com.apple.accountsd.oauthsigner
+		 0x4b003    M   D   com.apple.appsleep
+		 0x49503    U   A   com.apple.BezelServices
+		 0x46d03    M   D   com.apple.mbbackgrounduseragent
+		 0x47303    M   A   com.apple.distributed_notifications@Uv3
+		 0x47e03    M   D   com.apple.mdworker.shared
+		 0xa853f    U   A   Multilingual (Apple)_OpenStep
+		 0xa853f    U   A   vi (Apple)_OpenStep
+		 0xa853f    U   A   ko (Apple)_OpenStep
+		 0x8920b    M   D   com.apple.CloudPhotosConfiguration
+		 0x6bf03    M   D   com.apple.languageassetd
+		 0x6ab03    M   D   com.apple.homekit.pairedsync
+		 0x64803    M   D   com.apple.rcd
+		 0x62003    M   D   com.apple.midiserver.io
+		 0x69303    M   D   com.apple.contacts.donation.agent
+		 0x56903    M   D   com.apple.AssistiveControl.running
+		 0x4e503    M   A   com.apple.dock.notificationcenter
+		 0x4e703    M   A   com.apple.dock.launchpad
+		 0x4ad03    M   A   com.apple.FontWorker
+		 0x4ab03    M   D   com.apple.AOSPushRelay.push.demo
+		 0x45703    M   D   com.apple.routined.store.cloud
+		 0x2f40b    M   A   com.apple.rapport.private-discovery
+		 0x46803    M   A   com.apple.lsd.mapdb
+		 0x44703    M   A   com.apple.secinitd.container
+		 0x44103    M   A   com.apple.ctkd.token-client
+		 0x43803    M   A   com.apple.security.octagon
+		 0xa853f    U   A   ru (Apple)_OpenStep
+		 0xa853f    U   A   pt_BR (Apple)_OpenStep
+		 0xa853f    U   A   es (Apple)_OpenStep
+		 0xa853f    U   A   da (Apple)_OpenStep
+		 0x81d03    M   D   com.apple.siri-distributed-evaluation
+		 0x64f03    M   D   com.apple.private.alloy.willow.proxy-idswake
+		 0x65903    M   D   com.apple.navd
+		 0x62d03    M   D   com.apple.RemoteDesktop.agent
+		 0x67503    M   D   com.apple.networkserviceproxy
+		 0x60203    M   D   com.apple.xpc.amsaccountsd
+		 0x6a803    M   D   com.apple.aps.amsaccountsd
+		 0x56f03    M   D   com.apple.passd.device-registration
+		 0x56a03    M   D   com.apple.java.installondemand
+		 0x56403    M   D   com.apple.ContactsAgent.general
+		 0x56503    M   D   com.apple.ContactsAgent.addressbook
+		 0x55e03    M   D   com.apple.speech.synthesis.TimeAnnouncementsPort
+		 0x4d503    M   D   com.apple.familynotification.agent
+		 0x53003    M   A   com.apple.notificationcenterui.preferences
+		 0x54703    M   D   com.apple.screensharing.ShareScreenInvitation
+		 0x2ff07    M   A   com.apple.ak.authorizationservices.xpc
+		 0x44203    M   D   com.apple.ctkd.watcher-client
+		 0x9fd43    U   A   gecko-crash-server-pipe.612
+		 0x73703    M   D   com.apple.security.XPCTimeStampingService
+		 0x4d407    M   D   com.apple.facebook.xpc
+		 0x4d907    M   D   com.apple.appkit.xpc.ColorSampler
+		 0x64903    M   A   com.apple.coreservices.uasharedpasteboardmanager.xpc
+		 0x63f03    M   A   com.apple.bird.cache-delete
+		 0x67603    M   A   com.apple.cookied
+		 0x67c03    M   D   com.apple.ap.adprivacyd.attribution
+		 0x60f03    M   D   com.apple.accessibility.heard
+		 0x5a203    M   D   com.apple.aps.searchpartyuseragent
+		 0x5a503    M   D   com.apple.private.alloy.fmd-idswake
+		 0x59803    M   A   com.apple.cloudpaird
+		 0x4f703    M   D   com.apple.inputswitcher.startup
+		 0x51703    M   D   com.apple.dock.downloads
+		 0x51b03    M   D   com.apple.amp.mediasharingd
+		 0x4bf03    M   D   com.apple.UsageTrackingAgent
+		 0x54403    M   D   com.apple.aps.mdmclient.agent.push.development
+		 0x4b803    M   A   com.apple.scopedbookmarksagent.xpc
+		 0x2fe07    M   A   com.apple.xpc.activity.control
+		 0x37207    M   D   com.apple.uikitsystemapp.services
+		 0x35f0b    M   D   com.apple.CallHistorySyncHelper.aps
+		 0x3eb07    M   A   com.apple.usernoted.notificationcenter
+		 0x47103    M   D   com.apple.ContainerRepairAgent
+		 0x80507    M   D   com.apple.SafeEjectGPUService
+		 0x73a03    M   D   com.apple.iokit.IOServiceAuthorizeAgent
+		 0x65d03    M   A   com.apple.dockling.server
+		 0x63003    M   D   com.apple.voicememod.xpc
+		 0x67e03    M   D   com.apple.storeagent-xpc
+		 0xaa60f    M   D   com.apple.AddressBook.abd
+		 0x59303    M   A   com.apple.appstoreagent.legacy
+		 0x5ca03    M   D   com.apple.usernotifications.delegate.com.apple.reminders
+		 0x4fb03    M   D   com.apple.progressd.aps
+		 0x4d603    M   D   com.apple.usernotifications.delegate.com.apple.familynotifications
+		 0x4d103    M   D   com.apple.reversetemplated
+		 0x4be03    M   D   com.apple.dt.CommandLineTools.installondemand
+		 0x45403    M   A   com.apple.inputmethodkit.setxpcendpoint
+		 0x3f907    M   A   com.apple.amp.devicediscoveryd.devicesagentevents
+		 0x3e707    M   D   com.apple.btsa
+		 0x37007    M   A   com.apple.incoming-call-filter-server
+		 0xa853f    U   A   nb (Apple)_OpenStep
+		 0x63d03    M   D   com.apple.aquaappearancehelper
+		 0x67803    M   D   com.apple.storeuid
+		 0x5af03    M   D   com.apple.telephonyutilities.callservicesdaemon.callprovidermanager
+		 0x5ab03    M   D   com.apple.private.alloy.facetime.audio-idswake
+		 0x5bb03    M   A   com.apple.usernotifications.delegate.com.apple.wifi.usernotifications.autohotspot
+		 0x59103    M   A   com.apple.aps.appstoreagent
+		 0x50103    M   D   com.apple.accessibility.AXVisualSupportAgent.startup
+		 0x51403    M   D   com.apple.aps.CommCenter
+		 0x51903    M   A   com.apple.desktoppicture.cache-delete
+		 0x53f03    M   A   mul-xpc (Apple)_OpenStep
+		 0x30107    M   D   com.apple.webinspector
+		 0x46c03    M   A   com.apple.lsd.trustedsignatures
+		 0xa853f    U   A   pt (Apple)_OpenStep
+		 0x59c3b    M   D   com.apple.DictionaryServiceHelper
+		 0x74103    M   D   com.apple.SafariCloudHistoryPushAgent
+		 0x61603    M   D   com.apple.speech.CommandAndControl.utility
+		 0x69603    M   D   com.apple.askpermissiond
+		 0x69a03    M   D   com.apple.universalaccesscontrol.running
+		 0x5a403    M   D   com.apple.icloud.searchpartyuseragent.beaconmanager
+		 0x5d503    M   A   com.apple.sharing.transfer-observer
+		 0x5f803    M   D   com.apple.idsremoteurlconnectionagent.desktop.auth
+		 0x4f303    M   D   com.apple.xpc.loginitemregisterd
+		 0x50c03    M   D   com.apple.systemprofiler
+		 0x51f03    M   A   com.apple.cache_delete.public
+		 0x4d303    M   A   com.apple.photos.service
+		 0x4c903    M   A   com.apple.notificationcenterui.pip
+		 0x4b703    M   D   com.apple.screensharing.ViewInvitation
+		 0x54f03    M   D   com.apple.audio.AudioComponentPrefs
+		 0x30507    M   D   com.apple.FileProvider.cache-delete
+		 0x44c03    M   A   com.apple.lsd.modifydb
+		 0x73203    M   D   com.apple.tonelibraryd
+		 0x74c03    M   A   com.apple.private.spotlight.mdwrite
+		 0x74f03    M   D   com.apple.VideoSubscriberAccount.videosubscriptionsd
+		 0x6b003    M   A   com.apple.quicklook.ThumbnailsAgent.CacheDelete
+		 0x66803    M   A   com.apple.cloudd.cache-delete
+		 0x68d03    M   A   com.apple.spotlight.IndexAgent
+		 0x6a703    M   D   com.apple.amsaccountsd.multiuser
+		 0x3ef0b    M   D   com.apple.TMHelperAgent.DeliverNotification
+		 0x5d003    M   A   com.apple.corespeech.corespeechservices
+		 0x5d803    M   A   com.apple.SharingServices
+		 0x50803    M   D   com.apple.inputswitcher.stop
+		 0x4e803    M   D   com.apple.screensharing.menuextra
+		 0x3730b    M   D   com.apple.SafariBookmarksSyncAgent
+		 0x4c703    M   D   com.apple.notificationcenterui.alerts
+		 0x4c803    M   A   com.apple.notificationcenterui.snippet
+		 0x53303    M   D   com.apple.spinreporteragent
+		 0x31907    M   A   com.apple.Maps.mapspushd.icloud
+		 0x3e607    M   D   com.apple.speech.speechdatainstallerd
+		 0x3f807    M   A   com.apple.usernotifications.delegate.com.apple.iChat
+		 0x46503    M   A   com.apple.LocalAuthentication.RemoteUIHost
+		 0xa853f    U   A   pl (Apple)_OpenStep
+		 0xa853f    U   A   hu (Apple)_OpenStep
+		 0x6b703    M   A   com.apple.identityservicesd.aps
+		 0x61f03    M   D   com.apple.sidecar-display-agent
+		 0x61703    M   D   com.apple.DictationIM.startup
+		 0x69803    M   D   com.apple.aps.heard
+		 0x69e03    M   D   com.apple.gamed.note
+		 0x60a03    M   D   com.apple.usernotifications.delegate.com.apple.gamecenter
+		 0x60703    M   D   com.apple.controlstrip
+		 0x5c303    M   D   com.apple.DwellControl.startup
+		 0x57f03    M   D   com.apple.securityuploadd
+		 0x4ea03    M   A   com.apple.ipTelephony
+		 0x51303    M   A   com.apple.commcenter.coretelephony.xpc
+		 0x52103    M   D   com.apple.PhotoLibraryMigrationUtility.XPC
+		 0x52803    M   A   com.apple.AddressBook.ContactsAccountsService
+		 0x53103    M   A   com.apple.notificationcenterui.widgetcontent
+		 0x53a03    M   D   com.apple.protectedcloudstorage.protectedcloudkeysyncing
+		 0x4b903    M   D   com.apple.aps.mdmclient.agent.push.production
+		 0x54903    M   D   com.apple.coreservices.uasharedpasteboardprogressui.xpc
+		 0x3f607    M   A   com.apple.ak.aps
+		 0x3e507    M   A   com.apple.imagent.desktop.auth
+		 0x3fe07    M   A   com.apple.AirPlayAgent.xpc
+		 0xa853f    U   A   fr (Apple)_OpenStep
+		 0x5f107    M   A   com.apple.TrustedPeersHelper
+		 0x59707    M   D   com.apple.MailServiceAgent
+		 0x65103    M   D   com.apple.bluetoothUIServer
+		 0x65303    M   D   com.apple.unmountassistant.useragent
+		 0x62103    M   A   com.apple.coreservices.quarantine-resolver
+		 0x60b03    M   D   com.apple.gamed
+		 0x6a003    M   D   com.apple.sysdiagnose_agent
+		 0x5c703    M   A   com.apple.storekitservice
+		 0x5de03    M   D   com.apple.AddressBook.PushSubscription
+		 0x56003    M   D   com.apple.quicklook
+		 0x5ff03    M   D   com.apple.videoconference.avconference
+		 0x55703    M   A   com.apple.dmd.policy
+		 0x4ed03    M   D   com.apple.WebKit.PluginAgent
+		 0x4df03    M   D   com.apple.DataDeliveryServices.AssetService
+		 0x52203    M   D   com.apple.scrod
+		 0x52903    M   D   com.apple.syncservices.SyncServer
+		 0x54c03    M   D   com.apple.corespotlightservice
+		 0x4af03    M   A   com.apple.security.cloudkeychainproxy3
+		 0x31307    M   D   com.apple.siriknowledged
+		 0x42907    M   D   com.apple.quicklook.ui.helper.active
+		 0x31207    M   A   com.apple.CalendarAgent.database
+		 0x31107    M   D   com.apple.frontboard.systemappservices
+		 0x3170b    M   A   com.apple.rapport.people
+		 0x3140b    M   A   com.apple.storedownloadd
+		 0x47a03    M   A   com.apple.securityd.aps
+		 0x6c703    M   D   com.apple.tencentweibo.xpc
+		 0x6c103    M   A   com.apple.geod
+		 0x6be03    M   D   com.apple.replayd-cache-delete
+		 0x64a03    M   A   com.apple.coreservices.lsbestappsuggestionmanager.xpc
+		 0x66903    M   D   com.apple.screensharing.agent
+		 0x66c03    M   D   com.apple.voicememod.datastore.Local
+		 0x5b403    M   D   com.apple.telephonyutilities.callservicesdaemon.callcapabilities
+		 0x5b103    M   D   com.apple.callkit.callcontrollerhost
+		 0x5f903    M   D   com.apple.speech.synthesis.SpeakingHotKeyPort
+		 0x4f403    M   A   com.apple.nsurlsessiond
+		 0x4c503    M   A   com.apple.notificationcetnerui.ping
+		 0x4c603    M   A   com.apple.notificationcenterui.siri
+		 0x52f03    M   A   com.apple.notificationcenterui.extension-trampoline
+		 0x4cc03    M   A   com.apple.notificationcenterui.main
+		 0x45603    M   A   com.apple.routined.event
+		 0x3fc07    M   D   com.apple.CalendarAgent.push.dev
+		 0x49d2b    M   A   com.apple.PairingManager
+		 0x30d07    M   A   com.apple.CompanionLink
+		 0x46703    M   D   com.apple.cvmsCompAgent_x86_64
+		 0x43f03    M   D   com.apple.pluginkit.pkd.personaobserver
+		 0x44003    M   A   com.apple.pluginkit.pkd
+		 0x6aa03    M   D   com.apple.private.alloy.willow-idswake
+		 0x62b03    M   D   com.apple.ATS.FontValidator
+		 0x60903    M   D   com.apple.gamed.aps
+		 0x5ae03    M   D   com.apple.private.alloy.phonecontinuity-idswake
+		 0x5b803    M   A   com.apple.SharedWebCredentials
+		 0x5cc03    M   D   com.apple.remindd.userInteractive
+		 0x58803    M   A   com.apple.corespeech.corespeechd.activation.xpc
+		 0x5df03    M   D   com.apple.AddressBook.PushNotification
+		 0x4f203    M   D   com.apple.VoiceOver.running
+		 0x51c03    M   A   com.apple.AssetCacheLocatorService
+		 0x52703    M   A   com.apple.storeaccountd
+		 0x4ba03    M   D   com.apple.mdmclient.agent
+		 0x30907    M   A   com.apple.pasteboard.1
+		 0x44f03    M   A   com.apple.speech.speechsynthesisd
+		 0xa853f    U   A   sv (Apple)_OpenStep
+		 0xa853f    U   A   en_US (Apple)_OpenStep
+		 0xa853f    U   A   en_CA (Apple)_OpenStep
+		 0x6cd03    M   D   com.apple.siri.context.service
+		 0x6b503    M   A   com.apple.Spotlight
+		 0x62503    M   D   com.apple.ap.adprivacyd.opt-out
+		 0x62203    M   A   com.apple.coreservices.code-evaluation
+		 0x59203    M   A   com.apple.appstored.xpc.in-game-analytics
+		 0x58103    M   A   com.apple.sharing.handoff.scanning
+		 0x5e703    M   D   com.apple.passd.payment
+		 0x5f003    M   D   com.apple.private.alloy.accessibility.switchcontrol-idswake
+		 0x55603    M   A   com.apple.commerce
+		 0x4f003    M   D   com.apple.ap.adservicesd.server
+		 0x4ca03    M   A   com.apple.notificationcenterui.menu
+		 0x2e607    M   D   com.apple.RapportUIAgent
+		 0x3ea07    M   A   com.apple.usernoted.events
+		 0x3e207    M   A   com.apple.imagent.aps
+		 0x47703    M   A   com.apple.cfprefsd.agent
+		 0x97513    U   A   Mozilla_firefox_/Users/tester/Library/Application Support/Firefox/Profiles/m7jisifd.default-release_RemoteWindow
+		 0x76e07    U   A   com.apple.PressAndHold_Connection
+		 0x6ac03    M   D   com.apple.homed.aps
+		 0x61d03    M   D   com.apple.syncservices.uihandler
+		 0x5b203    M   D   com.apple.telephonyutilities.callservicesdaemon.momentscontroller
+		 0x58d03    M   D   com.apple.aps.remindd.dataaccess.dev
+		 0x57b03    M   D   com.apple.assessmentagent
+		 0x5e003    M   D   com.apple.AddressBook.SourceSync
+		 0x57303    M   D   com.apple.BMEHelper
+		 0x4eb03    M   A   com.apple.private.alloy.thumper.keys-idswake
+		 0x4e003    M   D   com.apple.helpd
+		 0x4d803    M   D   com.apple.CoreLocation.agent
+		 0x4d003    M   A   com.apple.backgroundtaskmanagementagent
+		 0x4b603    M   A   com.apple.accountsd.accountmanager
+		 0x55303    M   D   com.apple.AOSPushRelay
+		 0x49207    M   D   com.apple.exchange.exchangesyncd
+		 0x2ed07    M   D   com.apple.UIKit.statusbarserver
+		 0x31a07    M   A   com.apple.Maps.mapspushd.geoservices
+		 0x2f707    M   D   com.apple.coredatad.cloudkit
+		 0x47603    M   D   com.apple.cvmsCompAgent3600_x86_64_1
+		 0x73c03    M   A   com.apple.imdpersistence.IMDPersistenceAgent
+		 0x6c003    M   D   com.apple.LocalAuthentication.UI
+		 0x74403    M   D   com.apple.FontRegistry.FontRegistryUIAgent
+		 0x64e03    M   D   com.apple.usernotifications.delegate.com.apple.Home
+		 0x64b03    M   A   com.apple.coreservices.uasharedpasteboardaux.xpc
+		 0x62c03    M   D   com.apple.csuseragent
+		 0x67b03    M   D   com.apple.AdSheetPhone.push
+		 0x5bd03    M   D   com.apple.mediastream.mstreamd.push-dev
+		 0x5d303    M   A   com.apple.sharingd.nsxpc
+		 0x57903    M   D   com.apple.amp.library.framework
+		 0x5ea03    M   D   com.apple.passd.in-app-payment
+		 0x51803    M   A   com.apple.dock.remotedesktoppicture
+		 0x4db03    M   A   com.apple.cache_delete
+		 0x4cb03    M   A   com.apple.notificationcenterui.customalerts
+		 0x4bc03    M   A   com.apple.applespell
+		 0x30707    M   A   com.apple.coreservices.uauseractivitypasteboardclient.xpc
+		 0x42c07    M   D   com.apple.netauth.user.gui
+		 0x36707    M   D   com.apple.fileprovider.pushkit
+		 0x46a03    M   D   com.apple.lsd.diagnostics
+		 0x44d03    M   A   com.apple.lsd.personaobserver
+		 0x43e03    M   D   com.apple.cvmsCompAgent3600_x86_64
+		 0x43603    M   D   com.apple.installandsetup.migrationhelper
+		 0xa853f    U   A   it (Apple)_OpenStep
+		 0x65703    M   A   com.apple.coreservices.lsuseractivity.simulatorsupport
+		 0x65603    M   A   com.apple.coreservices.uasharedpasteboardcontroll.xpc
+		 0x64503    M   D   com.apple.dockextra.server
+		 0x63503    M   D   com.apple.noticeboard.agent
+		 0x62f03    M   D   com.apple.voicememod.datastore.Cloud
+		 0x67a03    M   D   com.apple.SpacesTouchBarService
+		 0x62303    M   D   com.apple.AddressBook.AssistantService
+		 0x5be03    M   D   com.apple.mediastream.mstreamd.push-prod
+		 0x5ed03    M   A   com.apple.CryptoTokenKit.AuthenticationHintsProvider.agent.libxpc
+		 0x5f703    M   D   com.apple.quicklookd.xpc
+		 0x4ef07    M   D   com.apple.universalaccessd.startup
+		 0x30307    M   D   com.apple.UIKit.KeyboardManagement.hosted
+		 0x48a0f    M   A   com.apple.commerce.cachedelete
+		 0x46e03    M   D   com.apple.cvmsCompAgent3425AMD_x86_64
+		 0x44403    M   D   com.apple.mdworker.sizing
+		 0x47203    M   A   com.apple.trustd.agent
+		 0x43903    M   A   com.apple.security.escrow-update
+		 0xa853f    U   A   en_IN (Apple)_OpenStep
+		 0x6c203    M   D   com.apple.hiservices-xpcservice
+		 0x63c03    M   D   com.apple.accessibility.MotionTrackingAgent
+		 0x66d03    M   D   com.apple.aps.voicememod
+		 0x68903    M   A   com.apple.iconservices
+		 0x57a03    M   D   com.apple.amp.library
+		 0x57503    M   D   com.apple.AddressBook.ScheduledSync
+		 0x5ec03    M   D   com.apple.passd.aps
+		 0x56c03    M   D   com.apple.private.alloy.applepay-idswake
+		 0x5ee03    M   A   com.apple.CryptoTokenKit.AuthenticationHintsProvider
+		 0x56303    M   D   com.apple.storeassetd
+		 0x50403    M   D   com.apple.progressd
+		 0x4e603    M   A   com.apple.dock.appstore
+		 0x51e03    M   A   com.apple.keyboardServices.textReplacementServer.aps
+		 0x4b103    M   A   com.apple.cdp.daemon
+		 0x2f807    M   A   com.apple.Maps.mapspushd
+		 0x35707    M   A   com.apple.usernoted.push
+		 0x3e407    M   A   com.apple.imagent.cache-delete
+		 0x46603    M   D   com.apple.spotlight.ImportAgent
+		 0x44903    M   D   com.apple.lsd.plugin
+		 0xa853f    U   A   fi (Apple)_OpenStep
+		 0xa853f    U   A   en (Apple)_OpenStep
+		 0x66103    M   A   com.apple.pbs.fetch_services
+		 0x60503    M   D   com.apple.SafariLaunchAgent
+		 0x5c003    M   D   com.apple.mediastream.mstreamd.sharing.push-prod
+		 0x5bc03    M   D   com.apple.mediastream.mstreamd-nowake
+		 0x5cb03    M   D   com.apple.aps.remindd
+		 0x5ef03    M   D   com.apple.AssistiveControl.startup
+		 0x56703    M   D   com.apple.corefollowup.uihelper
+		 0x56203    M   D   com.apple.screensharing.MessagesAgent
+		 0x5fb03    M   D   com.apple.AskPermissionUI
+		 0x5fc03    M   A   com.apple.icloud.fmfd
+		 0x55503    M   D   com.apple.ReportCrash
+		 0x50303    M   D   com.apple.window_proxies.startup
+		 0x50603    M   D   com.apple.SecureBackupDaemon.concurrent
+		 0x51a03    M   A   com.apple.dock.spaces
+		 0x55403    M   D   com.apple.AOSPushRelay.notifier
+		 0x55103    M   D   com.apple.AOSPushRelay.push
+		 0x45a03    M   A   com.apple.routined.registration
+		 0x45303    M   A   com.apple.inputmethodkit.launcher
+		 0x35c07    M   A   com.apple.amp.devicediscoveryd
+		 0x35807    M   D   com.apple.CalendarAgent.push
+		 0x35607    M   A   com.apple.usernotifications.remotenotificationservice
+		 0x48d53    M   A   com.apple.rapport
+		 0x47c03    M   A   com.apple.securityd.sos
+		 0xa853f    U   A   pt_PT (Apple)_OpenStep
+		 0x74903    M   A   com.apple.identityservicesd.nsxpc.auth
+		 0x6b303    M   A   com.apple.cloudphotod
+		 0x63303    M   D   com.apple.ctkbind-notification
+		 0x66b03    M   D   com.apple.neagent.lsproxy
+		 0x6a403    M   D   com.apple.usernotifications.delegate.com.apple.SoftwareUpdateNotification
+		 0x5b003    M   D   com.apple.private.alloy.facetime.multi-idswake
+		 0x5b903    M   D   com.apple.icloud.searchpartyuseragent.pairingmanager
+		 0x5d603    M   A   com.apple.coreservices.appleid.aps
+		 0x5d403    M   A   com.apple.sharing.handoff.advertising
+		 0x56b03    M   D   com.apple.passd.trusted-device-enrollment-info-provider
+		 0x55c03    M   D   com.apple.videoconference.camera
+		 0x4f803    M   D   com.apple.SecureBackupDaemon
+		 0x50703    M   D   com.apple.inputswitcher.running
+		 0x4d703    M   D   com.apple.diskspaced
+		 0x53203    M   D   com.apple.amp.library.devicecontents
+		 0x54a03    M   A   com.apple.metadata.mdwrite
+		 0x2fd07    M   A   com.apple.xpc.activity.unmanaged
+		 0x2e507    M   A   com.apple.CalendarAgent.proxy
+		 0x30007    M   D   com.apple.frontboard.workspace
+		 0x3df07    M   A   com.apple.usernoted.multi_client
+		 0x2f107    M   A   com.apple.usernoted.social_client
+		 0x2f607    M   D   com.apple.installerauthagent
+		 0xa853f    U   A   hi (Apple)_OpenStep
+		 0x9f88b    M   D   com.apple.Notes.datastore
+		 0x51007    M   D   com.apple.accessibility.mediaaccessibilityd
+		 0x6b903    M   D   com.apple.syncdefaultsd.push
+		 0x65e03    M   A   com.apple.ipodserver
+		 0x60803    M   D   com.apple.aps.gamed.CK
+		 0x58503    M   A   com.apple.SocialPushAgent
+		 0x58303    M   A   com.apple.sharing.classroom-transfer
+		 0x5eb03    M   D   com.apple.passd.bulletins
+		 0x5fa03    M   D   com.apple.speech.synthesis.ScreenReaderPort
+		 0x5fd03    M   A   com.apple.private.alloy.fmf-idswake
+		 0x45c03    M   A   com.apple.inputmethodkit.getxpcendpoint
+		 0x45d03    M   D   com.apple.AccessibilityVisualsAgent
+		 0x2f207    M   D   com.apple.accessibility.dfrhud
+		 0x35907    M   A   com.apple.CalendarAgent.store
+		 0x2e907    M   A   com.apple.RemoteDisplay
+		 0x47503    M   D   com.apple.usermanagerhelper
+		 0xa853f    U   A   en_JP (Apple)_OpenStep
+		 0xa853f    U   A   ar (Apple)_OpenStep
+		 0x6bc03    M   A   com.apple.tccd
+		 0x64403    M   A   com.apple.systemuiserver.ServiceProvider
+		 0x65f03    M   A   com.apple.SUISMessaging
+		 0x68203    M   D   com.apple.midiserver.ble
+		 0x69d03    M   D   com.apple.gamed.apsdev
+		 0x5d903    M   D   com.apple.printuitool.agent
+		 0x5da03    M   D   com.apple.universalaccessHUD
+		 0x5dc03    M   D   com.apple.ScreenReaderUIServer
+		 0x50203    M   D   com.apple.accessibility.AXVisualSupportAgent.running
+		 0x36e0b    M   D   com.apple.ap.adservicesd.statusconditionservice
+		 0x51603    M   A   com.apple.commcenter.xpc
+		 0x463bf    M   D   com.apple.corerecents.recentsd
+		 0x35b07    M   A   com.apple.ak.auth.xpc
+		 0x42a07    M   D   com.apple.siriknowledged.aps
+		 0x31607    M   D   com.apple.private.alloy.coreduet.sync-idswake
+		 0x44b03    M   A   com.apple.lsd.advertisingidentifiers
+		 0x44603    M   A   com.apple.secinitd
+		 0x43a03    M   A   com.apple.securityd.general
+		 0x43b03    M   D   com.apple.secd
+		 0xa853f    U   A   en_SG (Apple)_OpenStep
+		 0x6c303    M   D   com.apple.iCloudHelper
+		 0x73d03    M   D   com.apple.LocalAuthentication.DFR
+		 0x74203    M   D   com.apple.aps.SafariCloudHistoryPushAgent
+		 0x74b03    M   A   com.apple.identityservicesd.idquery.desktop.auth
+		 0x74a03    M   A   com.apple.identityservicesd.nsxpc
+		 0x75203    M   D   com.apple.transparencyd
+		 0x63103    M   D   com.apple.voicememod.aps
+		 0x67d03    M   D   com.apple.ap.adprivacyd.idmanager
+		 0x61203    M   D   com.apple.RemoteManagementAgent
+		 0x59b03    M   D   com.apple.mediastream.sharing
+		 0x57803    M   D   com.apple.amp.library.sharing
+		 0x5e303    M   D   com.apple.colorsync.useragent
+		 0x4e203    M   A   com.apple.dock.fullscreen
+		 0x4e303    M   A   com.apple.dock.server
+		 0x52403    M   D   com.apple.SafariBookmarksSyncAgent.Push
+		 0x4c103    M   D   com.apple.devicecheckd
+		 0x55203    M   D   com.apple.AOSPushRelay.push.dev
+		 0x30407    M   A   com.apple.ak.anisette.xpc
+		 0x36d07    M   D   com.apple.quicklook.ui.helper
+		 0x2e707    M   A   com.apple.usernoted.client
+		 0xa853f    U   A   tr (Apple)_OpenStep
+		 0xa853f    U   A   nl (Apple)_OpenStep
+		 0x4ff07    M   A   com.apple.ViewBridgeAuxiliary
+		 0x3151f    U   A   com.apple.SchedulerUpdateNotificationPort
+		 0x74303    M   D   com.apple.localizationswitcherd
+		 0x6b603    M   A   com.apple.identityservicesd.desktop.auth
+		 0x6b203    M   D   com.apple.icloudusernotification.agent
+		 0x67703    M   A   com.apple.nsurlstorage-cache
+		 0x69b03    M   D   com.apple.universalaccesscontrol.startup
+		 0x59903    M   D   com.apple.BTLEAudioController.xpc
+		 0x59003    M   A   com.apple.appstoreagent.xpc
+		 0x57d03    M   A   com.apple.tsm.uiserver
+		 0x57703    M   D   com.apple.STMUIHelper
+		 0x56d03    M   D   com.apple.passd.library
+		 0x57003    M   D   com.apple.passd.account
+		 0x4e403    M   A   com.apple.dock.sidecar
+		 0x54003    M   A   com.apple.WiFiVelocityAgent
+		 0x42807    M   D   com.apple.USBAgent
+		 0x36c07    M   A   com.apple.usernoted.dock
+		 0x4350b    M   D   com.apple.netauth.user.auth
+		 0x7771b    M   D   com.apple.CoreRoutine.helperservice
+		 0x6c803    M   D   com.apple.twitter.xpc
+		 0x6c603    M   D   com.apple.security.XPCKeychainSandboxCheck
+		 0x66503    M   A   com.apple.bird
+		 0x68e03    M   D   com.apple.DictationIM.feedback
+		 0x69003    M   D   com.apple.aps.remotemanagementd.http.apns-dev
+		 0x69203    M   D   com.apple.OSDUIHelper
+		 0x69703    M   D   com.apple.aps.askpermission
+		 0x5a303    M   D   com.apple.icloud.searchpartyuseragent.ownersession
+		 0x5c203    M   D   com.apple.DwellControl.running
+		 0x5db03    M   D   com.apple.KeyboardAccessAgent
+		 0x5e903    M   D   com.apple.usernotifications.delegate.com.apple.Passbook
+		 0x4c203    M   D   com.apple.imtransferservices.IMTransferAgent
+		 0x54103    M   D   com.apple.email.maild
+		 0x4b503    M   A   com.apple.accountsd.personaobserver
+		 0x4ac03    M   A   com.apple.FontWorker.ATS
+		 0x45f03    M   A   com.apple.fonts.atsbridge
+		 0x48513    M   A   com.apple.usernoted.prefs
+		 0x36807    M   D   com.apple.fileprovider.extension.push.development
+		 0x3fd07    M   A   com.apple.AirPlayUIAgent.xpc
+		 0x2e807    M   A   com.apple.private.alloy.nearby-idswake
+		 0x44e03    M   A   com.apple.CoreAuthentication.agent
+		 0x44a03    M   A   com.apple.lsd.open
+		 0x43c03    M   A   com.apple.securityd.xpc
+		 0xa853f    U   A   de (Apple)_OpenStep
+		 0x73103    M   D   com.apple.weibo.xpc
+		 0x73903    M   D   com.apple.package-script-service
+		 0x51107    M   D   com.apple.accounts.dom
+		 0x6bd03    M   D   com.apple.replayd
+		 0x6ba03    M   D   com.apple.syncdefaultsd
+		 0x74e03    M   A   com.apple.photos.cloud.pushnotification
+		 0x74d03    M   A   com.apple.photos.cloud.datarepair
+		 0x64103    M   A   com.apple.bird.token
+		 0x68303    M   D   com.apple.midiserver
+		 0x6a203    M   D   com.apple.parsec-fbf
+		 0x5aa03    M   D   com.apple.telephonyutilities.callservicesdaemon.callhistorymanager
+		 0x58b03    M   D   com.apple.remindd
+		 0x5e603    M   D   com.apple.passd.usage
+		 0x4fe03    M   D   com.apple.accessibility.AXVisualSupportAgent
+		 0x51503    M   D   com.apple.commcenter.atcs.xpc
+		 0x55003    M   D   com.apple.audio.AudioComponentRegistrar
+		 0x31007    M   A   com.apple.usernoted.daemon_client
+		 0x46003    M   D   com.apple.mdworker.mail
+		 0x46403    M   A   com.apple.CoreAuthentication.agent.libxpc
+		 0x47b03    M   A   com.apple.securityd.ckks
+		 0xa853f    U   A   en_GB (Apple)_OpenStep
+		 0xa853f    U   A   ars (Apple)_OpenStep
+		 0x6b803    M   D   com.apple.kvsd
+		 0x64603    M   A   com.apple.systemuiserver.screencapture
+		 0x63203    M   D   com.apple.neagent
+		 0x68a03    M   D   com.apple.universalaccessAuthWarn
+		 0x60d03    M   D   com.apple.UNCUserNotificationAgent
+		 0x69f03    M   D   com.apple.gamed.xpc
+		 0x5ad03    M   D   com.apple.telephonyutilities.callservicesdaemon.conversationmanager
+		 0x52c03    M   A   com.apple.photolibraryd.cacheDelete
+		 0x4c003    M   D   com.apple.private.alloy.pcskey.sync-idswake
+		 0x45203    M   D   com.apple.amp.artworkd
+		 0x36b07    M   D   com.apple.fileprovider.extension.push
+		 0xa853f    U   A   en_CN (Apple)_OpenStep
+		 0x64703    M   D   com.apple.rcd.media.key.events
+		 0x58e03    M   D   com.apple.aps.remindd.dataaccess.demo
+		 0x5e103    M   D   com.apple.usernotifications.delegate.com.apple.battery-monitor
+		 0x56e03    M   D   com.apple.passd.assertions
+		 0x5fe03    M   A   com.apple.icloud.fmfd.aps
+		 0x55903    M   A   com.apple.dmd.emergency-mode
+		 0x4fc03    M   D   com.apple.window_proxies
+		 0x51d03    M   A   com.apple.KeyboardServices.TextReplacementService
+		 0x54b03    M   D   com.apple.cfnetwork.AuthBrokerAgent
+		 0x45903    M   D   com.apple.routined.store.cache
+		 0x45503    M   D   com.apple.security.agent
+		 0x45e03    M   D   com.apple.alf.useragent
+		 0x36f07    M   A   com.apple.usernotifications.usernotificationservice
+		 0x37107    M   D   com.apple.mbfloagent
+		 0x75403    M   D   com.apple.homed.xpc
+		 0x65503    M   A   com.apple.coreservices.lsuseractivitymanager.xpc
+		 0x62903    M   D   com.apple.storeagent.storekit
+		 0x61803    M   A   com.apple.spotlight.SearchAgent
+		 0x69403    M   D   com.apple.contacts.donation.maintenance
+		 0x69903    M   A   com.apple.icdd
+		 0x5ac03    M   D   com.apple.telephonyutilities.callservicesdaemon.callstatecontroller
+		 0x5a003    M   D   com.apple.mediastream.sharing-nowake
+		 0x58c03    M   D   com.apple.aps.remindd.dataaccess
+		 0x58603    M   A   com.apple.SocialPushAccountController
+		 0x5e803    M   D   com.apple.passd.payment-continuity
+		 0x56103    M   D   com.apple.ServicesTouchBarService
+		 0x55803    M   A   com.apple.dmd
+		 0x4f103    M   D   com.apple.VoiceOver.startup
+		 0x4c403    M   D   com.apple.PIPAgent
+		 0x47007    M   D   com.apple.SafariNotificationAgent
+		 0x31b0f    M   D   com.apple.DiskArbitration.DiskArbitrationAgent
+		 0x3e007    M   D   com.apple.assistant_service
+		 0x31807    M   A   com.apple.CalendarAgent
+		 0x42507    M   A   com.apple.usernoted.test
+		 0x3e307    M   A   com.apple.madrid-idswake
+		 0x36007    M   D   com.apple.findmymacmessenger
+		 0x48b0b    M   D   com.apple.icloud.findmydeviced.findmydevice-user-agent
+		 0x46903    M   A   com.apple.security.translocation
+		 0x44803    M   D   com.apple.cvmsCompAgent_x86_64_1
+		 0x47403    M   D   com.apple.cvmsCompAgent3425AMD_x86_64_1
+		 0x47803    M   D   com.apple.TrustEvaluationAgent
+		 0xa853f    U   A   en_AU (Apple)_OpenStep
+		 0x74603    M   A   com.apple.sidecar-relay
+		 0x75103    M   A   com.apple.quicklook.ThumbnailsAgent
+		 0x69103    M   D   com.apple.aps.remotemanagementd.http.apns-prod
+		 0x69503    M   D   com.apple.ATS.FontValidatorConduit
+		 0x5b503    M   D   com.apple.private.alloy.phone.auth-idswake
+		 0x5bf03    M   D   com.apple.mediastream.mstreamd
+		 0x59e03    M   D   com.apple.mediastream.mstreamd.sharing.push-dev
+		 0x5c403    M   D   com.apple.screencaptureui
+		 0x58f03    M   D   com.apple.printtool.agent
+		 0x58703    M   A   com.apple.corespeech.voicetriggerservice
+		 0x50a03    M   A   com.apple.nsurlsessiond-cachedelete
+		 0x52003    M   A   com.apple.cmfsyncagent.auth
+		 0x52e03    M   A   com.apple.notificationcenterui.tcc
+		 0x45b03    M   A   com.apple.inputmethodkit.launchagent
+		 0x36907    M   D   com.apple.webinspector.debugger
+		 0x3f107    M   D   com.apple.FileProvider
+		 0x91be3    M   D   com.apple.mdworker.bundles
+		 0x47903    M   D   com.apple.metadata.mdbulkimport
+		 0xa853f    U   A   el (Apple)_OpenStep
+		 0x8270b    U   A   com.apple.Terminal.ServiceProvider
+		 0x57e0f    M   D   com.apple.DeviceSupportUpdater
+		 0x74003    M   D   com.apple.aps.kvsd
+		 0x65c03    M   D   com.apple.CallHistoryPluginHelper
+		 0x63a03    M   A   com.apple.cloudd
+		 0x66f03    M   D   com.apple.studentd
+		 0x61e03    M   D   com.apple.installd.user
+		 0x68c03    M   A   com.apple.spotlight.IndexDelegateAgent
+		 0x61003    M   D   com.apple.usernotifications.delegate.com.apple.askpermission.notifications
+		 0x60303    M   A   com.apple.SoftwareUpdateNotificationManagerService
+		 0x5ba03    M   A   com.apple.wifi.WiFiAgent
+		 0x5d703    M   A   com.apple.AutoUnlock.AuthenticationHintsProvider
+		 0x58203    M   A   com.apple.sharingd
+		 0x50b03    M   D   com.apple.Safari.SafeBrowsing.Service
+		 0x4c303    M   D   com.apple.amp.devicesd
+		 0x45803    M   D   com.apple.routined.internal
+		 0x2ee07    M   D   PurpleSystemAppPort
+		 0x46f03    M   D   com.apple.metadata.mdflagwriter
+		 0x43703    M   D   com.apple.mdworker.single
+	}
+
+	task-special ports = {
+			 0x2e303 4       bootstrap  com.apple.xpc.launchd.user.domain.501.100006.Aqua
+			 0x15503 9          access  com.apple.taskgated
+	}
+
+	disabled services = {
+{
+	"com.apple.TMHelperAgent.SetupOffer" => false
+	"com.apple.familycontrols.useragent" => true
+	"com.apple.familynotification.agent" => true
+	"com.apple.ManagedClientAgent.enrollagent" => true
+	"com.apple.ScreenTimeAgent" => true
+	"com.apple.diagnostics_agent" => true
+	"com.apple.Siri.agent" => true
+	"com.apple.SiriTTSTrainingAgent" => true
+	"com.apple.IMLoggingAgent" => true
+	"com.apple.IMDPersistenceAgent" => true
+	"org.w0lf.cDockHelper" => false
+	"com.apple.FolderActionsDispatcher" => true
+	"com.apple.parsecd" => true
+	"com.apple.spotlightknowledged" => true
+	"com.apple.suggestd" => true
+	"com.apple.photoanalysisd" => true
+	"com.apple.familycircled" => true
+	"org.xquartz.startx" => true
+	"com.apple.appleseed.seedusaged.postinstall" => true
+	"com.apple.knowledge-agent" => true
+	"com.apple.assistantd" => true
+	"com.apple.mediaanalysisd" => true
+	"com.apple.ScriptMenuApp" => true
+	"com.apple.SiriNCService" => true
+	"com.apple.soagent" => true
+}
+	}
+
+	properties = {
+		shutting down = 0
+		slain = 0
+		uncorked = 0
+		deactivated = 0
+		inactive = 0
+		in initial on-demand = 0
+		audit check done = 0
+		bootcache hack = 0
+		cocooning = 0
+		gui = 1
+		gui login = 1
+		exec hack = 0
+	}
+}
+
+===== PROCESS METADATA =====
+    1     0     0 Thu Jul 30 14:17:47 2026     /sbin/launchd
+   94     1     0 Thu Jul 30 14:18:26 2026     /usr/sbin/syslogd
+   95     1     0 Thu Jul 30 14:18:26 2026     /usr/libexec/UserEventAgent (System)
+   97     1     0 Thu Jul 30 14:18:26 2026     /Library/PrivilegedHelperTools/com.crystalidea.macsfancontrol.smcwrite
+   99     1     0 Thu Jul 30 14:18:26 2026     /System/Library/PrivateFrameworks/Uninstall.framework/Resources/uninstalld
+  100     1     0 Thu Jul 30 14:18:26 2026     /usr/libexec/kextd
+  101     1     0 Thu Jul 30 14:18:26 2026     /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd
+  105     1     0 Thu Jul 30 14:18:26 2026     /usr/sbin/systemstats --daemon
+  106     1     0 Thu Jul 30 14:18:26 2026     /usr/libexec/configd
+  108     1     0 Thu Jul 30 14:18:26 2026     /System/Library/CoreServices/powerd.bundle/powerd
+  112     1     0 Thu Jul 30 14:18:26 2026     /usr/libexec/logd
+  116     1     0 Thu Jul 30 14:18:26 2026     /usr/libexec/watchdogd
+  119     1     0 Thu Jul 30 14:18:26 2026     /usr/libexec/warmd
+  120     1     0 Thu Jul 30 14:18:26 2026     /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Support/mds
+  122     1     0 Thu Jul 30 14:18:26 2026     /usr/libexec/diskarbitrationd
+  128     1     0 Thu Jul 30 14:18:26 2026     /usr/libexec/opendirectoryd
+  129     1     0 Thu Jul 30 14:18:26 2026     /System/Library/PrivateFrameworks/ApplePushService.framework/apsd
+  130     1     0 Thu Jul 30 14:18:26 2026     /System/Library/CoreServices/launchservicesd
+  131     1   266 Thu Jul 30 14:18:26 2026     /usr/libexec/timed
+  132     1   213 Thu Jul 30 14:18:26 2026     /System/Library/PrivateFrameworks/MobileDevice.framework/Versions/A/Resources/usbmuxd -launchd
+  133     1     0 Thu Jul 30 14:18:26 2026     /usr/sbin/securityd -i
+  134     1     0 Thu Jul 30 14:18:26 2026     auditd -l
+  138     1     0 Thu Jul 30 14:18:26 2026     autofsd
+  139     1   244 Thu Jul 30 14:18:26 2026     /usr/libexec/displaypolicyd -k 1
+  140     1     0 Thu Jul 30 14:18:26 2026     /usr/libexec/dasd
+  144     1     0 Thu Jul 30 14:18:26 2026     /System/Library/CoreServices/logind
+  145     1     0 Thu Jul 30 14:18:26 2026     /System/Library/PrivateFrameworks/GenerationalStorage.framework/Versions/A/Support/revisiond
+  146     1     0 Thu Jul 30 14:18:26 2026     /usr/sbin/KernelEventAgent
+  148     1     0 Thu Jul 30 14:18:26 2026     /usr/sbin/bluetoothd
+  149     1   261 Thu Jul 30 14:18:26 2026     /usr/libexec/hidd
+  151     1     0 Thu Jul 30 14:18:26 2026     /usr/libexec/corebrightnessd --launchd
+  152     1     0 Thu Jul 30 14:18:26 2026     /usr/libexec/AirPlayXPCHelper
+  154     1     0 Thu Jul 30 14:18:26 2026     /usr/sbin/notifyd
+  155     1   241 Thu Jul 30 14:18:26 2026     /usr/sbin/distnoted daemon
+  157     1     0 Thu Jul 30 14:18:26 2026     /usr/sbin/cfprefsd daemon
+  158     1     0 Thu Jul 30 14:18:26 2026     /System/Library/CoreServices/coreservicesd
+  159     1     0 Thu Jul 30 14:18:26 2026     /usr/libexec/syspolicyd
+  161     1   501 Thu Jul 30 14:18:26 2026     /System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow console
+  166     1     0 Thu Jul 30 14:18:26 2026     /System/Library/Frameworks/Security.framework/Versions/A/XPCServices/authd.xpc/Contents/MacOS/authd
+  171     1   202 Thu Jul 30 14:18:27 2026     /usr/sbin/coreaudiod
+  192     1     0 Thu Jul 30 14:18:27 2026     /System/Library/PrivateFrameworks/CoreDuetContext.framework/Resources/contextstored
+  193     1     0 Thu Jul 30 14:18:27 2026     /usr/libexec/lsd runAsRoot
+  197     1     0 Thu Jul 30 14:18:27 2026     /usr/libexec/searchpartyd
+  202     1    65 Thu Jul 30 14:18:28 2026     /usr/sbin/mDNSResponder
+  213     1     0 Thu Jul 30 14:18:28 2026     /usr/sbin/mDNSResponderHelper
+  232     1    88 Thu Jul 30 14:18:28 2026     /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+  234     1    24 Thu Jul 30 14:18:28 2026     /usr/libexec/symptomsd
+  235     1     0 Thu Jul 30 14:18:29 2026     /usr/libexec/airportd
+  245     1     0 Thu Jul 30 14:18:30 2026     /usr/libexec/runningboardd
+  252     1   242 Thu Jul 30 14:18:31 2026     /usr/libexec/nsurlsessiond --privileged
+  258     1     0 Thu Jul 30 14:18:31 2026     /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mds_stores
+  259     1   270 Thu Jul 30 14:18:32 2026     /System/Library/DriverExtensions/AppleUserHIDDrivers.dext/AppleUserHIDDrivers com.apple.driverkit.AppleUserHIDEventDriver 0x100000422
+  262     1     0 Thu Jul 30 14:18:33 2026     /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/CVMServer
+  266     1   205 Thu Jul 30 14:18:33 2026     /usr/libexec/locationd
+  267     1     0 Thu Jul 30 14:18:33 2026     /usr/libexec/apfsd
+  270     1   262 Thu Jul 30 14:18:33 2026     /System/Library/Frameworks/CoreMediaIO.framework/Resources/VDC.plugin/Contents/Resources/VDCAssistant
+  271     1    55 Thu Jul 30 14:18:33 2026     /System/Library/CoreServices/appleeventsd --server
+  291     1     0 Thu Jul 30 14:18:36 2026     /usr/libexec/securityd_service
+  293     1   501 Thu Jul 30 14:18:38 2026     /usr/libexec/UserEventAgent (Aqua)
+  296     1   501 Thu Jul 30 14:18:38 2026     /usr/sbin/distnoted agent
+  298     1   501 Thu Jul 30 14:18:38 2026     /usr/libexec/lsd
+  301     1   501 Thu Jul 30 14:18:38 2026     /System/Library/CoreServices/Dock.app/Contents/MacOS/Dock
+  304     1   501 Thu Jul 30 14:18:38 2026     /System/Library/CoreServices/SystemUIServer.app/Contents/MacOS/SystemUIServer
+  312     1   501 Thu Jul 30 14:18:38 2026     /System/Library/Frameworks/Accounts.framework/Versions/A/Support/accountsd
+  313     1   501 Thu Jul 30 14:18:39 2026     /System/Library/CoreServices/backgroundtaskmanagementagent
+  314     1   501 Thu Jul 30 14:18:39 2026     /System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd
+  316     1   501 Thu Jul 30 14:18:39 2026     /usr/libexec/nsurlsessiond
+  320     1   501 Thu Jul 30 14:18:39 2026     /System/Library/CoreServices/sharedfilelistd
+  321     1   501 Thu Jul 30 14:18:39 2026     /System/Library/PrivateFrameworks/AMPDevices.framework/Versions/A/Support/AMPDeviceDiscoveryAgent --launchd
+  323     1   501 Thu Jul 30 14:18:39 2026     /System/Library/Frameworks/ApplicationServices.framework/Frameworks/ATS.framework/Support/fontd
+  325     1   501 Thu Jul 30 14:18:39 2026     /usr/libexec/pboard
+  329     1   501 Thu Jul 30 14:18:40 2026     /usr/libexec/rapportd
+  331     1   501 Thu Jul 30 14:18:40 2026     /System/Library/CoreServices/Spotlight.app/Contents/MacOS/Spotlight
+  332     1   501 Thu Jul 30 14:18:40 2026     /System/Library/PrivateFrameworks/IDS.framework/identityservicesd.app/Contents/MacOS/identityservicesd
+  334     1   501 Thu Jul 30 14:18:41 2026     /usr/sbin/usernoted
+  336     1   501 Thu Jul 30 14:18:41 2026     /System/Library/CoreServices/lockoutagent
+  342     1   501 Thu Jul 30 14:18:41 2026     /System/Library/CoreServices/NotificationCenter.app/Contents/MacOS/NotificationCenter
+  343     1   501 Thu Jul 30 14:18:41 2026     /System/Library/CoreServices/WiFiAgent.app/Contents/MacOS/WiFiAgent
+  344     1     0 Thu Jul 30 14:18:41 2026     /System/Library/PrivateFrameworks/AmbientDisplay.framework/Versions/A/XPCServices/com.apple.AmbientDisplayAgent.xpc/Contents/MacOS/com.apple.AmbientDisplayAgent
+  349     1   501 Thu Jul 30 14:18:42 2026     /System/Library/PrivateFrameworks/IMCore.framework/imagent.app/Contents/MacOS/imagent
+  352     1   501 Thu Jul 30 14:18:42 2026     /System/Library/Frameworks/CryptoTokenKit.framework/ctkd -tw
+  369     1   501 Thu Jul 30 14:18:46 2026     /System/Library/PrivateFrameworks/UserActivity.framework/Agents/useractivityd
+  370     1   501 Thu Jul 30 14:18:46 2026     /System/Library/PrivateFrameworks/MediaRemote.framework/Support/mediaremoteagent
+  373     1   501 Thu Jul 30 14:18:46 2026     /usr/libexec/sharingd
+  384     1   501 Thu Jul 30 14:18:53 2026     /System/Library/PrivateFrameworks/CommerceKit.framework/Versions/A/Resources/commerce
+  387     1   501 Thu Jul 30 14:18:53 2026     /System/Library/PrivateFrameworks/CoreSpeech.framework/corespeechd
+  389     1   501 Thu Jul 30 14:18:53 2026     /System/Library/CoreServices/SocialPushAgent.app/Contents/MacOS/SocialPushAgent
+  391     1   501 Thu Jul 30 14:18:53 2026     /System/Library/Frameworks/InputMethodKit.framework/Resources/imklaunchagent
+  392     1   501 Thu Jul 30 14:18:53 2026     /System/Library/Image Capture/Support/icdd
+  394     1   501 Thu Jul 30 14:18:53 2026     /System/Library/CoreServices/AirPlayUIAgent.app/Contents/MacOS/AirPlayUIAgent --launchd
+  395     1   501 Thu Jul 30 14:18:53 2026     /System/Library/CoreServices/cloudpaird
+  400     1     0 Thu Jul 30 14:18:53 2026     /System/Library/Frameworks/CryptoTokenKit.framework/ctkahp.bundle/Contents/MacOS/ctkahp -d
+  402     1   501 Thu Jul 30 14:18:54 2026     /Applications/Macs Fan Control.app/Contents/MacOS/Macs Fan Control
+  403     1   501 Thu Jul 30 14:18:54 2026     /System/Library/Frameworks/CryptoTokenKit.framework/ctkahp.bundle/Contents/MacOS/ctkahp
+  406     1   501 Thu Jul 30 14:18:54 2026     /System/Library/Input Methods/PressAndHold.app/Contents/PlugIns/PAH_Extension.appex/Contents/MacOS/PAH_Extension
+  408     1   501 Thu Jul 30 14:18:55 2026     /System/Library/PrivateFrameworks/CommerceKit.framework/Versions/A/Resources/storeaccountd
+  418     1   501 Thu Jul 30 14:19:01 2026     /System/Library/CoreServices/Dock.app/Contents/XPCServices/com.apple.dock.extra.xpc/Contents/MacOS/com.apple.dock.extra
+  431     1   501 Thu Jul 30 14:19:10 2026     /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd
+  449   105     0 Thu Jul 30 14:19:26 2026     /usr/sbin/systemstats --logger-helper /private/var/db/systemstats
+  454     1   501 Thu Jul 30 14:19:27 2026     /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ATS.framework/Versions/A/Support/fontworker
+  482     1     0 Thu Jul 30 14:19:58 2026     /usr/libexec/taskgated
+  612     1   501 Thu Jul 30 14:20:36 2026     /Applications/Firefox.app/Contents/MacOS/firefox -foreground
+  614     1   501 Thu Jul 30 14:20:39 2026     /Applications/Firefox.app/Contents/MacOS/crashhelper 612 gecko-crash-server-pipe.612 /private/var/folders/p2/xcjq5bzn3zggjjjhr00yxbh00000gn/T/TemporaryItems/ org.mozilla.crashhelper.14871468335842126046
+  615   612   501 Thu Jul 30 14:20:40 2026     /Applications/Firefox.app/Contents/MacOS/plugin-container.app/Contents/MacOS/plugin-container -parentBuildID 20260727124451 -prefsHandle 0:36766 -prefMapHandle 1:293084 -sbStartup -sbAppPath /Applications/Firefox.app -ipcHandle 0 -initialChannelId {2a5f78e3-fbcc-4fe3-b855-237bb0fa4701} -parentPid 612 -crashHelperPid 614 -crashHelperSend 2 -crashHelperRecv 0 -crashReporter gecko-crash-server-pipe.612 -appDir /Applications/Firefox.app/Contents/Resources/browser -profile /Users/tester/Library/Application Support/Firefox/Profiles/m7jisifd.default-release org.mozilla.machname.547115680 1 socket
+  616   612   501 Thu Jul 30 14:20:44 2026     /Applications/Firefox.app/Contents/MacOS/gpu-helper.app/Contents/MacOS/Firefox GPU Helper -parentBuildID 20260727124451 -prefsHandle 0:36815 -prefMapHandle 1:293084 -sbStartup -sbAppPath /Applications/Firefox.app -ipcHandle 0 -initialChannelId {fe653b32-61b5-4306-8dee-2dcef36b0637} -parentPid 612 -crashHelperPid 614 -crashHelperSend 2 -crashHelperRecv 0 -crashReporter gecko-crash-server-pipe.612 -appDir /Applications/Firefox.app/Contents/Resources/browser -profile /Users/tester/Library/Application Support/Firefox/Profiles/m7jisifd.default-release org.mozilla.machname.670004282 2 gpu
+  620   612   501 Thu Jul 30 14:20:46 2026     /Applications/Firefox.app/Contents/MacOS/plugin-container.app/Contents/MacOS/plugin-container -isForBrowser -prefsHandle 0:37022 -prefMapHandle 1:293084 -jsInitHandle 2:156236 -sbStartup -sbAppPath /Applications/Firefox.app -sbLevel 3 -parentBuildID 20260727124451 -ipcHandle 0 -initialChannelId {110aa44a-8382-4fd6-aebe-8936d7b90d17} -parentPid 612 -crashHelperPid 614 -crashHelperSend 3 -crashHelperRecv 0 -crashReporter gecko-crash-server-pipe.612 -greomni /Applications/Firefox.app/Contents/Resources/omni.ja -appomni /Applications/Firefox.app/Contents/Resources/browser/omni.ja -appDir /Applications/Firefox.app/Contents/Resources/browser -profile /Users/tester/Library/Application Support/Firefox/Profiles/m7jisifd.default-release org.mozilla.machname.2140606276 3 tab
+  621   612   501 Thu Jul 30 14:20:46 2026     /Applications/Firefox.app/Contents/MacOS/plugin-container.app/Contents/MacOS/plugin-container -parentBuildID 20260727124451 -prefsHandle 0:37022 -prefMapHandle 1:293084 -sbStartup -sbAppPath /Applications/Firefox.app -ipcHandle 0 -initialChannelId {21fed23e-9f60-4fee-8bea-a32964805df5} -parentPid 612 -crashHelperPid 614 -crashHelperSend 2 -crashHelperRecv 0 -crashReporter gecko-crash-server-pipe.612 -appDir /Applications/Firefox.app/Contents/Resources/browser -profile /Users/tester/Library/Application Support/Firefox/Profiles/m7jisifd.default-release org.mozilla.machname.1902441374 4 rdd
+  631   612   501 Thu Jul 30 14:21:06 2026     (plugin-container)
+  635   612   501 Thu Jul 30 14:21:47 2026     /Applications/Firefox.app/Contents/MacOS/plugin-container.app/Contents/MacOS/plugin-container -isForBrowser -prefsHandle 0:53908 -prefMapHandle 1:293084 -jsInitHandle 2:156236 -sbStartup -sbAppPath /Applications/Firefox.app -sbLevel 3 -parentBuildID 20260727124451 -ipcHandle 0 -initialChannelId {5d059dd0-16be-418b-8637-868890100663} -parentPid 612 -crashHelperPid 614 -crashHelperSend 3 -crashHelperRecv 0 -crashReporter gecko-crash-server-pipe.612 -greomni /Applications/Firefox.app/Contents/Resources/omni.ja -appomni /Applications/Firefox.app/Contents/Resources/browser/omni.ja -appDir /Applications/Firefox.app/Contents/Resources/browser -profile /Users/tester/Library/Application Support/Firefox/Profiles/m7jisifd.default-release org.mozilla.machname.896572990 10 tab
+  659   612   501 Thu Jul 30 14:23:43 2026     (plugin-container)
+  660   612   501 Thu Jul 30 14:24:17 2026     (plugin-container)
+  721   612   501 Thu Jul 30 14:27:11 2026     (plugin-container)
+  727     1   501 Thu Jul 30 14:27:31 2026     /System/Library/Frameworks/ApplicationServices.framework/Frameworks/SpeechSynthesis.framework/Resources/com.apple.speech.speechsynthesisd
+  729   612   501 Thu Jul 30 14:27:43 2026     (plugin-container)
+  736   612   501 Thu Jul 30 14:30:57 2026     /Applications/Firefox.app/Contents/MacOS/plugin-container.app/Contents/MacOS/plugin-container -parentBuildID 20260727124451 -sandboxingKind 1 -prefsHandle 0:53987 -prefMapHandle 1:293084 -sbStartup -sbAppPath /Applications/Firefox.app -ipcHandle 0 -initialChannelId {ea4522b9-64aa-4381-877f-287801b3e877} -parentPid 612 -crashHelperPid 614 -crashHelperSend 2 -crashHelperRecv 0 -crashReporter gecko-crash-server-pipe.612 -appDir /Applications/Firefox.app/Contents/Resources/browser -profile /Users/tester/Library/Application Support/Firefox/Profiles/m7jisifd.default-release org.mozilla.machname.2027991204 23 utility
+  737   612   501 Thu Jul 30 14:31:09 2026     /Applications/Firefox.app/Contents/MacOS/plugin-container.app/Contents/MacOS/plugin-container -parentBuildID 20260727124451 -sandboxingKind 0 -prefsHandle 0:53987 -prefMapHandle 1:293084 -sbStartup -sbAppPath /Applications/Firefox.app -ipcHandle 0 -initialChannelId {36b54fd4-ab88-414c-98db-05b413c79932} -parentPid 612 -crashHelperPid 614 -crashHelperSend 2 -crashHelperRecv 0 -crashReporter gecko-crash-server-pipe.612 -appDir /Applications/Firefox.app/Contents/Resources/browser -profile /Users/tester/Library/Application Support/Firefox/Profiles/m7jisifd.default-release org.mozilla.machname.1887908707 24 utility
+  792   612   501 Thu Jul 30 14:50:46 2026     (plugin-container)
+  794   612   501 Thu Jul 30 14:50:58 2026     (plugin-container)
+  797   612   501 Thu Jul 30 14:51:10 2026     (plugin-container)
+  807   612   501 Thu Jul 30 14:51:21 2026     (plugin-container)
+  811   612   501 Thu Jul 30 14:51:54 2026     (plugin-container)
+  812   612   501 Thu Jul 30 14:51:57 2026     (plugin-container)
+  813   612   501 Thu Jul 30 14:52:02 2026     (plugin-container)
+  816   612   501 Thu Jul 30 14:52:24 2026     (plugin-container)
+  817   612   501 Thu Jul 30 14:52:37 2026     (plugin-container)
+  818   612   501 Thu Jul 30 14:52:48 2026     (plugin-container)
+  819   612   501 Thu Jul 30 14:53:06 2026     (plugin-container)
+  820   612   501 Thu Jul 30 14:53:06 2026     (plugin-container)
+  830   612   501 Thu Jul 30 14:56:01 2026     (plugin-container)
+  844   612   501 Thu Jul 30 14:58:08 2026     /Applications/Firefox.app/Contents/MacOS/plugin-container.app/Contents/MacOS/plugin-container -isForBrowser -prefsHandle 0:49816 -prefMapHandle 1:293084 -jsInitHandle 2:156236 -sbStartup -sbAppPath /Applications/Firefox.app -sbLevel 3 -parentBuildID 20260727124451 -ipcHandle 0 -initialChannelId {44fa97b4-b2a6-4437-8033-8b352028c222} -parentPid 612 -crashHelperPid 614 -crashHelperSend 3 -crashHelperRecv 0 -crashReporter gecko-crash-server-pipe.612 -greomni /Applications/Firefox.app/Contents/Resources/omni.ja -appomni /Applications/Firefox.app/Contents/Resources/browser/omni.ja -appDir /Applications/Firefox.app/Contents/Resources/browser -profile /Users/tester/Library/Application Support/Firefox/Profiles/m7jisifd.default-release org.mozilla.machname.1451900248 63 tab
+  906   612   501 Thu Jul 30 15:15:01 2026     (plugin-container)
+  920   612   501 Thu Jul 30 15:16:17 2026     (plugin-container)
+  975   612   501 Thu Jul 30 15:28:33 2026     (plugin-container)
+  979   612   501 Thu Jul 30 15:30:10 2026     (plugin-container)
+  998     1     0 Thu Jul 30 15:38:34 2026     /System/Library/CoreServices/CrashReporterSupportHelper server-init
+ 1122     1     0 Thu Jul 30 16:20:25 2026     /System/Library/PrivateFrameworks/MediaRemote.framework/Support/mediaremoted
+ 1254   612   501 Fri Jul 31 09:23:33 2026     (plugin-container)
+ 1637     1   501 Fri Jul 31 10:16:22 2026     /System/Library/PrivateFrameworks/GeoServices.framework/Versions/A/XPCServices/com.apple.geod.xpc/Contents/MacOS/com.apple.geod
+ 1690     1   501 Fri Jul 31 10:47:30 2026     /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdwrite
+ 1712     1     0 Fri Jul 31 10:56:27 2026     /usr/libexec/PerfPowerServices
+ 1733     1   501 Fri Jul 31 11:05:44 2026     /System/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal
+ 1755     1   501 Fri Jul 31 11:06:27 2026     /System/Library/PrivateFrameworks/CommerceKit.framework/Versions/A/Resources/storedownloadd
+ 3319     1   501 Fri Jul 31 11:16:36 2026     /usr/libexec/fmfd
+ 3993     1   501 Fri Jul 31 11:41:51 2026     /System/Library/PrivateFrameworks/IMDPersistence.framework/IMAutomaticHistoryDeletionAgent.app/Contents/MacOS/IMAutomaticHistoryDeletionAgent
+14426   612   501 Fri Jul 31 16:53:48 2026     (plugin-container)
+14438   612   501 Fri Jul 31 16:54:15 2026     (plugin-container)
+16174   612   501 Fri Jul 31 16:57:25 2026     (plugin-container)
+19800   612   501 Fri Jul 31 21:21:00 2026     (plugin-container)
+26598   612   501 Fri Jul 31 23:02:35 2026     /Applications/Firefox.app/Contents/MacOS/plugin-container.app/Contents/MacOS/plugin-container -isForBrowser -prefsHandle 0:49945 -prefMapHandle 1:293084 -jsInitHandle 2:156236 -sbStartup -sbAppPath /Applications/Firefox.app -sbLevel 3 -parentBuildID 20260727124451 -ipcHandle 0 -initialChannelId {8b3cae84-6feb-4383-a32a-2a62b7839d00} -parentPid 612 -crashHelperPid 614 -crashHelperSend 3 -crashHelperRecv 0 -crashReporter gecko-crash-server-pipe.612 -greomni /Applications/Firefox.app/Contents/Resources/omni.ja -appomni /Applications/Firefox.app/Contents/Resources/browser/omni.ja -appDir /Applications/Firefox.app/Contents/Resources/browser -profile /Users/tester/Library/Application Support/Firefox/Profiles/m7jisifd.default-release org.mozilla.machname.231393564 148 tab
+26928   612   501 Fri Jul 31 23:05:19 2026     (plugin-container)
+27942     1   501 Sat Aug  1 02:12:39 2026     /System/Library/PrivateFrameworks/SoftwareUpdate.framework/Resources/SoftwareUpdateNotificationManager.app/Contents/MacOS/SoftwareUpdateNotificationManager
+27943     1     0 Sat Aug  1 02:12:40 2026     /usr/libexec/trustd
+27970     1   501 Sat Aug  1 02:12:52 2026     /System/Library/Frameworks/CoreTelephony.framework/Support/CommCenter -L
+28215     1   501 Sat Aug  1 03:11:27 2026     /System/Library/CoreServices/TextInputMenuAgent.app/Contents/MacOS/TextInputMenuAgent
+28223     1   501 Sat Aug  1 03:12:06 2026     /System/Library/PrivateFrameworks/CoreDuetContext.framework/Resources/ContextStoreAgent
+28224     1   501 Sat Aug  1 03:12:10 2026     /System/Library/PrivateFrameworks/ViewBridge.framework/Versions/A/XPCServices/ViewBridgeAuxiliary.xpc/Contents/MacOS/ViewBridgeAuxiliary
+28225     1     0 Sat Aug  1 03:12:10 2026     /System/Library/Frameworks/Security.framework/Versions/A/XPCServices/com.apple.CodeSigningHelper.xpc/Contents/MacOS/com.apple.CodeSigningHelper
+28226     1     0 Sat Aug  1 03:12:10 2026     /System/Library/PrivateFrameworks/TCC.framework/Resources/tccd system
+28227     1     0 Sat Aug  1 03:12:10 2026     /usr/libexec/sandboxd
+28228     1     0 Sat Aug  1 03:12:11 2026     /usr/libexec/mobileassetd
+28229     1     0 Sat Aug  1 03:12:12 2026     /usr/libexec/keybagd -t 15
+28232     1     0 Sat Aug  1 03:12:17 2026     /usr/sbin/WirelessRadioManagerd
+28233     1     0 Sat Aug  1 03:12:18 2026     /usr/libexec/coreduetd
+28244     1     0 Sat Aug  1 03:16:04 2026     /usr/libexec/sysmond
+28245     1   501 Sat Aug  1 03:16:06 2026     /usr/libexec/SidecarRelay
+28246     1   501 Sat Aug  1 03:16:06 2026     /usr/sbin/cfprefsd agent
+28253     1   501 Sat Aug  1 03:17:56 2026     /System/Library/PrivateFrameworks/CalendarAgent.framework/Executables/CalendarAgent
+28254     1   501 Sat Aug  1 03:17:57 2026     /usr/libexec/secinitd
+28255     1   501 Sat Aug  1 03:17:57 2026     /usr/libexec/trustd --agent
+28258     1   501 Sat Aug  1 03:17:58 2026     /System/Library/PrivateFrameworks/TCC.framework/Resources/tccd
+28259     1   501 Sat Aug  1 03:17:58 2026     /System/Library/PrivateFrameworks/CalendarNotification.framework/Versions/A/XPCServices/CalNCService.xpc/Contents/MacOS/CalNCService
+28261     1   501 Sat Aug  1 03:17:59 2026     /System/Library/Frameworks/AddressBook.framework/Executables/ContactsAccountsService
+28263     1   501 Sat Aug  1 03:18:02 2026     /usr/libexec/nsurlstoraged
+28266     1   501 Sat Aug  1 03:18:49 2026     /usr/libexec/secd
+28267     1   501 Sat Aug  1 03:18:49 2026     /System/Library/Frameworks/Security.framework/Versions/A/XPCServices/TrustedPeersHelper.xpc/Contents/MacOS/TrustedPeersHelper
+28268     1   501 Sat Aug  1 03:18:50 2026     /System/Library/PrivateFrameworks/CoreCDP.framework/Versions/A/Resources/cdpd
+28269     1   501 Sat Aug  1 03:18:50 2026     /System/Library/Frameworks/Security.framework/Versions/A/Resources/CloudKeychainProxy.bundle/Contents/MacOS/CloudKeychainProxy
+28271     1     0 Sat Aug  1 03:18:55 2026     /usr/libexec/nehelper
+28272     1   501 Sat Aug  1 03:18:55 2026     /usr/libexec/neagent
+28273     1   501 Sat Aug  1 03:18:55 2026     /System/Library/PrivateFrameworks/AssetCacheServices.framework/Versions/A/XPCServices/AssetCacheLocatorService.xpc/Contents/MacOS/AssetCacheLocatorService -a
+28274     1   501 Sat Aug  1 03:18:55 2026     /System/Library/PrivateFrameworks/AuthKit.framework/Versions/A/Support/akd
+28275     1   265 Sat Aug  1 03:18:55 2026     /System/Library/PrivateFrameworks/CoreADI.framework/adid
+28294     1     0 Sat Aug  1 03:25:00 2026     /usr/sbin/aslmanager -s /var/log/eventmonitor
+28303     1   501 Sat Aug  1 03:27:35 2026     /System/Library/CoreServices/iconservicesagent
+28304     1   240 Sat Aug  1 03:27:36 2026     /System/Library/CoreServices/iconservicesd
+28305     1     0 Sat Aug  1 03:27:36 2026     /System/Library/CoreServices/backupd.bundle/Contents/Resources/backupd-helper -launchd
+28307     1   501 Sat Aug  1 03:28:06 2026     /System/Library/Frameworks/LocalAuthentication.framework/Support/coreauthd
+28308     1   501 Sat Aug  1 03:28:06 2026     /usr/libexec/WiFiVelocityAgent
+28309     1   501 Sat Aug  1 03:28:09 2026     /System/Library/PrivateFrameworks/AppSSO.framework/Support/AppSSOAgent.app/Contents/MacOS/AppSSOAgent
+28310     1     0 Sat Aug  1 03:28:18 2026     /usr/libexec/wifivelocityd
+28316     1   501 Sat Aug  1 03:28:21 2026     /usr/libexec/pkd
+28328     1     0 Sat Aug  1 03:28:37 2026     /usr/libexec/diskmanagementd
+28342     1   501 Sat Aug  1 09:45:42 2026     /usr/libexec/dmd
+28343     1   222 Sat Aug  1 09:45:42 2026     /usr/sbin/netbiosd
+28346     1   501 Sat Aug  1 09:45:46 2026     /System/Library/PrivateFrameworks/IMDPersistence.framework/XPCServices/IMDPersistenceAgent.xpc/Contents/MacOS/IMDPersistenceAgent
+28349     1   501 Sat Aug  1 09:45:47 2026     /System/Library/PrivateFrameworks/CommunicationsFilter.framework/CMFSyncAgent
+28368     1   501 Sat Aug  1 09:45:53 2026     /usr/libexec/routined LAUNCHED_BY_LAUNCHD
+28397     1   501 Sat Aug  1 09:46:47 2026     /System/Library/CoreServices/mapspushd
+28467     1   501 Sat Aug  1 09:58:07 2026     /System/Library/PrivateFrameworks/AppStoreDaemon.framework/Support/appstoreagent
+28470     1   501 Sat Aug  1 09:58:23 2026     /System/Library/PrivateFrameworks/PhotoLibraryServices.framework/Versions/A/Support/photolibraryd
+28471     1   200 Sat Aug  1 09:58:23 2026     /System/Library/CoreServices/Software Update.app/Contents/Resources/softwareupdated
+28472     1     0 Sat Aug  1 09:58:26 2026     /System/Library/PrivateFrameworks/AccountPolicy.framework/XPCServices/com.apple.AccountPolicyHelper.xpc/Contents/MacOS/com.apple.AccountPolicyHelper
+28473     1     0 Sat Aug  1 09:58:30 2026     /System/Library/CoreServices/Software Update.app/Contents/Resources/suhelperd
+28474     1   501 Sat Aug  1 09:58:31 2026     /System/Library/CoreServices/ScopedBookmarkAgent
+28475     1    97 Sat Aug  1 09:58:31 2026     /System/Library/Frameworks/ApplicationServices.framework/Frameworks/ATS.framework/Support/fontd
+28476     1     0 Sat Aug  1 09:58:33 2026     /usr/sbin/filecoordinationd
+28481     1   501 Sat Aug  1 09:58:55 2026     cloudphotod
+28483     1   501 Sat Aug  1 09:59:02 2026     /System/Library/PrivateFrameworks/CacheDelete.framework/deleted
+28538     1     0 Sat Aug  1 10:07:52 2026     /System/Library/Frameworks/LocalAuthentication.framework/Support/coreauthd
+28541     1     0 Sat Aug  1 10:07:59 2026     /System/Library/Frameworks/Security.framework/authtrampoline
+28606     1    89 Sat Aug  1 10:08:08 2026     /usr/libexec/trustd --agent
+28614     1     0 Sat Aug  1 10:08:17 2026     /usr/sbin/systemsoundserverd
+28615     1     0 Sat Aug  1 10:08:19 2026     /System/Library/Frameworks/AudioToolbox.framework/AudioComponentRegistrar -daemon
+28637     1   501 Sat Aug  1 10:09:01 2026     /System/Library/CoreServices/CoreServicesUIAgent.app/Contents/MacOS/CoreServicesUIAgent
+28684     1     0 Sat Aug  1 10:10:41 2026     /System/Library/CoreServices/ReportCrash daemon
+29007     1   501 Sat Aug  1 10:14:03 2026     /usr/libexec/swcd
+29008     1   501 Sat Aug  1 10:14:03 2026     /System/Library/PrivateFrameworks/CloudDocsDaemon.framework/Versions/A/Support/bird
+29014     1   501 Sat Aug  1 10:14:06 2026     /System/Library/CoreServices/pbs
+29075     1   501 Sat Aug  1 10:14:17 2026     /System/Library/Services/AppleSpell.service/Contents/MacOS/AppleSpell
+29122     1   501 Sat Aug  1 10:14:18 2026     /usr/libexec/keyboardservicesd
+29194     1     0 Sat Aug  1 10:21:03 2026     /usr/sbin/ocspd
+29329     1   501 Sat Aug  1 10:21:57 2026     /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/com.apple.appkit.xpc.openAndSavePanelService.xpc/Contents/MacOS/com.apple.appkit.xpc.openAndSavePanelService
+29330     1   501 Sat Aug  1 10:21:58 2026     /System/Library/Frameworks/Quartz.framework/Versions/A/Frameworks/QuickLookUI.framework/Versions/A/XPCServices/QuickLookUIService.xpc/Contents/MacOS/QuickLookUIService
+29333     1   501 Sat Aug  1 10:22:06 2026     /System/Library/Frameworks/QuickLookThumbnailing.framework/Support/com.apple.quicklook.ThumbnailsAgent
+29334     1   501 Sat Aug  1 10:22:10 2026     /System/Library/Frameworks/QuickLook.framework/Versions/A/XPCServices/QuickLookSatellite.xpc/Contents/MacOS/QuickLookSatellite
+29455     1   501 Sat Aug  1 10:27:36 2026     /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+29476     1   501 Sat Aug  1 10:28:47 2026     /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+29477     1    89 Sat Aug  1 10:28:50 2026     /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+29479     1    89 Sat Aug  1 10:28:50 2026     /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+29480     1    89 Sat Aug  1 10:28:51 2026     /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+29481     1   501 Sat Aug  1 10:29:11 2026     /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+ 1734  1733     0 Fri Jul 31 11:05:46 2026     login -pf evanlebrecht
+ 1736  1734   501 Fri Jul 31 11:05:49 2026     -zsh
+29521  1736   501 Sat Aug  1 10:29:23 2026     /bin/sh scripts/background_service_probe.sh --uid 501 --output /Users/tester/Desktop/catalina-10.15.7-service-probe-v2.txt
+29533 29521     0 Sat Aug  1 10:29:23 2026     /bin/ps -ww -axo pid=,ppid=,uid=,lstart=,command=
+
+===== CANDIDATE SERVICE DETAILS =====
+
+--- SERVICE com.apple.SoftwareUpdateNotificationManager ---
+com.apple.SoftwareUpdateNotificationManager = {
+	active count = 5
+	copy count = 0
+	one shot = 0
+	path = /System/Library/LaunchAgents/com.apple.SoftwareUpdateNotificationManager.plist
+	state = running
+
+	program = /System/Library/PrivateFrameworks/SoftwareUpdate.framework/Resources/SoftwareUpdateNotificationManager.app/Contents/MacOS/SoftwareUpdateNotificationManager
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.VAKBzAjoWo/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		XPC_SERVICE_NAME => com.apple.SoftwareUpdateNotificationManager
+	}
+
+	domain = com.apple.xpc.launchd.user.domain.501.100006.Aqua
+	asid = 100006
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 3
+	successive crashes = 0
+	pid = 27942
+	immediate reason = ipc (mach)
+	forks = 0
+	execs = 1
+	initialized = 1
+	trampolined = 1
+	started suspended = 0
+	proxy started suspended = 0
+	last exit reason = JETSAM_REASON_MEMORY_IDLE_EXIT
+	last jetsam exit details = JETSAM_REASON_MEMORY_IDLE_EXIT
+
+	event triggers = {
+		LoginDone => {
+			keepalive = 0
+			service = com.apple.SoftwareUpdateNotificationManager
+			stream = com.apple.notifyd.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Notification" => "com.apple.system.loginwindow.delayedLoginItemsInitiated"
+			}
+		}
+		MDMWakeup => {
+			keepalive = 0
+			service = com.apple.SoftwareUpdateNotificationManager
+			stream = com.apple.notifyd.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Notification" => "com.apple.SoftwareUpdate.MDM.wakeup"
+			}
+		}
+		OSXAvailable => {
+			keepalive = 0
+			service = com.apple.SoftwareUpdateNotificationManager
+			stream = com.apple.notifyd.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Notification" => "com.apple.SoftwareUpdate.OSXAvailable"
+			}
+		}
+		BadgingCountChanged => {
+			keepalive = 0
+			service = com.apple.SoftwareUpdateNotificationManager
+			stream = com.apple.notifyd.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Notification" => "com.apple.SoftwareUpdate.BadgingCountChanged"
+			}
+		}
+		UpdatesAvailable => {
+			keepalive = 0
+			service = com.apple.SoftwareUpdateNotificationManager
+			stream = com.apple.notifyd.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Notification" => "com.apple.SoftwareUpdate.updatesAvailable"
+			}
+		}
+	}
+
+	endpoints = {
+		"com.apple.SoftwareUpdateNotificationManagerService" = {
+			port = 0x60303
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.usernotifications.delegate.com.apple.SoftwareUpdateNotification" = {
+			port = 0x6a403
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	dynamic endpoints = {
+	}
+
+	pid-local endpoints = {
+		"com.apple.tsm.portname" = {
+			port = 0xa2833
+			active = 1
+			managed = 0
+			reset = 0
+			hide = 0
+		}
+		"com.apple.axserver" = {
+			port = 0xa21b7
+			active = 1
+			managed = 0
+			reset = 0
+			hide = 0
+		}
+	}
+
+	instance-specific endpoints = {
+	}
+
+	event channels = {
+		"com.apple.alarm" = {
+			port = 0x95d4b
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.notifyd.matching" = {
+			port = 0x60403
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	sockets = {
+	}
+
+	instances = {
+	}
+
+	spawn type = interactive
+	spawn role = (null)
+	jetsam priority = 3
+	jetsam memory limit (active, soft) = 15 MB
+	jetsam memory limit (inactive, soft) = 15 MB
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = {
+		partial import = 0
+		launchd bundle = 0
+		xpc bundle = 0
+		keepalive = 0
+		runatload = 0
+		low priority i/o = 0
+		low priority background i/o = 0
+		dataless file mode = 0
+		legacy timer behavior = 0
+		exception handler = 0
+		multiple instances = 0
+		supports transactions = 1
+		supports pressured exit = 1
+		supports idle hysteresis = 0
+		enter kdp before kill = 0
+		wait for debugger = 0
+		app = 0
+		system app = 0
+		creates session = 0
+		inetd-compatible = 0
+		inetd listener = 0
+		abandon process group = 0
+		one-shot = 0
+		event monitor = 0
+		penalty box = 0
+		pended non-demand spawn = 0
+		role account = 0
+		launch only once = 0
+		system support = 0
+		app-like = 0
+		inferred program = 0
+		joins gui session = 0
+		joins host session = 0
+		parameterized sandbox = 0
+		resolve program = 0
+		abandon coalition = 0
+		high bits aslr = 0
+		extension = 0
+		nano allocator = 0
+		no initgroups = 0
+		start on fs mount = 0
+		endpoints initialized = 1
+		is copy = 0
+		disallow all lookups = 0
+		system service = 1
+		protected by submitter = 0
+	}
+}
+
+--- SERVICE com.apple.appstoreagent ---
+com.apple.appstoreagent = {
+	active count = 9
+	copy count = 0
+	one shot = 0
+	path = /System/Library/LaunchAgents/com.apple.appstoreagent.plist
+	state = running
+
+	program = /System/Library/PrivateFrameworks/AppStoreDaemon.framework/Support/appstoreagent
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.VAKBzAjoWo/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		XPC_SERVICE_NAME => com.apple.appstoreagent
+	}
+
+	domain = com.apple.xpc.launchd.user.domain.501.100006.Aqua
+	asid = 100006
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 4
+	successive crashes = 0
+	pid = 28467
+	immediate reason = xpc event
+	forks = 0
+	execs = 1
+	initialized = 1
+	trampolined = 1
+	started suspended = 0
+	proxy started suspended = 0
+	last exit reason = JETSAM_REASON_MEMORY_IDLE_EXIT
+	last jetsam exit details = JETSAM_REASON_MEMORY_IDLE_EXIT
+
+	event triggers = {
+		com.apple.appstored.ArcadePostPO => {
+			keepalive = 0
+			service = com.apple.appstoreagent
+			stream = com.apple.xpc.activity
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Repeating" => false
+				"_SequenceNumber" => 1
+				"GracePeriod" => 300
+				"Delay" => 3614
+				"AllowBattery" => true
+				"RequireNetworkConnectivity" => true
+				"Priority" => "Maintenance"
+			}
+		}
+		com.apple.appstored.ArcadePostSummary => {
+			keepalive = 0
+			service = com.apple.appstoreagent
+			stream = com.apple.xpc.activity
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Repeating" => false
+				"_SequenceNumber" => 1
+				"GracePeriod" => 300
+				"Delay" => 21599
+				"AllowBattery" => true
+				"RequireNetworkConnectivity" => true
+				"Priority" => "Maintenance"
+			}
+		}
+		com.apple.appstored.ArcadeResetPO => {
+			keepalive = 0
+			service = com.apple.appstoreagent
+			stream = com.apple.xpc.activity
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"_SequenceNumber" => 2
+				"RequireInexpensiveNetworkConnectivity" => false
+				"Delay" => 0
+				"AllowBattery" => true
+				"RequireNetworkConnectivity" => false
+				"Priority" => "Utility"
+			}
+		}
+		com.apple.appstored.activities.AdPlatformsStatusConditions => {
+			keepalive = 0
+			service = com.apple.appstoreagent
+			stream = com.apple.xpc.activity
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Repeating" => true
+				"_SequenceNumber" => 2
+				"GracePeriod" => 28800
+				"Interval" => 2592000
+				"Delay" => 0
+				"AllowBattery" => true
+				"Priority" => "Utility"
+			}
+		}
+		com.apple.appstored.AutoUpdates => {
+			keepalive = 0
+			service = com.apple.appstoreagent
+			stream = com.apple.xpc.activity
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Repeating" => true
+				"_SequenceNumber" => 2
+				"RequireScreenSleep" => true
+				"ExpectedDuration" => 3600
+				"GracePeriod" => 28800
+				"Interval" => 86400
+				"RequireInexpensiveNetworkConnectivity" => false
+				"AllowBattery" => true
+				"RequireNetworkConnectivity" => true
+				"Priority" => "Utility"
+			}
+		}
+		appstoreagent => {
+			keepalive = 0
+			service = com.apple.appstoreagent
+			stream = com.apple.usernotificationcenter.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"system" => true
+				"events" => [
+					0 = "didDismissAlert"
+					1 = "didActivateNotification"
+					2 = "didDeliverNotification"
+					3 = "didSnoozeAlert"
+					4 = "didRemoveDeliveredNotifications"
+					5 = "didExpireNotifications"
+				]
+				"bundleid" => "com.apple.appstoreagent"
+			}
+		}
+		com.apple.appstored.ASDItunesAccountDidChangeNotification => {
+			keepalive = 0
+			service = com.apple.appstoreagent
+			stream = com.apple.distnoted.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Name" => "com.apple.appstored.ASDItunesAccountDidChangeNotification"
+			}
+		}
+		com.apple.appstored.ASDRepairBundleID => {
+			keepalive = 0
+			service = com.apple.appstoreagent
+			stream = com.apple.distnoted.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Name" => "com.apple.appstored.ASDRepairBundleID"
+			}
+		}
+		com.apple.crashreporter.third_party_submission_preference_changed => {
+			keepalive = 0
+			service = com.apple.appstoreagent
+			stream = com.apple.notifyd.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Notification" => "com.apple.crashreporter.third_party_submission_preference_changed"
+			}
+		}
+	}
+
+	endpoints = {
+		"com.apple.appstoreagent.legacy" = {
+			port = 0x59303
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.appstored.xpc.in-game-analytics" = {
+			port = 0x59203
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.aps.appstoreagent" = {
+			port = 0x59103
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.storekitservice" = {
+			port = 0x5c703
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.appstoreagent.xpc" = {
+			port = 0x59003
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	dynamic endpoints = {
+	}
+
+	pid-local endpoints = {
+	}
+
+	instance-specific endpoints = {
+	}
+
+	event channels = {
+		"com.apple.usernotificationcenter.matching" = {
+			port = 0x59503
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.distnoted.matching" = {
+			port = 0x5c503
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.xpc.activity" = {
+			port = 0x59403
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.notifyd.matching" = {
+			port = 0x5c603
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	sockets = {
+	}
+
+	instances = {
+	}
+
+	spawn type = adaptive
+	jetsam priority = 3
+	jetsam memory limit (active, soft) = 30 MB
+	jetsam memory limit (inactive, soft) = 30 MB
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = {
+		partial import = 0
+		launchd bundle = 0
+		xpc bundle = 0
+		keepalive = 0
+		runatload = 0
+		low priority i/o = 0
+		low priority background i/o = 0
+		dataless file mode = 0
+		legacy timer behavior = 0
+		exception handler = 0
+		multiple instances = 0
+		supports transactions = 1
+		supports pressured exit = 1
+		supports idle hysteresis = 0
+		enter kdp before kill = 0
+		wait for debugger = 0
+		app = 0
+		system app = 0
+		creates session = 0
+		inetd-compatible = 0
+		inetd listener = 0
+		abandon process group = 0
+		one-shot = 0
+		event monitor = 0
+		penalty box = 0
+		pended non-demand spawn = 0
+		role account = 0
+		launch only once = 0
+		system support = 0
+		app-like = 0
+		inferred program = 0
+		joins gui session = 0
+		joins host session = 0
+		parameterized sandbox = 0
+		resolve program = 0
+		abandon coalition = 0
+		high bits aslr = 0
+		extension = 0
+		nano allocator = 0
+		no initgroups = 0
+		start on fs mount = 0
+		endpoints initialized = 1
+		is copy = 0
+		disallow all lookups = 0
+		system service = 1
+		protected by submitter = 0
+	}
+}
+
+--- SERVICE com.apple.storedownloadd ---
+com.apple.storedownloadd = {
+	active count = 3
+	copy count = 0
+	one shot = 0
+	path = /System/Library/LaunchAgents/com.apple.storedownloadd.plist
+	state = running
+
+	program = /System/Library/PrivateFrameworks/CommerceKit.framework/Versions/A/Resources/storedownloadd
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.VAKBzAjoWo/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		XPC_SERVICE_NAME => com.apple.storedownloadd
+	}
+
+	domain = com.apple.xpc.launchd.user.domain.501.100006.Aqua
+	asid = 100006
+	minimum runtime = 10
+	exit timeout = 1
+	runs = 1
+	successive crashes = 0
+	pid = 1755
+	immediate reason = ipc (mach)
+	forks = 0
+	execs = 1
+	initialized = 1
+	trampolined = 1
+	started suspended = 0
+	proxy started suspended = 0
+	last exit code = (never exited)
+
+	event triggers = {
+	}
+
+	endpoints = {
+		"com.apple.commerce.cachedelete" = {
+			port = 0x48a0f
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.storedownloadd" = {
+			port = 0x3140b
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	dynamic endpoints = {
+	}
+
+	pid-local endpoints = {
+	}
+
+	instance-specific endpoints = {
+	}
+
+	event channels = {
+	}
+
+	sockets = {
+	}
+
+	instances = {
+	}
+
+	spawn type = adaptive
+	jetsam priority = 3
+	jetsam memory limit (active, soft) = 70 MB
+	jetsam memory limit (inactive, soft) = 70 MB
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = {
+		partial import = 0
+		launchd bundle = 0
+		xpc bundle = 0
+		keepalive = 0
+		runatload = 0
+		low priority i/o = 0
+		low priority background i/o = 0
+		dataless file mode = 0
+		legacy timer behavior = 0
+		exception handler = 0
+		multiple instances = 0
+		supports transactions = 1
+		supports pressured exit = 0
+		supports idle hysteresis = 0
+		enter kdp before kill = 0
+		wait for debugger = 0
+		app = 0
+		system app = 0
+		creates session = 0
+		inetd-compatible = 0
+		inetd listener = 0
+		abandon process group = 0
+		one-shot = 0
+		event monitor = 0
+		penalty box = 0
+		pended non-demand spawn = 0
+		role account = 0
+		launch only once = 0
+		system support = 0
+		app-like = 0
+		inferred program = 0
+		joins gui session = 0
+		joins host session = 0
+		parameterized sandbox = 0
+		resolve program = 0
+		abandon coalition = 0
+		high bits aslr = 0
+		extension = 0
+		nano allocator = 0
+		no initgroups = 0
+		start on fs mount = 0
+		endpoints initialized = 1
+		is copy = 0
+		disallow all lookups = 0
+		system service = 1
+		protected by submitter = 0
+	}
+}
+
+--- SERVICE com.apple.storeassetd ---
+com.apple.storeassetd = {
+	active count = 0
+	copy count = 0
+	one shot = 0
+	path = /System/Library/LaunchAgents/com.apple.storeassetd.plist
+	state = waiting
+
+	program = /System/Library/PrivateFrameworks/CommerceKit.framework/Versions/A/Resources/storeassetd
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.VAKBzAjoWo/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		XPC_SERVICE_NAME => com.apple.storeassetd
+	}
+
+	domain = com.apple.xpc.launchd.user.domain.501.100006.Aqua
+	asid = 100006
+	minimum runtime = 10
+	exit timeout = 1
+	runs = 0
+	successive crashes = 0
+	last exit code = (never exited)
+
+	event triggers = {
+		storeassetd => {
+			keepalive = 0
+			service = com.apple.storeassetd
+			stream = com.apple.usernotificationcenter.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"system" => true
+				"events" => [
+					0 = "didDismissAlert"
+					1 = "didActivateNotification"
+					2 = "didDeliverNotification"
+					3 = "didSnoozeAlert"
+					4 = "didRemoveDeliveredNotifications"
+					5 = "didExpireNotifications"
+				]
+				"bundleid" => "com.apple.storeassetd"
+			}
+		}
+	}
+
+	endpoints = {
+		"com.apple.storeassetd" = {
+			port = 0x56303
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	dynamic endpoints = {
+	}
+
+	pid-local endpoints = {
+	}
+
+	instance-specific endpoints = {
+	}
+
+	event channels = {
+		"com.apple.usernotificationcenter.matching" = {
+			port = 0x5f203
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	sockets = {
+	}
+
+	instances = {
+	}
+
+	spawn type = adaptive
+	jetsam priority = 3
+	jetsam memory limit (active, soft) = 100 MB
+	jetsam memory limit (inactive, soft) = 100 MB
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = {
+		partial import = 0
+		launchd bundle = 0
+		xpc bundle = 0
+		keepalive = 0
+		runatload = 0
+		low priority i/o = 0
+		low priority background i/o = 0
+		dataless file mode = 0
+		legacy timer behavior = 0
+		exception handler = 0
+		multiple instances = 0
+		supports transactions = 1
+		supports pressured exit = 0
+		supports idle hysteresis = 0
+		enter kdp before kill = 0
+		wait for debugger = 0
+		app = 0
+		system app = 0
+		creates session = 0
+		inetd-compatible = 0
+		inetd listener = 0
+		abandon process group = 0
+		one-shot = 0
+		event monitor = 0
+		penalty box = 0
+		pended non-demand spawn = 0
+		role account = 0
+		launch only once = 0
+		system support = 0
+		app-like = 0
+		inferred program = 0
+		joins gui session = 0
+		joins host session = 0
+		parameterized sandbox = 0
+		resolve program = 0
+		abandon coalition = 0
+		high bits aslr = 0
+		extension = 0
+		nano allocator = 0
+		no initgroups = 0
+		start on fs mount = 0
+		endpoints initialized = 1
+		is copy = 0
+		disallow all lookups = 0
+		system service = 1
+		protected by submitter = 0
+	}
+}
+
+--- SERVICE com.apple.photolibraryd ---
+com.apple.photolibraryd = {
+	active count = 5
+	copy count = 0
+	one shot = 0
+	path = /System/Library/LaunchAgents/com.apple.photolibraryd.plist
+	state = running
+
+	program = /System/Library/PrivateFrameworks/PhotoLibraryServices.framework/Versions/A/Support/photolibraryd
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.VAKBzAjoWo/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		XPC_SERVICE_NAME => com.apple.photolibraryd
+	}
+
+	domain = com.apple.xpc.launchd.user.domain.501.100006.Aqua
+	asid = 100006
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 6
+	successive crashes = 0
+	pid = 28470
+	immediate reason = xpc event
+	forks = 0
+	execs = 1
+	initialized = 1
+	trampolined = 1
+	started suspended = 0
+	proxy started suspended = 0
+	last exit reason = JETSAM_REASON_MEMORY_IDLE_EXIT
+	last jetsam exit details = JETSAM_REASON_MEMORY_IDLE_EXIT
+
+	semaphores = {
+		after crash => 1
+	}
+
+	event triggers = {
+		com.apple.photolibraryd.cloudphoto => {
+			keepalive = 0
+			service = com.apple.photolibraryd
+			stream = com.apple.distnoted.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Name" => "com.apple.cpl.wantslibrary.notification"
+			}
+		}
+		com.apple.photolibraryd.periodicmaintenance => {
+			keepalive = 0
+			service = com.apple.photolibraryd
+			stream = com.apple.xpc.activity
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"RequireScreenSleep" => true
+				"Interval" => 86400
+				"PowerNap" => true
+				"AllowBattery" => false
+				"Priority" => "Maintenance"
+			}
+		}
+		com.apple.photolibraryd.curatedlibraryprocessing => {
+			keepalive = 0
+			service = com.apple.photolibraryd
+			stream = com.apple.xpc.activity
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Repeating" => true
+				"RequireScreenSleep" => true
+				"Interval" => 10800
+				"GracePeriod" => 3600
+				"PowerNap" => true
+				"Priority" => "Maintenance"
+			}
+		}
+	}
+
+	endpoints = {
+		"com.apple.photolibraryd.cacheDelete" = {
+			port = 0x52c03
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.photos.service" = {
+			port = 0x4d303
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	dynamic endpoints = {
+	}
+
+	pid-local endpoints = {
+	}
+
+	instance-specific endpoints = {
+	}
+
+	event channels = {
+		"com.apple.distnoted.matching" = {
+			port = 0x52a03
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.xpc.activity" = {
+			port = 0x52b03
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	sockets = {
+	}
+
+	instances = {
+	}
+
+	spawn type = adaptive
+	jetsam priority = 3
+	jetsam memory limit (active, soft) = 300 MB
+	jetsam memory limit (inactive, soft) = 300 MB
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = {
+		partial import = 0
+		launchd bundle = 0
+		xpc bundle = 0
+		keepalive = 0
+		runatload = 0
+		low priority i/o = 0
+		low priority background i/o = 0
+		dataless file mode = 0
+		legacy timer behavior = 0
+		exception handler = 0
+		multiple instances = 0
+		supports transactions = 1
+		supports pressured exit = 1
+		supports idle hysteresis = 0
+		enter kdp before kill = 0
+		wait for debugger = 0
+		app = 0
+		system app = 0
+		creates session = 0
+		inetd-compatible = 0
+		inetd listener = 0
+		abandon process group = 0
+		one-shot = 0
+		event monitor = 0
+		penalty box = 0
+		pended non-demand spawn = 0
+		role account = 0
+		launch only once = 0
+		system support = 0
+		app-like = 0
+		inferred program = 0
+		joins gui session = 0
+		joins host session = 0
+		parameterized sandbox = 0
+		resolve program = 0
+		abandon coalition = 0
+		high bits aslr = 0
+		extension = 0
+		nano allocator = 0
+		no initgroups = 0
+		start on fs mount = 0
+		endpoints initialized = 1
+		is copy = 0
+		disallow all lookups = 0
+		system service = 1
+		protected by submitter = 0
+	}
+}
+
+--- SERVICE com.apple.cloudphotod ---
+com.apple.cloudphotod = {
+	active count = 8
+	copy count = 0
+	one shot = 0
+	path = /System/Library/LaunchAgents/com.apple.cloudphotod.plist
+	state = running
+
+	program = /System/Library/PrivateFrameworks/CloudPhotoLibrary.framework/Versions/A/Support//cloudphotod
+	arguments = {
+		cloudphotod
+	}
+
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.VAKBzAjoWo/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		XPC_SERVICE_NAME => com.apple.cloudphotod
+	}
+
+	domain = com.apple.xpc.launchd.user.domain.501.100006.Aqua
+	asid = 100006
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 6
+	successive crashes = 0
+	pid = 28481
+	immediate reason = ipc (mach)
+	forks = 0
+	execs = 1
+	initialized = 1
+	trampolined = 1
+	started suspended = 0
+	proxy started suspended = 0
+	last exit reason = JETSAM_REASON_MEMORY_IDLE_EXIT
+	last jetsam exit details = JETSAM_REASON_MEMORY_IDLE_EXIT
+
+	event triggers = {
+		com.apple.datamigrator.migrationDidFinish => {
+			keepalive = 0
+			service = com.apple.cloudphotod
+			stream = com.apple.notifyd.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Notification" => "com.apple.datamigrator.migrationDidFinish"
+			}
+		}
+	}
+
+	endpoints = {
+		"com.apple.photos.cloud.datarepair" = {
+			port = 0x74d03
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.photos.cloud.pushnotification" = {
+			port = 0x74e03
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.cloudphotod" = {
+			port = 0x6b303
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	dynamic endpoints = {
+	}
+
+	pid-local endpoints = {
+	}
+
+	instance-specific endpoints = {
+	}
+
+	event channels = {
+		"com.apple.xpc.activity" = {
+			port = 0x98763
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.coreduetcontext.client_event_stream" = {
+			port = 0x7920f
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.coreduetcontext.mdcs_events" = {
+			port = 0x9ff2f
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.notifyd.matching" = {
+			port = 0x6b403
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	sockets = {
+	}
+
+	instances = {
+	}
+
+	spawn type = adaptive
+	jetsam priority = 3
+	jetsam memory limit (active, soft) = 60 MB
+	jetsam memory limit (inactive, soft) = 60 MB
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = {
+		partial import = 0
+		launchd bundle = 0
+		xpc bundle = 0
+		keepalive = 0
+		runatload = 0
+		low priority i/o = 0
+		low priority background i/o = 0
+		dataless file mode = 0
+		legacy timer behavior = 0
+		exception handler = 0
+		multiple instances = 0
+		supports transactions = 1
+		supports pressured exit = 1
+		supports idle hysteresis = 0
+		enter kdp before kill = 0
+		wait for debugger = 0
+		app = 0
+		system app = 0
+		creates session = 0
+		inetd-compatible = 0
+		inetd listener = 0
+		abandon process group = 0
+		one-shot = 0
+		event monitor = 0
+		penalty box = 0
+		pended non-demand spawn = 0
+		role account = 0
+		launch only once = 0
+		system support = 0
+		app-like = 0
+		inferred program = 0
+		joins gui session = 0
+		joins host session = 0
+		parameterized sandbox = 0
+		resolve program = 0
+		abandon coalition = 0
+		high bits aslr = 0
+		extension = 0
+		nano allocator = 0
+		no initgroups = 0
+		start on fs mount = 0
+		endpoints initialized = 1
+		is copy = 0
+		disallow all lookups = 0
+		system service = 1
+		protected by submitter = 0
+	}
+}
+
+--- SERVICE com.apple.photoanalysisd ---
+Could not find service "com.apple.photoanalysisd" in domain for login: 100006
+NOT_LOADED: com.apple.photoanalysisd
+
+--- SERVICE com.apple.mediaanalysisd ---
+Could not find service "com.apple.mediaanalysisd" in domain for login: 100006
+NOT_LOADED: com.apple.mediaanalysisd
+
+--- SERVICE com.apple.email.maild ---
+com.apple.email.maild = {
+	active count = 0
+	copy count = 0
+	one shot = 0
+	path = /System/Library/LaunchAgents/com.apple.email.maild.plist
+	state = waiting
+
+	program = /System/Library/PrivateFrameworks/EmailDaemon.framework/Versions/A/maild
+	arguments = {
+		/System/Library/PrivateFrameworks/EmailDaemon.framework/Versions/A/maild
+	}
+
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.VAKBzAjoWo/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		XPC_SERVICE_NAME => com.apple.email.maild
+	}
+
+	domain = com.apple.xpc.launchd.user.domain.501.100006.Aqua
+	asid = 100006
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 0
+	successive crashes = 0
+	last exit code = (never exited)
+
+	event triggers = {
+	}
+
+	endpoints = {
+		"com.apple.email.maild" = {
+			port = 0x54103
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	dynamic endpoints = {
+	}
+
+	pid-local endpoints = {
+	}
+
+	instance-specific endpoints = {
+	}
+
+	event channels = {
+	}
+
+	sockets = {
+	}
+
+	instances = {
+	}
+
+	spawn type = adaptive
+	jetsam priority = 3
+	jetsam memory limit (active, soft) = 155 MB
+	jetsam memory limit (inactive, soft) = 155 MB
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = {
+		partial import = 0
+		launchd bundle = 0
+		xpc bundle = 0
+		keepalive = 0
+		runatload = 0
+		low priority i/o = 0
+		low priority background i/o = 0
+		dataless file mode = 0
+		legacy timer behavior = 0
+		exception handler = 0
+		multiple instances = 0
+		supports transactions = 1
+		supports pressured exit = 1
+		supports idle hysteresis = 0
+		enter kdp before kill = 0
+		wait for debugger = 0
+		app = 0
+		system app = 0
+		creates session = 0
+		inetd-compatible = 0
+		inetd listener = 0
+		abandon process group = 0
+		one-shot = 0
+		event monitor = 0
+		penalty box = 0
+		pended non-demand spawn = 0
+		role account = 0
+		launch only once = 0
+		system support = 0
+		app-like = 0
+		inferred program = 1
+		joins gui session = 0
+		joins host session = 0
+		parameterized sandbox = 0
+		resolve program = 0
+		abandon coalition = 0
+		high bits aslr = 0
+		extension = 0
+		nano allocator = 0
+		no initgroups = 0
+		start on fs mount = 0
+		endpoints initialized = 1
+		is copy = 0
+		disallow all lookups = 0
+		system service = 1
+		protected by submitter = 0
+	}
+}
+
+--- SERVICE com.apple.MailServiceAgent ---
+Could not find service "com.apple.MailServiceAgent" in domain for login: 100006
+NOT_LOADED: com.apple.MailServiceAgent
+
+--- SERVICE com.apple.mdworker.mail ---
+Could not find service "com.apple.mdworker.mail" in domain for login: 100006
+NOT_LOADED: com.apple.mdworker.mail
+
+--- SERVICE com.apple.imagent ---
+com.apple.imagent = {
+	active count = 10
+	copy count = 0
+	one shot = 0
+	path = /System/Library/LaunchAgents/com.apple.imagent.plist
+	state = running
+
+	program = /System/Library/PrivateFrameworks/IMCore.framework/imagent.app/Contents/MacOS/imagent
+	arguments = {
+		/System/Library/PrivateFrameworks/IMCore.framework/imagent.app/Contents/MacOS/imagent
+	}
+
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.VAKBzAjoWo/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		NSRunningFromLaunchd => 1
+		XPC_SERVICE_NAME => com.apple.imagent
+	}
+
+	domain = com.apple.xpc.launchd.user.domain.501.100006.Aqua
+	asid = 100006
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 1
+	successive crashes = 0
+	pid = 349
+	immediate reason = ipc (mach)
+	forks = 0
+	execs = 1
+	initialized = 1
+	trampolined = 1
+	started suspended = 0
+	proxy started suspended = 0
+	last exit code = (never exited)
+
+	semaphores = {
+		successful exit => 0
+	}
+
+	event triggers = {
+		com.apple.messages.messageSyncing => {
+			keepalive = 0
+			service = com.apple.imagent
+			stream = com.apple.xpc.activity
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Repeating" => true
+				"_SequenceNumber" => 2
+				"NetworkTransferDirection" => "Bidirectional"
+				"RequireScreenSleep" => false
+				"GracePeriod" => 3600
+				"Interval" => 86400
+				"PowerNap" => true
+				"RequireInexpensiveNetworkConnectivity" => true
+				"Delay" => 86400
+				"AllowBattery" => false
+				"Priority" => "Utility"
+			}
+		}
+		com.apple.messages.ckMetricsLogging => {
+			keepalive = 0
+			service = com.apple.imagent
+			stream = com.apple.xpc.activity
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Repeating" => true
+				"_SequenceNumber" => 2
+				"Interval" => 86400
+				"AllowBattery" => true
+				"RequireNetworkConnectivity" => true
+				"Priority" => "Utility"
+			}
+		}
+		com.apple.messages.chatSyncing => {
+			keepalive = 0
+			service = com.apple.imagent
+			stream = com.apple.xpc.activity
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Repeating" => true
+				"_SequenceNumber" => 2
+				"Interval" => 14400
+				"RequireNetworkConnectivity" => true
+				"AllowBattery" => true
+				"Priority" => "Utility"
+			}
+		}
+		com.apple.private.IMCore.LoggedIntoHSA2 => {
+			keepalive = 0
+			service = com.apple.imagent
+			stream = com.apple.distnoted.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Name" => "com.apple.private.IMCore.LoggedIntoHSA2"
+			}
+		}
+		com.apple.authkit.user-info-changed => {
+			keepalive = 0
+			service = com.apple.imagent
+			stream = com.apple.distnoted.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Name" => "com.apple.authkit.user-info-changed"
+			}
+		}
+	}
+
+	endpoints = {
+		"com.apple.imagent.aps" = {
+			port = 0x3e207
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.incoming-call-filter-server" = {
+			port = 0x37007
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.madrid-idswake" = {
+			port = 0x3e307
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.imagent.cache-delete" = {
+			port = 0x3e407
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.imagent.desktop.auth" = {
+			port = 0x3e507
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.usernotifications.delegate.com.apple.iChat" = {
+			port = 0x3f807
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	dynamic endpoints = {
+	}
+
+	pid-local endpoints = {
+	}
+
+	instance-specific endpoints = {
+	}
+
+	event channels = {
+		"com.apple.usernotificationcenter.matching" = {
+			port = 0x3ee67
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.xpc.activity" = {
+			port = 0x7ba83
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.distnoted.matching" = {
+			port = 0x3e107
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	sockets = {
+	}
+
+	instances = {
+	}
+
+	spawn type = interactive
+	spawn role = (null)
+	jetsam priority = 3
+	jetsam memory limit (active) = (unlimited)
+	jetsam memory limit (inactive) = (unlimited)
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = {
+		partial import = 0
+		launchd bundle = 0
+		xpc bundle = 0
+		keepalive = 0
+		runatload = 0
+		low priority i/o = 0
+		low priority background i/o = 0
+		dataless file mode = 0
+		legacy timer behavior = 0
+		exception handler = 0
+		multiple instances = 0
+		supports transactions = 0
+		supports pressured exit = 0
+		supports idle hysteresis = 0
+		enter kdp before kill = 0
+		wait for debugger = 0
+		app = 0
+		system app = 0
+		creates session = 0
+		inetd-compatible = 0
+		inetd listener = 0
+		abandon process group = 0
+		one-shot = 0
+		event monitor = 0
+		penalty box = 0
+		pended non-demand spawn = 1
+		role account = 0
+		launch only once = 0
+		system support = 0
+		app-like = 0
+		inferred program = 1
+		joins gui session = 0
+		joins host session = 0
+		parameterized sandbox = 0
+		resolve program = 0
+		abandon coalition = 0
+		high bits aslr = 0
+		extension = 0
+		nano allocator = 0
+		no initgroups = 0
+		start on fs mount = 0
+		endpoints initialized = 1
+		is copy = 0
+		disallow all lookups = 0
+		system service = 1
+		protected by submitter = 0
+	}
+}
+
+--- SERVICE com.apple.IMDPersistenceAgent ---
+Could not find service "com.apple.IMDPersistenceAgent" in domain for login: 100006
+NOT_LOADED: com.apple.IMDPersistenceAgent
+
+--- SERVICE com.apple.imautomatichistorydeletionagent ---
+com.apple.imautomatichistorydeletionagent = {
+	active count = 3
+	copy count = 0
+	one shot = 0
+	path = /System/Library/LaunchAgents/com.apple.imautomatichistorydeletionagent.plist
+	state = running
+
+	program = /System/Library/PrivateFrameworks/IMDPersistence.framework/IMAutomaticHistoryDeletionAgent.app/Contents/MacOS/IMAutomaticHistoryDeletionAgent
+	arguments = {
+		/System/Library/PrivateFrameworks/IMDPersistence.framework/IMAutomaticHistoryDeletionAgent.app/Contents/MacOS/IMAutomaticHistoryDeletionAgent
+	}
+
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.VAKBzAjoWo/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		XPC_SERVICE_NAME => com.apple.imautomatichistorydeletionagent
+	}
+
+	domain = com.apple.xpc.launchd.user.domain.501.100006.Aqua
+	asid = 100006
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 1
+	successive crashes = 0
+	pid = 3993
+	immediate reason = xpc event
+	forks = 0
+	execs = 1
+	initialized = 1
+	trampolined = 1
+	started suspended = 0
+	proxy started suspended = 0
+	last exit code = (never exited)
+
+	event triggers = {
+		com.apple.IMAutomaticHistoryDeletionAgent => {
+			keepalive = 0
+			service = com.apple.imautomatichistorydeletionagent
+			stream = com.apple.xpc.activity
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Repeating" => true
+				"GracePeriod" => 7200
+				"Interval" => 86400
+				"AllowBattery" => true
+			}
+		}
+		com.apple.imautomatichistorydeletionagent.prefchange => {
+			keepalive = 0
+			service = com.apple.imautomatichistorydeletionagent
+			stream = com.apple.notifyd.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Notification" => "com.apple.imautomatichistorydeletionagent.prefchange"
+			}
+		}
+	}
+
+	endpoints = {
+	}
+
+	dynamic endpoints = {
+	}
+
+	pid-local endpoints = {
+	}
+
+	instance-specific endpoints = {
+	}
+
+	event channels = {
+		"com.apple.xpc.activity" = {
+			port = 0x64d03
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.notifyd.matching" = {
+			port = 0x65203
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	sockets = {
+	}
+
+	instances = {
+	}
+
+	spawn type = background
+	spawn role = (null)
+	jetsam priority = 3
+	jetsam memory limit (active) = (unlimited)
+	jetsam memory limit (inactive) = (unlimited)
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = {
+		partial import = 0
+		launchd bundle = 0
+		xpc bundle = 0
+		keepalive = 0
+		runatload = 0
+		low priority i/o = 0
+		low priority background i/o = 0
+		dataless file mode = 0
+		legacy timer behavior = 0
+		exception handler = 0
+		multiple instances = 0
+		supports transactions = 0
+		supports pressured exit = 0
+		supports idle hysteresis = 0
+		enter kdp before kill = 0
+		wait for debugger = 0
+		app = 0
+		system app = 0
+		creates session = 0
+		inetd-compatible = 0
+		inetd listener = 0
+		abandon process group = 0
+		one-shot = 0
+		event monitor = 0
+		penalty box = 0
+		pended non-demand spawn = 0
+		role account = 0
+		launch only once = 0
+		system support = 0
+		app-like = 0
+		inferred program = 1
+		joins gui session = 0
+		joins host session = 0
+		parameterized sandbox = 0
+		resolve program = 0
+		abandon coalition = 0
+		high bits aslr = 0
+		extension = 0
+		nano allocator = 0
+		no initgroups = 0
+		start on fs mount = 0
+		endpoints initialized = 1
+		is copy = 0
+		disallow all lookups = 0
+		system service = 1
+		protected by submitter = 0
+	}
+}
+
+--- SERVICE com.apple.cmfsyncagent ---
+com.apple.cmfsyncagent = {
+	active count = 3
+	copy count = 0
+	one shot = 0
+	path = /System/Library/LaunchAgents/com.apple.cmfsyncagent.plist
+	state = running
+
+	program = /System/Library/PrivateFrameworks/CommunicationsFilter.framework/CMFSyncAgent
+	arguments = {
+		/System/Library/PrivateFrameworks/CommunicationsFilter.framework/CMFSyncAgent
+	}
+
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.VAKBzAjoWo/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		NSRunningFromLaunchd => 1
+		XPC_SERVICE_NAME => com.apple.cmfsyncagent
+	}
+
+	domain = com.apple.xpc.launchd.user.domain.501.100006.Aqua
+	asid = 100006
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 5
+	successive crashes = 0
+	pid = 28349
+	immediate reason = ipc (mach)
+	forks = 0
+	execs = 1
+	initialized = 1
+	trampolined = 1
+	started suspended = 0
+	proxy started suspended = 0
+	last exit reason = JETSAM_REASON_MEMORY_IDLE_EXIT
+	last jetsam exit details = JETSAM_REASON_MEMORY_IDLE_EXIT
+
+	event triggers = {
+		com.apple.cmfsyncagent.kvstorechange => {
+			keepalive = 0
+			service = com.apple.cmfsyncagent
+			stream = com.apple.notifyd.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Notification" => "com.apple.cmfsyncagent.kvstorechange"
+			}
+		}
+	}
+
+	endpoints = {
+		"com.apple.cmfsyncagent.auth" = {
+			port = 0x52003
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	dynamic endpoints = {
+	}
+
+	pid-local endpoints = {
+	}
+
+	instance-specific endpoints = {
+	}
+
+	event channels = {
+		"com.apple.notifyd.matching" = {
+			port = 0x4da03
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	sockets = {
+	}
+
+	instances = {
+	}
+
+	spawn type = adaptive
+	jetsam priority = 3
+	jetsam memory limit (active, soft) = 30 MB
+	jetsam memory limit (inactive, soft) = 30 MB
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = {
+		partial import = 0
+		launchd bundle = 0
+		xpc bundle = 0
+		keepalive = 0
+		runatload = 0
+		low priority i/o = 0
+		low priority background i/o = 0
+		dataless file mode = 0
+		legacy timer behavior = 0
+		exception handler = 0
+		multiple instances = 0
+		supports transactions = 1
+		supports pressured exit = 1
+		supports idle hysteresis = 0
+		enter kdp before kill = 0
+		wait for debugger = 0
+		app = 0
+		system app = 0
+		creates session = 0
+		inetd-compatible = 0
+		inetd listener = 0
+		abandon process group = 0
+		one-shot = 0
+		event monitor = 0
+		penalty box = 0
+		pended non-demand spawn = 0
+		role account = 0
+		launch only once = 0
+		system support = 0
+		app-like = 0
+		inferred program = 1
+		joins gui session = 0
+		joins host session = 0
+		parameterized sandbox = 0
+		resolve program = 0
+		abandon coalition = 0
+		high bits aslr = 0
+		extension = 0
+		nano allocator = 0
+		no initgroups = 0
+		start on fs mount = 0
+		endpoints initialized = 1
+		is copy = 0
+		disallow all lookups = 0
+		system service = 1
+		protected by submitter = 0
+	}
+}
+
+--- SERVICE com.apple.CallHistorySyncHelper ---
+com.apple.CallHistorySyncHelper = {
+	active count = 0
+	copy count = 0
+	one shot = 0
+	path = /System/Library/LaunchAgents/com.apple.CallHistorySyncHelper.plist
+	state = waiting
+
+	program = /System/Library/PrivateFrameworks/CallHistory.framework/Support/CallHistorySyncHelper
+	arguments = {
+		/System/Library/PrivateFrameworks/CallHistory.framework/Support/CallHistorySyncHelper
+	}
+
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.VAKBzAjoWo/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		XPC_SERVICE_NAME => com.apple.CallHistorySyncHelper
+	}
+
+	domain = com.apple.xpc.launchd.user.domain.501.100006.Aqua
+	asid = 100006
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 1
+	successive crashes = 0
+	last exit reason = JETSAM_REASON_MEMORY_IDLE_EXIT
+	last jetsam exit details = JETSAM_REASON_MEMORY_IDLE_EXIT
+
+	event triggers = {
+		com.apple.callhistorysync.idslaunchnotification => {
+			keepalive = 0
+			service = com.apple.CallHistorySyncHelper
+			stream = com.apple.notifyd.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Notification" => "com.apple.callhistorysync.idslaunchnotification"
+			}
+		}
+	}
+
+	endpoints = {
+		"com.apple.CallHistorySyncHelper" = {
+			port = 0x487e7
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.CallHistorySyncHelper.aps" = {
+			port = 0x35f0b
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	dynamic endpoints = {
+	}
+
+	pid-local endpoints = {
+	}
+
+	instance-specific endpoints = {
+	}
+
+	event channels = {
+		"com.apple.notifyd.matching" = {
+			port = 0x48f07
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	sockets = {
+	}
+
+	instances = {
+	}
+
+	spawn type = adaptive
+	jetsam priority = 3
+	jetsam memory limit (active, soft) = 60 MB
+	jetsam memory limit (inactive, soft) = 60 MB
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = {
+		partial import = 0
+		launchd bundle = 0
+		xpc bundle = 0
+		keepalive = 0
+		runatload = 0
+		low priority i/o = 0
+		low priority background i/o = 0
+		dataless file mode = 0
+		legacy timer behavior = 0
+		exception handler = 0
+		multiple instances = 0
+		supports transactions = 1
+		supports pressured exit = 1
+		supports idle hysteresis = 0
+		enter kdp before kill = 0
+		wait for debugger = 0
+		app = 0
+		system app = 0
+		creates session = 0
+		inetd-compatible = 0
+		inetd listener = 0
+		abandon process group = 0
+		one-shot = 0
+		event monitor = 0
+		penalty box = 0
+		pended non-demand spawn = 0
+		role account = 0
+		launch only once = 0
+		system support = 0
+		app-like = 0
+		inferred program = 1
+		joins gui session = 0
+		joins host session = 0
+		parameterized sandbox = 0
+		resolve program = 0
+		abandon coalition = 0
+		high bits aslr = 0
+		extension = 0
+		nano allocator = 0
+		no initgroups = 0
+		start on fs mount = 0
+		endpoints initialized = 1
+		is copy = 0
+		disallow all lookups = 0
+		system service = 1
+		protected by submitter = 0
+	}
+}
+
+--- SERVICE com.apple.telephonyutilities.callservicesd ---
+com.apple.telephonyutilities.callservicesd = {
+	active count = 0
+	copy count = 0
+	one shot = 0
+	path = /System/Library/LaunchAgents/com.apple.telephonyutilities.callservicesd.plist
+	state = waiting
+
+	program = /System/Library/PrivateFrameworks/TelephonyUtilities.framework/callservicesd
+	arguments = {
+		/System/Library/PrivateFrameworks/TelephonyUtilities.framework/callservicesd
+	}
+
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.VAKBzAjoWo/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		NSRunningFromLaunchd => 1
+		XPC_SERVICE_NAME => com.apple.telephonyutilities.callservicesd
+	}
+
+	domain = com.apple.xpc.launchd.user.domain.501.100006.Aqua
+	asid = 100006
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 2
+	successive crashes = 0
+	last exit reason = JETSAM_REASON_MEMORY_IDLE_EXIT
+	last jetsam exit details = JETSAM_REASON_MEMORY_IDLE_EXIT
+
+	event triggers = {
+		com.apple.callhistory.save.distributed.notification => {
+			keepalive = 0
+			service = com.apple.telephonyutilities.callservicesd
+			stream = com.apple.distnoted.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Name" => "com.apple.callhistory.save.distributed.notification"
+			}
+		}
+		com.apple.telephonyutilities.callservicesd.kCTSettingCallCapabilitiesChangedNotification => {
+			keepalive = 0
+			service = com.apple.telephonyutilities.callservicesd
+			stream = com.apple.CTTelephonyCenter
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Name" => "kCTSettingCallCapabilitiesChangedNotification"
+			}
+		}
+		com.apple.telephonyutilities.callservicesd.kFZACAppBundleIdentifierLaunchNotification => {
+			keepalive = 0
+			service = com.apple.telephonyutilities.callservicesd
+			stream = com.apple.notifyd.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Notification" => "kFZACAppBundleIdentifierLaunchNotification"
+			}
+		}
+		com.apple.telephonyutilities.callservicesd.kFZVCAppBundleIdentifierLaunchNotification => {
+			keepalive = 0
+			service = com.apple.telephonyutilities.callservicesd
+			stream = com.apple.notifyd.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Notification" => "kFZVCAppBundleIdentifierLaunchNotification"
+			}
+		}
+		com.apple.telephonyutilities.callservicesd.fakeincomingmessage => {
+			keepalive = 0
+			service = com.apple.telephonyutilities.callservicesd
+			stream = com.apple.notifyd.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Notification" => "com.apple.telephonyutilities.callservicesd.fakeincomingmessage"
+			}
+		}
+		com.apple.telephonyutilities.callservicesd.fakeoutgoingmessage => {
+			keepalive = 0
+			service = com.apple.telephonyutilities.callservicesd
+			stream = com.apple.notifyd.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Notification" => "com.apple.telephonyutilities.callservicesd.fakeoutgoingmessage"
+			}
+		}
+		com.apple.telephonyutilities.callservicesd.kFaceTimeChangedNotification => {
+			keepalive = 0
+			service = com.apple.telephonyutilities.callservicesd
+			stream = com.apple.notifyd.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Notification" => "kFaceTimeChangedNotification"
+			}
+		}
+	}
+
+	endpoints = {
+		"com.apple.telephonyutilities.callservicesdaemon.callstatecontroller" = {
+			port = 0x5ac03
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.private.alloy.facetime.audio-idswake" = {
+			port = 0x5ab03
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.telephonyutilities.callservicesdaemon.conversationmanager" = {
+			port = 0x5ad03
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.private.alloy.phonecontinuity-idswake" = {
+			port = 0x5ae03
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.telephonyutilities.callservicesdaemon.callprovidermanager" = {
+			port = 0x5af03
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.private.alloy.facetime.multi-idswake" = {
+			port = 0x5b003
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.callkit.callcontrollerhost" = {
+			port = 0x5b103
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.telephonyutilities.callservicesdaemon.callhistorymanager" = {
+			port = 0x5aa03
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.telephonyutilities.callservicesdaemon.momentscontroller" = {
+			port = 0x5b203
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.callkit.callsourcehost" = {
+			port = 0x5b303
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.telephonyutilities.callservicesdaemon.callcapabilities" = {
+			port = 0x5b403
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.private.alloy.phone.auth-idswake" = {
+			port = 0x5b503
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.private.alloy.facetime.video-idswake" = {
+			port = 0x5a903
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	dynamic endpoints = {
+	}
+
+	pid-local endpoints = {
+	}
+
+	instance-specific endpoints = {
+	}
+
+	event channels = {
+		"com.apple.usernotificationcenter.matching" = {
+			port = 0x89a23
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.distnoted.matching" = {
+			port = 0x6a903
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.CTTelephonyCenter" = {
+			port = 0x60103
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.notifyd.matching" = {
+			port = 0x60003
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	sockets = {
+	}
+
+	instances = {
+	}
+
+	spawn type = adaptive
+	jetsam priority = 3
+	jetsam memory limit (active) = (unlimited)
+	jetsam memory limit (inactive) = (unlimited)
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = {
+		partial import = 0
+		launchd bundle = 0
+		xpc bundle = 0
+		keepalive = 0
+		runatload = 0
+		low priority i/o = 0
+		low priority background i/o = 0
+		dataless file mode = 0
+		legacy timer behavior = 0
+		exception handler = 0
+		multiple instances = 0
+		supports transactions = 1
+		supports pressured exit = 1
+		supports idle hysteresis = 0
+		enter kdp before kill = 0
+		wait for debugger = 0
+		app = 0
+		system app = 0
+		creates session = 0
+		inetd-compatible = 0
+		inetd listener = 0
+		abandon process group = 0
+		one-shot = 0
+		event monitor = 0
+		penalty box = 0
+		pended non-demand spawn = 0
+		role account = 0
+		launch only once = 0
+		system support = 0
+		app-like = 0
+		inferred program = 1
+		joins gui session = 0
+		joins host session = 0
+		parameterized sandbox = 0
+		resolve program = 0
+		abandon coalition = 0
+		high bits aslr = 0
+		extension = 0
+		nano allocator = 0
+		no initgroups = 0
+		start on fs mount = 0
+		endpoints initialized = 1
+		is copy = 0
+		disallow all lookups = 0
+		system service = 1
+		protected by submitter = 0
+	}
+}
+
+--- SERVICE com.apple.corespeechd ---
+com.apple.corespeechd = {
+	active count = 5
+	copy count = 0
+	one shot = 0
+	path = /System/Library/LaunchAgents/com.apple.corespeechd.plist
+	state = running
+
+	program = /System/Library/PrivateFrameworks/CoreSpeech.framework/corespeechd
+	arguments = {
+		/System/Library/PrivateFrameworks/CoreSpeech.framework/corespeechd
+	}
+
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.VAKBzAjoWo/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		XPC_SERVICE_NAME => com.apple.corespeechd
+	}
+
+	domain = com.apple.xpc.launchd.user.domain.501.100006.Aqua
+	asid = 100006
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 1
+	successive crashes = 0
+	pid = 387
+	immediate reason = speculative
+	forks = 0
+	execs = 1
+	initialized = 1
+	trampolined = 1
+	started suspended = 0
+	proxy started suspended = 0
+	last exit code = (never exited)
+
+	event triggers = {
+	}
+
+	endpoints = {
+		"com.apple.corespeech.corespeechd.activation.xpc" = {
+			port = 0x58803
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.corespeech.voicetriggerservice" = {
+			port = 0x58703
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.corespeech.corespeechservices" = {
+			port = 0x5d003
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.corespeech.corespeechd.xpc" = {
+			port = 0x36a0b
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	dynamic endpoints = {
+	}
+
+	pid-local endpoints = {
+	}
+
+	instance-specific endpoints = {
+	}
+
+	event channels = {
+	}
+
+	sockets = {
+	}
+
+	instances = {
+	}
+
+	spawn type = interactive
+	spawn role = (null)
+	jetsam priority = 3
+	jetsam memory limit (active) = (unlimited)
+	jetsam memory limit (inactive) = (unlimited)
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = {
+		partial import = 0
+		launchd bundle = 0
+		xpc bundle = 0
+		keepalive = 1
+		runatload = 1
+		low priority i/o = 0
+		low priority background i/o = 0
+		dataless file mode = 0
+		legacy timer behavior = 0
+		exception handler = 0
+		multiple instances = 0
+		supports transactions = 1
+		supports pressured exit = 0
+		supports idle hysteresis = 0
+		enter kdp before kill = 0
+		wait for debugger = 0
+		app = 0
+		system app = 0
+		creates session = 0
+		inetd-compatible = 0
+		inetd listener = 0
+		abandon process group = 0
+		one-shot = 0
+		event monitor = 0
+		penalty box = 0
+		pended non-demand spawn = 1
+		role account = 0
+		launch only once = 0
+		system support = 0
+		app-like = 0
+		inferred program = 1
+		joins gui session = 0
+		joins host session = 0
+		parameterized sandbox = 0
+		resolve program = 0
+		abandon coalition = 0
+		high bits aslr = 0
+		extension = 0
+		nano allocator = 0
+		no initgroups = 0
+		start on fs mount = 0
+		endpoints initialized = 1
+		is copy = 0
+		disallow all lookups = 0
+		system service = 1
+		protected by submitter = 0
+	}
+}
+
+--- SERVICE com.apple.siriknowledged ---
+com.apple.siriknowledged = {
+	active count = 0
+	copy count = 0
+	one shot = 0
+	path = /System/Library/LaunchAgents/com.apple.siriknowledged.plist
+	state = waiting
+
+	program = /usr/libexec/siriknowledged
+	arguments = {
+		/usr/libexec/siriknowledged
+	}
+
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.VAKBzAjoWo/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		XPC_SERVICE_NAME => com.apple.siriknowledged
+	}
+
+	domain = com.apple.xpc.launchd.user.domain.501.100006.Aqua
+	asid = 100006
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 0
+	successive crashes = 0
+	last exit code = (never exited)
+
+	event triggers = {
+		notification => {
+			keepalive = 0
+			service = com.apple.siriknowledged
+			stream = com.apple.coreduetcontext.client_event_stream
+			monitor = com.apple.contextstored
+			descriptor = {
+				"client-identifier" => "com.apple.siriknowledge"
+			}
+		}
+		kAFPreferencesDidChangeDarwinNotification => {
+			keepalive = 0
+			service = com.apple.siriknowledged
+			stream = com.apple.notifyd.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Notification" => "kAFPreferencesDidChangeDarwinNotification"
+			}
+		}
+	}
+
+	endpoints = {
+		"com.apple.siriknowledged" = {
+			port = 0x31307
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.siriknowledged.aps" = {
+			port = 0x42a07
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	dynamic endpoints = {
+	}
+
+	pid-local endpoints = {
+	}
+
+	instance-specific endpoints = {
+	}
+
+	event channels = {
+		"com.apple.coreduetcontext.client_event_stream" = {
+			port = 0x3497b
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.notifyd.matching" = {
+			port = 0x30f07
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	sockets = {
+	}
+
+	instances = {
+	}
+
+	spawn type = adaptive
+	jetsam priority = 3
+	jetsam memory limit (active, soft) = 30 MB
+	jetsam memory limit (inactive, soft) = 30 MB
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = {
+		partial import = 0
+		launchd bundle = 0
+		xpc bundle = 0
+		keepalive = 0
+		runatload = 0
+		low priority i/o = 0
+		low priority background i/o = 0
+		dataless file mode = 0
+		legacy timer behavior = 0
+		exception handler = 0
+		multiple instances = 0
+		supports transactions = 1
+		supports pressured exit = 1
+		supports idle hysteresis = 0
+		enter kdp before kill = 0
+		wait for debugger = 0
+		app = 0
+		system app = 0
+		creates session = 0
+		inetd-compatible = 0
+		inetd listener = 0
+		abandon process group = 0
+		one-shot = 0
+		event monitor = 0
+		penalty box = 0
+		pended non-demand spawn = 0
+		role account = 0
+		launch only once = 0
+		system support = 0
+		app-like = 0
+		inferred program = 0
+		joins gui session = 0
+		joins host session = 0
+		parameterized sandbox = 0
+		resolve program = 0
+		abandon coalition = 0
+		high bits aslr = 0
+		extension = 0
+		nano allocator = 0
+		no initgroups = 0
+		start on fs mount = 0
+		endpoints initialized = 1
+		is copy = 0
+		disallow all lookups = 0
+		system service = 1
+		protected by submitter = 0
+	}
+}
+
+--- SERVICE com.apple.DictationIM ---
+com.apple.DictationIM = {
+	active count = 0
+	copy count = 0
+	one shot = 0
+	path = /System/Library/LaunchAgents/com.apple.DictationIM.plist
+	state = waiting
+
+	program = /System/Library/Input Methods/DictationIM.app/Contents/MacOS/DictationIM
+	arguments = {
+		/System/Library/Input Methods/DictationIM.app/Contents/MacOS/DictationIM
+	}
+
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.VAKBzAjoWo/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		XPC_SERVICE_NAME => com.apple.DictationIM
+	}
+
+	domain = com.apple.xpc.launchd.user.domain.501.100006.Aqua
+	asid = 100006
+	minimum runtime = 1
+	exit timeout = 5
+	runs = 0
+	successive crashes = 0
+	last exit code = (never exited)
+
+	event triggers = {
+	}
+
+	endpoints = {
+		"com.apple.speech.CommandAndControl.utility" = {
+			port = 0x61603
+			active = 0
+			managed = 1
+			reset = 1
+			hide = 0
+		}
+		"com.apple.DictationIM.startup" = {
+			port = 0x61703
+			active = 0
+			managed = 1
+			reset = 1
+			hide = 0
+		}
+		"com.apple.DictationIM.feedback" = {
+			port = 0x68e03
+			active = 0
+			managed = 1
+			reset = 1
+			hide = 0
+		}
+	}
+
+	dynamic endpoints = {
+	}
+
+	pid-local endpoints = {
+	}
+
+	instance-specific endpoints = {
+	}
+
+	event channels = {
+	}
+
+	sockets = {
+	}
+
+	instances = {
+	}
+
+	spawn type = interactive
+	spawn role = (null)
+	jetsam priority = 3
+	jetsam memory limit (active, soft) = 50 MB
+	jetsam memory limit (inactive, soft) = 50 MB
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = {
+		partial import = 0
+		launchd bundle = 0
+		xpc bundle = 0
+		keepalive = 0
+		runatload = 0
+		low priority i/o = 0
+		low priority background i/o = 0
+		dataless file mode = 0
+		legacy timer behavior = 0
+		exception handler = 0
+		multiple instances = 0
+		supports transactions = 1
+		supports pressured exit = 0
+		supports idle hysteresis = 0
+		enter kdp before kill = 0
+		wait for debugger = 0
+		app = 0
+		system app = 0
+		creates session = 0
+		inetd-compatible = 0
+		inetd listener = 0
+		abandon process group = 0
+		one-shot = 0
+		event monitor = 0
+		penalty box = 0
+		pended non-demand spawn = 0
+		role account = 0
+		launch only once = 0
+		system support = 0
+		app-like = 0
+		inferred program = 1
+		joins gui session = 0
+		joins host session = 0
+		parameterized sandbox = 0
+		resolve program = 0
+		abandon coalition = 0
+		high bits aslr = 0
+		extension = 0
+		nano allocator = 0
+		no initgroups = 0
+		start on fs mount = 0
+		endpoints initialized = 1
+		is copy = 0
+		disallow all lookups = 0
+		system service = 1
+		protected by submitter = 0
+	}
+}
+
+--- SERVICE com.apple.assistant_service ---
+com.apple.assistant_service = {
+	active count = 0
+	copy count = 0
+	one shot = 0
+	path = /System/Library/LaunchAgents/com.apple.assistant_service.plist
+	state = waiting
+
+	program = /System/Library/PrivateFrameworks/AssistantServices.framework/Versions/A/Support/assistant_service
+	arguments = {
+		/System/Library/PrivateFrameworks/AssistantServices.framework/Versions/A/Support/assistant_service
+	}
+
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.VAKBzAjoWo/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		XPC_SERVICE_NAME => com.apple.assistant_service
+	}
+
+	domain = com.apple.xpc.launchd.user.domain.501.100006.Aqua
+	asid = 100006
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 0
+	successive crashes = 0
+	last exit code = (never exited)
+
+	event triggers = {
+		com.apple.assistant.speech-capture.finished => {
+			keepalive = 0
+			service = com.apple.assistant_service
+			stream = com.apple.notifyd.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Notification" => "com.apple.assistant.speech-capture.finished"
+			}
+		}
+	}
+
+	endpoints = {
+		"com.apple.assistant_service" = {
+			port = 0x3e007
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	dynamic endpoints = {
+	}
+
+	pid-local endpoints = {
+	}
+
+	instance-specific endpoints = {
+	}
+
+	event channels = {
+		"com.apple.notifyd.matching" = {
+			port = 0x49407
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	sockets = {
+	}
+
+	instances = {
+	}
+
+	spawn type = adaptive
+	jetsam priority = 3
+	jetsam memory limit (active) = (unlimited)
+	jetsam memory limit (inactive) = (unlimited)
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = {
+		partial import = 0
+		launchd bundle = 0
+		xpc bundle = 0
+		keepalive = 0
+		runatload = 0
+		low priority i/o = 0
+		low priority background i/o = 0
+		dataless file mode = 0
+		legacy timer behavior = 0
+		exception handler = 0
+		multiple instances = 0
+		supports transactions = 1
+		supports pressured exit = 1
+		supports idle hysteresis = 0
+		enter kdp before kill = 0
+		wait for debugger = 0
+		app = 0
+		system app = 0
+		creates session = 0
+		inetd-compatible = 0
+		inetd listener = 0
+		abandon process group = 0
+		one-shot = 0
+		event monitor = 0
+		penalty box = 0
+		pended non-demand spawn = 0
+		role account = 0
+		launch only once = 0
+		system support = 0
+		app-like = 0
+		inferred program = 1
+		joins gui session = 0
+		joins host session = 0
+		parameterized sandbox = 0
+		resolve program = 0
+		abandon coalition = 0
+		high bits aslr = 0
+		extension = 0
+		nano allocator = 0
+		no initgroups = 0
+		start on fs mount = 0
+		endpoints initialized = 1
+		is copy = 0
+		disallow all lookups = 0
+		system service = 1
+		protected by submitter = 0
+	}
+}
+
+--- SERVICE com.apple.speech.speechdatainstallerd ---
+com.apple.speech.speechdatainstallerd = {
+	active count = 0
+	copy count = 0
+	one shot = 0
+	path = /System/Library/LaunchAgents/com.apple.speech.speechdatainstallerd.plist
+	state = waiting
+
+	program = /System/Library/PrivateFrameworks/SpeechObjects.framework/Versions/A/SpeechDataInstallerd.app/Contents/MacOS/SpeechDataInstallerd
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.VAKBzAjoWo/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		XPC_SERVICE_NAME => com.apple.speech.speechdatainstallerd
+	}
+
+	domain = com.apple.xpc.launchd.user.domain.501.100006.Aqua
+	asid = 100006
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 0
+	successive crashes = 0
+	last exit code = (never exited)
+
+	event triggers = {
+		com.apple.speech.speechdatainstallerd.268435464 => {
+			keepalive = 0
+			service = com.apple.speech.speechdatainstallerd
+			stream = com.apple.launchd.calendarinterval
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Minute" => 41
+				"Hour" => 14
+				"Weekday" => 2
+			}
+		}
+	}
+
+	endpoints = {
+		"com.apple.speech.speechdatainstallerd" = {
+			port = 0x3e607
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	dynamic endpoints = {
+	}
+
+	pid-local endpoints = {
+	}
+
+	instance-specific endpoints = {
+	}
+
+	event channels = {
+		"com.apple.launchd.calendarinterval" = {
+			port = 0x49107
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	sockets = {
+	}
+
+	instances = {
+	}
+
+	spawn type = daemon
+	spawn role = (null)
+	jetsam priority = 3
+	jetsam memory limit (active, soft) = 100 MB
+	jetsam memory limit (inactive, soft) = 100 MB
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = {
+		partial import = 0
+		launchd bundle = 0
+		xpc bundle = 0
+		keepalive = 0
+		runatload = 0
+		low priority i/o = 0
+		low priority background i/o = 0
+		dataless file mode = 0
+		legacy timer behavior = 0
+		exception handler = 0
+		multiple instances = 0
+		supports transactions = 1
+		supports pressured exit = 0
+		supports idle hysteresis = 0
+		enter kdp before kill = 0
+		wait for debugger = 0
+		app = 0
+		system app = 0
+		creates session = 0
+		inetd-compatible = 0
+		inetd listener = 0
+		abandon process group = 0
+		one-shot = 0
+		event monitor = 0
+		penalty box = 0
+		pended non-demand spawn = 0
+		role account = 0
+		launch only once = 0
+		system support = 0
+		app-like = 0
+		inferred program = 0
+		joins gui session = 0
+		joins host session = 0
+		parameterized sandbox = 0
+		resolve program = 0
+		abandon coalition = 0
+		high bits aslr = 0
+		extension = 0
+		nano allocator = 0
+		no initgroups = 0
+		start on fs mount = 0
+		endpoints initialized = 1
+		is copy = 0
+		disallow all lookups = 0
+		system service = 1
+		protected by submitter = 0
+	}
+}
+
+--- SERVICE com.apple.bird ---
+com.apple.bird = {
+	active count = 7
+	copy count = 0
+	one shot = 0
+	path = /System/Library/LaunchAgents/com.apple.bird.plist
+	state = running
+
+	program = /System/Library/PrivateFrameworks/CloudDocsDaemon.framework/Versions/A/Support/bird
+	arguments = {
+		/System/Library/PrivateFrameworks/CloudDocsDaemon.framework/Versions/A/Support/bird
+	}
+
+	inherited environment = {
+		SSH_AUTH_SOCK => /private/tmp/com.apple.launchd.VAKBzAjoWo/Listeners
+	}
+
+	default environment = {
+		PATH => /usr/bin:/bin:/usr/sbin:/sbin
+	}
+
+	environment = {
+		XPC_SERVICE_NAME => com.apple.bird
+	}
+
+	domain = com.apple.xpc.launchd.user.domain.501.100006.Aqua
+	asid = 100006
+	minimum runtime = 10
+	exit timeout = 5
+	runs = 7
+	successive crashes = 0
+	pid = 29008
+	immediate reason = xpc event
+	forks = 0
+	execs = 1
+	initialized = 1
+	trampolined = 1
+	started suspended = 0
+	proxy started suspended = 0
+	last exit reason = JETSAM_REASON_MEMORY_IDLE_EXIT
+	last jetsam exit details = JETSAM_REASON_MEMORY_IDLE_EXIT
+
+	event triggers = {
+		com.apple.bird.cache-delete.push => {
+			keepalive = 0
+			service = com.apple.bird
+			stream = com.apple.xpc.activity
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Repeating" => true
+				"_SequenceNumber" => 1
+				"RequireScreenSleep" => true
+				"GracePeriod" => 14400
+				"PowerNap" => true
+				"Delay" => 14400
+				"AllowBattery" => false
+				"Priority" => "Maintenance"
+			}
+		}
+		com.apple.bird.fsevents => {
+			keepalive = 0
+			service = com.apple.bird
+			stream = com.apple.fsevents.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Path" => "~/Library/Mobile Documents"
+			}
+		}
+		com.apple.bird.apps.install => {
+			keepalive = 0
+			service = com.apple.bird
+			stream = com.apple.distnoted.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Name" => "com.apple.LaunchServices.applicationRegistered"
+			}
+		}
+		com.apple.bird.apps.uninstall => {
+			keepalive = 0
+			service = com.apple.bird
+			stream = com.apple.distnoted.matching
+			monitor = com.apple.UserEventAgent-Aqua
+			descriptor = {
+				"Name" => "com.apple.LaunchServices.applicationUnregistered"
+			}
+		}
+	}
+
+	endpoints = {
+		"com.apple.bird.token" = {
+			port = 0x64103
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.bird.push" = {
+			port = 0x64003
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.bird.cache-delete" = {
+			port = 0x63f03
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.bird" = {
+			port = 0x66503
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	dynamic endpoints = {
+	}
+
+	pid-local endpoints = {
+	}
+
+	instance-specific endpoints = {
+	}
+
+	event channels = {
+		"com.apple.fsevents.matching" = {
+			port = 0x66203
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.distnoted.matching" = {
+			port = 0x66303
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+		"com.apple.xpc.activity" = {
+			port = 0x66403
+			active = 1
+			managed = 1
+			reset = 0
+			hide = 0
+		}
+	}
+
+	sockets = {
+	}
+
+	instances = {
+	}
+
+	spawn type = adaptive
+	jetsam priority = 3
+	jetsam memory limit (active, soft) = 100 MB
+	jetsam memory limit (inactive, soft) = 100 MB
+	jetsamproperties category = daemon
+	jetsam thread limit = 32
+	cpumon = default
+
+	properties = {
+		partial import = 0
+		launchd bundle = 0
+		xpc bundle = 0
+		keepalive = 0
+		runatload = 0
+		low priority i/o = 0
+		low priority background i/o = 0
+		dataless file mode = 0
+		legacy timer behavior = 0
+		exception handler = 0
+		multiple instances = 0
+		supports transactions = 1
+		supports pressured exit = 1
+		supports idle hysteresis = 0
+		enter kdp before kill = 0
+		wait for debugger = 0
+		app = 0
+		system app = 0
+		creates session = 0
+		inetd-compatible = 0
+		inetd listener = 0
+		abandon process group = 0
+		one-shot = 0
+		event monitor = 0
+		penalty box = 0
+		pended non-demand spawn = 0
+		role account = 0
+		launch only once = 0
+		system support = 0
+		app-like = 0
+		inferred program = 1
+		joins gui session = 0
+		joins host session = 0
+		parameterized sandbox = 0
+		resolve program = 0
+		abandon coalition = 0
+		high bits aslr = 0
+		extension = 0
+		nano allocator = 0
+		no initgroups = 0
+		start on fs mount = 0
+		endpoints initialized = 1
+		is copy = 0
+		disallow all lookups = 0
+		system service = 1
+		protected by submitter = 0
+	}
+}
+
+===== CANDIDATE LAUNCH AGENT PLISTS =====
+
+--- LAUNCH AGENT com.apple.CallHistorySyncHelper ---
+path=/System/Library/LaunchAgents/com.apple.CallHistorySyncHelper.plist
+{
+  "EnablePressuredExit" => 1
+  "EnableTransactions" => 1
+  "Label" => "com.apple.CallHistorySyncHelper"
+  "LaunchEvents" => {
+    "com.apple.notifyd.matching" => {
+      "com.apple.callhistorysync.idslaunchnotification" => {
+        "Notification" => "com.apple.callhistorysync.idslaunchnotification"
+      }
+    }
+  }
+  "MachServices" => {
+    "com.apple.CallHistorySyncHelper" => 1
+    "com.apple.CallHistorySyncHelper.aps" => 1
+  }
+  "POSIXSpawnType" => "Adaptive"
+  "ProgramArguments" => [
+    0 => "/System/Library/PrivateFrameworks/CallHistory.framework/Support/CallHistorySyncHelper"
+  ]
+}
+
+--- LAUNCH AGENT com.apple.DictationIM ---
+path=/System/Library/LaunchAgents/com.apple.DictationIM.plist
+{
+  "EnableTransactions" => 1
+  "Label" => "com.apple.DictationIM"
+  "LimitLoadToSessionType" => [
+    0 => "Aqua"
+    1 => "LoginWindow"
+  ]
+  "MachServices" => {
+    "com.apple.DictationIM.feedback" => {
+      "ResetAtClose" => 1
+    }
+    "com.apple.DictationIM.startup" => {
+      "ResetAtClose" => 1
+    }
+    "com.apple.speech.CommandAndControl.utility" => {
+      "ResetAtClose" => 1
+    }
+  }
+  "ProcessType" => "Interactive"
+  "ProgramArguments" => [
+    0 => "/System/Library/Input Methods/DictationIM.app/Contents/MacOS/DictationIM"
+  ]
+  "ThrottleInterval" => 1
+}
+
+--- LAUNCH AGENT com.apple.SoftwareUpdateNotificationManager ---
+path=/System/Library/LaunchAgents/com.apple.SoftwareUpdateNotificationManager.plist
+{
+  "EnablePressuredExit" => 1
+  "EnableTransactions" => 1
+  "Label" => "com.apple.SoftwareUpdateNotificationManager"
+  "LaunchEvents" => {
+    "com.apple.notifyd.matching" => {
+      "BadgingCountChanged" => {
+        "Notification" => "com.apple.SoftwareUpdate.BadgingCountChanged"
+      }
+      "LoginDone" => {
+        "Notification" => "com.apple.system.loginwindow.delayedLoginItemsInitiated"
+      }
+      "MDMWakeup" => {
+        "Notification" => "com.apple.SoftwareUpdate.MDM.wakeup"
+      }
+      "OSXAvailable" => {
+        "Notification" => "com.apple.SoftwareUpdate.OSXAvailable"
+      }
+      "UpdatesAvailable" => {
+        "Notification" => "com.apple.SoftwareUpdate.updatesAvailable"
+      }
+    }
+  }
+  "LimitLoadToSessionType" => [
+    0 => "LoginWindow"
+    1 => "Aqua"
+  ]
+  "MachServices" => {
+    "com.apple.SoftwareUpdateNotificationManagerService" => 1
+    "com.apple.usernotifications.delegate.com.apple.SoftwareUpdateNotification" => 1
+  }
+  "ProcessType" => "Interactive"
+  "Program" => "/System/Library/PrivateFrameworks/SoftwareUpdate.framework/Resources/SoftwareUpdateNotificationManager.app/Contents/MacOS/SoftwareUpdateNotificationManager"
+}
+
+--- LAUNCH AGENT com.apple.appstoreagent ---
+path=/System/Library/LaunchAgents/com.apple.appstoreagent.plist
+{
+  "EnablePressuredExit" => 1
+  "EnableTransactions" => 1
+  "Label" => "com.apple.appstoreagent"
+  "LaunchEvents" => {
+    "com.apple.distnoted.matching" => {
+      "com.apple.appstored.ASDItunesAccountDidChangeNotification" => {
+        "Name" => "com.apple.appstored.ASDItunesAccountDidChangeNotification"
+      }
+      "com.apple.appstored.ASDRepairBundleID" => {
+        "Name" => "com.apple.appstored.ASDRepairBundleID"
+      }
+    }
+    "com.apple.notifyd.matching" => {
+      "com.apple.crashreporter.third_party_submission_preference_changed" => {
+        "Notification" => "com.apple.crashreporter.third_party_submission_preference_changed"
+      }
+    }
+    "com.apple.usernotificationcenter.matching" => {
+      "appstoreagent" => {
+        "bundleid" => "com.apple.appstoreagent"
+        "events" => [
+          0 => "didDismissAlert"
+          1 => "didActivateNotification"
+          2 => "didDeliverNotification"
+          3 => "didSnoozeAlert"
+          4 => "didRemoveDeliveredNotifications"
+          5 => "didExpireNotifications"
+        ]
+        "system" => 1
+      }
+    }
+    "com.apple.xpc.activity" => {
+      "com.apple.appstoreagent.scheduleTasks" => {
+        "AllowBattery" => 1
+        "Delay" => 120
+        "GracePeriod" => 60
+        "Priority" => "Maintenance"
+        "Repeating" => 0
+      }
+    }
+  }
+  "LimitLoadToSessionType" => [
+    0 => "Aqua"
+  ]
+  "MachServices" => {
+    "com.apple.appstoreagent.legacy" => 1
+    "com.apple.appstoreagent.xpc" => 1
+    "com.apple.appstored.xpc.in-game-analytics" => 1
+    "com.apple.aps.appstoreagent" => 1
+    "com.apple.storekitservice" => 1
+  }
+  "ProcessType" => "Adaptive"
+  "Program" => "/System/Library/PrivateFrameworks/AppStoreDaemon.framework/Support/appstoreagent"
+  "RunAtLoad" => 0
+}
+
+--- LAUNCH AGENT com.apple.assistant_service ---
+path=/System/Library/LaunchAgents/com.apple.assistant_service.plist
+{
+  "EnablePressuredExit" => 1
+  "Label" => "com.apple.assistant_service"
+  "LaunchEvents" => {
+    "com.apple.notifyd.matching" => {
+      "com.apple.assistant.speech-capture.finished" => {
+        "Notification" => "com.apple.assistant.speech-capture.finished"
+      }
+    }
+  }
+  "MachServices" => {
+    "com.apple.assistant_service" => 1
+  }
+  "POSIXSpawnType" => "Adaptive"
+  "ProgramArguments" => [
+    0 => "/System/Library/PrivateFrameworks/AssistantServices.framework/Versions/A/Support/assistant_service"
+  ]
+}
+
+--- LAUNCH AGENT com.apple.bird ---
+path=/System/Library/LaunchAgents/com.apple.bird.plist
+{
+  "Disabled" => 0
+  "DrainMessagesOnFailedInit" => 1
+  "EnablePressuredExit" => 1
+  "EnableTransactions" => 1
+  "EnvironmentVariables" => {
+  }
+  "Label" => "com.apple.bird"
+  "LaunchEvents" => {
+    "com.apple.distnoted.matching" => {
+      "com.apple.bird.apps.install" => {
+        "Name" => "com.apple.LaunchServices.applicationRegistered"
+      }
+      "com.apple.bird.apps.uninstall" => {
+        "Name" => "com.apple.LaunchServices.applicationUnregistered"
+      }
+    }
+    "com.apple.fsevents.matching" => {
+      "com.apple.bird.fsevents" => {
+        "Path" => "~/Library/Mobile Documents"
+      }
+    }
+    "com.apple.xpc.activity" => {
+      "com.apple.bird.analytics-report" => {
+        "AllowBattery" => 0
+        "Interval" => 86400
+        "Priority" => "Maintenance"
+        "Repeating" => 1
+      }
+      "com.apple.bird.configuration-server-update" => {
+        "AllowBattery" => 0
+        "Interval" => 172800
+        "Priority" => "Maintenance"
+        "Repeating" => 1
+      }
+      "com.apple.bird.sync" => {
+        "AllowBattery" => 0
+        "Interval" => 28800
+        "Priority" => "Maintenance"
+        "Repeating" => 1
+      }
+    }
+  }
+  "MachServices" => {
+    "com.apple.bird" => 1
+    "com.apple.bird.cache-delete" => 1
+    "com.apple.bird.push" => 1
+    "com.apple.bird.token" => 1
+  }
+  "POSIXSpawnType" => "Adaptive"
+  "ProgramArguments" => [
+    0 => "/System/Library/PrivateFrameworks/CloudDocsDaemon.framework/Versions/A/Support/bird"
+  ]
+}
+
+--- LAUNCH AGENT com.apple.cloudphotod ---
+path=/System/Library/LaunchAgents/com.apple.cloudphotod.plist
+{
+  "EnablePressuredExit" => 1
+  "EnableTransactions" => 1
+  "Label" => "com.apple.cloudphotod"
+  "LaunchEvents" => {
+    "com.apple.notifyd.matching" => {
+      "com.apple.datamigrator.migrationDidFinish" => {
+        "Notification" => "com.apple.datamigrator.migrationDidFinish"
+      }
+    }
+  }
+  "MachServices" => {
+    "com.apple.cloudphotod" => 1
+    "com.apple.photos.cloud.datarepair" => 1
+    "com.apple.photos.cloud.pushnotification" => 1
+  }
+  "POSIXSpawnType" => "Adaptive"
+  "Program" => "/System/Library/PrivateFrameworks/CloudPhotoLibrary.framework/Versions/A/Support//cloudphotod"
+  "ProgramArguments" => [
+    0 => "cloudphotod"
+  ]
+}
+
+--- LAUNCH AGENT com.apple.cmfsyncagent ---
+path=/System/Library/LaunchAgents/com.apple.cmfsyncagent.plist
+{
+  "EnablePressuredExit" => 1
+  "EnvironmentVariables" => {
+    "NSRunningFromLaunchd" => "1"
+  }
+  "Label" => "com.apple.cmfsyncagent"
+  "LaunchEvents" => {
+    "com.apple.notifyd.matching" => {
+      "com.apple.cmfsyncagent.kvstorechange" => {
+        "Notification" => "com.apple.cmfsyncagent.kvstorechange"
+      }
+    }
+  }
+  "MachServices" => {
+    "com.apple.cmfsyncagent.auth" => 1
+  }
+  "POSIXSpawnType" => "Adaptive"
+  "ProgramArguments" => [
+    0 => "/System/Library/PrivateFrameworks/CommunicationsFilter.framework/CMFSyncAgent"
+  ]
+}
+
+--- LAUNCH AGENT com.apple.corespeechd ---
+path=/System/Library/LaunchAgents/com.apple.corespeechd.plist
+{
+  "EnablePressuredExit" => 1
+  "EnableTransactions" => 1
+  "KeepAlive" => 1
+  "Label" => "com.apple.corespeechd"
+  "MachServices" => {
+    "com.apple.corespeech.corespeechd.activation.xpc" => 1
+    "com.apple.corespeech.corespeechd.xpc" => 1
+    "com.apple.corespeech.corespeechservices" => 1
+    "com.apple.corespeech.voicetriggerservice" => 1
+  }
+  "ProcessType" => "Interactive"
+  "ProgramArguments" => [
+    0 => "/System/Library/PrivateFrameworks/CoreSpeech.framework/corespeechd"
+  ]
+  "RunAtLoad" => 1
+}
+
+--- LAUNCH AGENT com.apple.email.maild ---
+path=/System/Library/LaunchAgents/com.apple.email.maild.plist
+{
+  "EnablePressuredExit" => 1
+  "EnableTransactions" => 1
+  "Label" => "com.apple.email.maild"
+  "MachServices" => {
+    "com.apple.email.maild" => 1
+  }
+  "POSIXSpawnType" => "Adaptive"
+  "ProgramArguments" => [
+    0 => "/System/Library/PrivateFrameworks/EmailDaemon.framework/Versions/A/maild"
+  ]
+}
+
+--- LAUNCH AGENT com.apple.imagent ---
+path=/System/Library/LaunchAgents/com.apple.imagent.plist
+{
+  "EnvironmentVariables" => {
+    "NSRunningFromLaunchd" => "1"
+  }
+  "KeepAlive" => {
+    "SuccessfulExit" => 0
+  }
+  "Label" => "com.apple.imagent"
+  "LaunchEvents" => {
+    "com.apple.distnoted.matching" => {
+      "com.apple.authkit.user-info-changed" => {
+        "Name" => "com.apple.authkit.user-info-changed"
+      }
+      "com.apple.private.IMCore.LoggedIntoHSA2" => {
+        "Name" => "com.apple.private.IMCore.LoggedIntoHSA2"
+      }
+    }
+    "com.apple.xpc.activity" => {
+    }
+  }
+  "MachServices" => {
+    "com.apple.imagent.aps" => 1
+    "com.apple.imagent.cache-delete" => 1
+    "com.apple.imagent.desktop.auth" => 1
+    "com.apple.incoming-call-filter-server" => 1
+    "com.apple.madrid-idswake" => 1
+    "com.apple.usernotifications.delegate.com.apple.iChat" => 1
+  }
+  "POSIXSpawnType" => "Interactive"
+  "ProgramArguments" => [
+    0 => "/System/Library/PrivateFrameworks/IMCore.framework/imagent.app/Contents/MacOS/imagent"
+  ]
+}
+
+--- LAUNCH AGENT com.apple.imautomatichistorydeletionagent ---
+path=/System/Library/LaunchAgents/com.apple.imautomatichistorydeletionagent.plist
+{
+  "Label" => "com.apple.imautomatichistorydeletionagent"
+  "LaunchEvents" => {
+    "com.apple.notifyd.matching" => {
+      "com.apple.imautomatichistorydeletionagent.prefchange" => {
+        "Notification" => "com.apple.imautomatichistorydeletionagent.prefchange"
+      }
+    }
+    "com.apple.xpc.activity" => {
+      "com.apple.IMAutomaticHistoryDeletionAgent" => {
+        "AllowBattery" => 1
+        "GracePeriod" => 7200
+        "Interval" => 86400
+        "Repeating" => 1
+      }
+    }
+  }
+  "POSIXSpawnType" => "Background"
+  "ProgramArguments" => [
+    0 => "/System/Library/PrivateFrameworks/IMDPersistence.framework/IMAutomaticHistoryDeletionAgent.app/Contents/MacOS/IMAutomaticHistoryDeletionAgent"
+  ]
+}
+
+--- LAUNCH AGENT com.apple.mdworker.mail ---
+path=/System/Library/LaunchAgents/com.apple.mdworker.mail.plist
+{
+  "CFBundleIdentifier" => "com.apple.Spotlight"
+  "EnablePressuredExit" => 1
+  "EnableTransactions" => 1
+  "EnvironmentVariables" => {
+    "MallocCorruptionAbort" => "1"
+  }
+  "Label" => "com.apple.mdworker.mail"
+  "LimitLoadToSessionType" => "Background"
+  "LowPriorityBackgroundIO" => 0
+  "MachServices" => {
+    "com.apple.mdworker.mail" => {
+      "ResetAtClose" => 1
+    }
+  }
+  "MultipleInstances" => 1
+  "POSIXSpawnType" => "Interactive"
+  "ProgramArguments" => [
+    0 => "/System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared"
+    1 => "-s"
+    2 => "mdworker-mail"
+    3 => "-c"
+    4 => "MDSImporterWorker"
+    5 => "-m"
+    6 => "com.apple.mdworker.mail"
+  ]
+  "ThrottleInterval" => 1
+}
+
+--- LAUNCH AGENT com.apple.mediaanalysisd ---
+path=/System/Library/LaunchAgents/com.apple.mediaanalysisd.plist
+{
+  "EnablePressuredExit" => 1
+  "EnableTransactions" => 1
+  "Label" => "com.apple.mediaanalysisd"
+  "LaunchEvents" => {
+    "com.apple.xpc.activity" => {
+      "com.apple.mediaanalysisd.fullanalysis" => {
+        "AllowBattery" => 0
+        "CPUIntensive" => 1
+        "Interval" => 7200
+        "MemoryIntensive" => 1
+        "PowerNap" => 1
+        "Priority" => "Maintenance"
+        "Repeating" => 1
+        "RequireScreenSleep" => 1
+      }
+      "com.apple.mediaanalysisd.photosanalysis" => {
+        "AllowBattery" => 0
+        "CPUIntensive" => 1
+        "Interval" => 7200
+        "MemoryIntensive" => 1
+        "PowerNap" => 1
+        "Priority" => "Maintenance"
+        "Repeating" => 1
+        "RequireScreenSleep" => 1
+      }
+    }
+  }
+  "MachServices" => {
+    "com.apple.mediaanalysisd.analysis" => 1
+    "com.apple.mediaanalysisd.homekit" => 1
+    "com.apple.mediaanalysisd.photos" => 1
+    "com.apple.mediaanalysisd.realtime" => 1
+  }
+  "ProcessType" => "Adaptive"
+  "ProgramArguments" => [
+    0 => "/System/Library/PrivateFrameworks/VideoProcessing.framework/Versions/A/mediaanalysisd"
+  ]
+  "RunAtLoad" => 0
+}
+
+--- LAUNCH AGENT com.apple.photoanalysisd ---
+path=/System/Library/LaunchAgents/com.apple.photoanalysisd.plist
+{
+  "EnablePressuredExit" => 1
+  "EnableTransactions" => 1
+  "Label" => "com.apple.photoanalysisd"
+  "LaunchEvents" => {
+    "com.apple.xpc.activity" => {
+      "com.apple.photoanalysisd.backgroundanalysis" => {
+        "AllowBattery" => 0
+        "Delay" => 0
+        "Interval" => 7200
+        "PowerNap" => 1
+        "Priority" => "Maintenance"
+        "Repeating" => 1
+      }
+    }
+  }
+  "MachServices" => {
+    "com.apple.photoanalysisd" => 1
+  }
+  "ProcessType" => "Adaptive"
+  "Program" => "/System/Library/PrivateFrameworks/PhotoAnalysis.framework/Versions/A/Support/photoanalysisd"
+}
+
+--- LAUNCH AGENT com.apple.photolibraryd ---
+path=/System/Library/LaunchAgents/com.apple.photolibraryd.plist
+{
+  "EnablePressuredExit" => 1
+  "EnableTransactions" => 1
+  "KeepAlive" => {
+    "Crashed" => 1
+  }
+  "Label" => "com.apple.photolibraryd"
+  "LaunchEvents" => {
+    "com.apple.distnoted.matching" => {
+      "com.apple.photolibraryd.cloudphoto" => {
+        "Name" => "com.apple.cpl.wantslibrary.notification"
+      }
+    }
+    "com.apple.xpc.activity" => {
+      "com.apple.photolibraryd.curatedlibraryprocessing" => {
+        "GracePeriod" => 3600
+        "Interval" => 10800
+        "PowerNap" => 1
+        "Priority" => "Maintenance"
+        "Repeating" => 1
+        "RequireScreenSleep" => 1
+      }
+      "com.apple.photolibraryd.periodicmaintenance" => {
+        "AllowBattery" => 0
+        "Interval" => 86400
+        "PowerNap" => 1
+        "Priority" => "Maintenance"
+        "RequireScreenSleep" => 1
+      }
+    }
+  }
+  "MachServices" => {
+    "com.apple.photolibraryd.cacheDelete" => 1
+    "com.apple.photos.service" => 1
+  }
+  "ProcessType" => "Adaptive"
+  "Program" => "/System/Library/PrivateFrameworks/PhotoLibraryServices.framework/Versions/A/Support/photolibraryd"
+}
+
+--- LAUNCH AGENT com.apple.siriknowledged ---
+path=/System/Library/LaunchAgents/com.apple.siriknowledged.plist
+{
+  "EnablePressuredExit" => 1
+  "EnableTransactions" => 1
+  "Label" => "com.apple.siriknowledged"
+  "LaunchEvents" => {
+    "com.apple.coreduetcontext.client_event_stream" => {
+      "notification" => {
+        "client-identifier" => "com.apple.siriknowledge"
+      }
+    }
+    "com.apple.notifyd.matching" => {
+      "kAFPreferencesDidChangeDarwinNotification" => {
+        "Notification" => "kAFPreferencesDidChangeDarwinNotification"
+      }
+    }
+  }
+  "MachServices" => {
+    "com.apple.siriknowledged" => 1
+    "com.apple.siriknowledged.aps" => 1
+  }
+  "ProcessType" => "Adaptive"
+  "Program" => "/usr/libexec/siriknowledged"
+  "ProgramArguments" => [
+    0 => "/usr/libexec/siriknowledged"
+  ]
+  "RunAtLoad" => 0
+}
+
+--- LAUNCH AGENT com.apple.speech.speechdatainstallerd ---
+path=/System/Library/LaunchAgents/com.apple.speech.speechdatainstallerd.plist
+{
+  "EnableTransactions" => 1
+  "Label" => "com.apple.speech.speechdatainstallerd"
+  "LimitLoadToSessionType" => "Aqua"
+  "MachServices" => {
+    "com.apple.speech.speechdatainstallerd" => 1
+  }
+  "Program" => "/System/Library/PrivateFrameworks/SpeechObjects.framework/Versions/A/SpeechDataInstallerd.app/Contents/MacOS/SpeechDataInstallerd"
+  "StartCalendarInterval" => {
+    "Hour" => 14
+    "Minute" => 41
+    "Weekday" => 2
+  }
+}
+
+--- LAUNCH AGENT com.apple.storeassetd ---
+path=/System/Library/LaunchAgents/com.apple.storeassetd.plist
+{
+  "EnableTransactions" => 1
+  "ExitTimeOut" => 1
+  "Label" => "com.apple.storeassetd"
+  "LaunchEvents" => {
+    "com.apple.usernotificationcenter.matching" => {
+      "storeassetd" => {
+        "bundleid" => "com.apple.storeassetd"
+        "events" => [
+          0 => "didDismissAlert"
+          1 => "didActivateNotification"
+          2 => "didDeliverNotification"
+          3 => "didSnoozeAlert"
+          4 => "didRemoveDeliveredNotifications"
+          5 => "didExpireNotifications"
+        ]
+        "system" => 1
+      }
+    }
+  }
+  "LimitLoadToSessionType" => [
+    0 => "LoginWindow"
+    1 => "Aqua"
+  ]
+  "MachServices" => {
+    "com.apple.storeassetd" => 1
+  }
+  "POSIXSpawnType" => "_AdaptiveUtility"
+  "Program" => "/System/Library/PrivateFrameworks/CommerceKit.framework/Versions/A/Resources/storeassetd"
+}
+
+--- LAUNCH AGENT com.apple.storedownloadd ---
+path=/System/Library/LaunchAgents/com.apple.storedownloadd.plist
+{
+  "EnableTransactions" => 1
+  "ExitTimeOut" => 1
+  "Label" => "com.apple.storedownloadd"
+  "LimitLoadToSessionType" => [
+    0 => "LoginWindow"
+    1 => "Aqua"
+  ]
+  "MachServices" => {
+    "com.apple.commerce.cachedelete" => 1
+    "com.apple.storedownloadd" => 1
+  }
+  "POSIXSpawnType" => "_AdaptiveUtility"
+  "Program" => "/System/Library/PrivateFrameworks/CommerceKit.framework/Versions/A/Resources/storedownloadd"
+}
+
+--- LAUNCH AGENT com.apple.telephonyutilities.callservicesd ---
+path=/System/Library/LaunchAgents/com.apple.telephonyutilities.callservicesd.plist
+{
+  "EnablePressuredExit" => 1
+  "EnableTransactions" => 1
+  "EnvironmentVariables" => {
+    "NSRunningFromLaunchd" => "1"
+  }
+  "Label" => "com.apple.telephonyutilities.callservicesd"
+  "LaunchEvents" => {
+    "com.apple.CTTelephonyCenter" => {
+      "com.apple.telephonyutilities.callservicesd.kCTSettingCallCapabilitiesChangedNotification" => {
+        "Name" => "kCTSettingCallCapabilitiesChangedNotification"
+      }
+    }
+    "com.apple.distnoted.matching" => {
+      "com.apple.callhistory.save.distributed.notification" => {
+        "Name" => "com.apple.callhistory.save.distributed.notification"
+      }
+    }
+    "com.apple.notifyd.matching" => {
+      "com.apple.telephonyutilities.callservicesd.fakeincomingmessage" => {
+        "Notification" => "com.apple.telephonyutilities.callservicesd.fakeincomingmessage"
+      }
+      "com.apple.telephonyutilities.callservicesd.fakeoutgoingmessage" => {
+        "Notification" => "com.apple.telephonyutilities.callservicesd.fakeoutgoingmessage"
+      }
+      "com.apple.telephonyutilities.callservicesd.kFaceTimeChangedNotification" => {
+        "Notification" => "kFaceTimeChangedNotification"
+      }
+      "com.apple.telephonyutilities.callservicesd.kFZACAppBundleIdentifierLaunchNotification" => {
+        "Notification" => "kFZACAppBundleIdentifierLaunchNotification"
+      }
+      "com.apple.telephonyutilities.callservicesd.kFZVCAppBundleIdentifierLaunchNotification" => {
+        "Notification" => "kFZVCAppBundleIdentifierLaunchNotification"
+      }
+    }
+  }
+  "MachServices" => {
+    "com.apple.callkit.callcontrollerhost" => 1
+    "com.apple.callkit.callsourcehost" => 1
+    "com.apple.private.alloy.facetime.audio-idswake" => 1
+    "com.apple.private.alloy.facetime.multi-idswake" => 1
+    "com.apple.private.alloy.facetime.video-idswake" => 1
+    "com.apple.private.alloy.phone.auth-idswake" => 1
+    "com.apple.private.alloy.phonecontinuity-idswake" => 1
+    "com.apple.telephonyutilities.callservicesdaemon.callcapabilities" => 1
+    "com.apple.telephonyutilities.callservicesdaemon.callhistorymanager" => 1
+    "com.apple.telephonyutilities.callservicesdaemon.callprovidermanager" => 1
+    "com.apple.telephonyutilities.callservicesdaemon.callstatecontroller" => 1
+    "com.apple.telephonyutilities.callservicesdaemon.conversationmanager" => 1
+    "com.apple.telephonyutilities.callservicesdaemon.momentscontroller" => 1
+  }
+  "ProcessType" => "Adaptive"
+  "ProgramArguments" => [
+    0 => "/System/Library/PrivateFrameworks/TelephonyUtilities.framework/callservicesd"
+  ]
+}
+
+===== ASSOCIATED APPLICATION IDENTIFIERS =====
+
+--- APPLICATION Photos ---
+path=/System/Applications/Photos.app
+bundle_identifier=com.apple.Photos
+
+--- APPLICATION Mail ---
+path=/System/Applications/Mail.app
+bundle_identifier=com.apple.mail
+
+--- APPLICATION Messages ---
+path=/System/Applications/Messages.app
+bundle_identifier=com.apple.iChat
+
+--- APPLICATION FaceTime ---
+path=/System/Applications/FaceTime.app
+bundle_identifier=com.apple.FaceTime
+
+--- APPLICATION App Store ---
+path=/System/Applications/App Store.app
+bundle_identifier=com.apple.AppStore
+
+--- APPLICATION System Preferences ---
+path=/System/Applications/System Preferences.app
+bundle_identifier=com.apple.systempreferences
+
+--- APPLICATION Siri ---
+path=/System/Library/CoreServices/Siri.app
+bundle_identifier=com.apple.Siri
+
+===== SOFTWARE UPDATE PREFERENCES =====
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>AutomaticCheckEnabled</key>
+	<true/>
+	<key>AutomaticDownload</key>
+	<false/>
+	<key>AutomaticallyInstallMacOSUpdates</key>
+	<false/>
+	<key>ConfigDataInstall</key>
+	<false/>
+	<key>CriticalUpdateInstall</key>
+	<true/>
+	<key>DidRegisterLocalUpdates</key>
+	<false/>
+	<key>IgnoringUnseenRamped</key>
+	<false/>
+	<key>LastAttemptBuildVersion</key>
+	<string>10.15.7 (19H15)</string>
+	<key>LastAttemptSystemVersion</key>
+	<string>10.15.7 (19H15)</string>
+	<key>LastBackgroundSuccessfulDate</key>
+	<date>2026-08-01T02:59:07Z</date>
+	<key>LastFullSuccessfulDate</key>
+	<date>2026-08-01T06:12:45Z</date>
+	<key>LastRecommendedMajorOSBundleIdentifier</key>
+	<string></string>
+	<key>LastRecommendedUpdatesAvailable</key>
+	<integer>11</integer>
+	<key>LastResultCode</key>
+	<integer>0</integer>
+	<key>LastSessionSuccessful</key>
+	<true/>
+	<key>LastSuccessfulDate</key>
+	<date>2026-08-01T06:12:45Z</date>
+	<key>LastUpdatesAvailable</key>
+	<integer>11</integer>
+	<key>PrimaryLanguages</key>
+	<array>
+		<string>en-US</string>
+		<string>en</string>
+	</array>
+	<key>RecommendedUpdates</key>
+	<array>
+		<dict>
+			<key>Display Name</key>
+			<string>macOS Catalina Security Update 2021-008</string>
+			<key>Display Version</key>
+			<string>10.15.7</string>
+			<key>Identifier</key>
+			<string>macOS Catalina Security Update 2021-008</string>
+			<key>Product Key</key>
+			<string>002-31087</string>
+		</dict>
+		<dict>
+			<key>Display Name</key>
+			<string>macOS Catalina Security Update 2021-002</string>
+			<key>Display Version</key>
+			<string>10.15.7</string>
+			<key>Identifier</key>
+			<string>macOS Catalina Security Update 2021-002</string>
+			<key>Product Key</key>
+			<string>071-29320</string>
+		</dict>
+		<dict>
+			<key>Display Name</key>
+			<string>macOS Catalina Security Update 2021-004</string>
+			<key>Display Version</key>
+			<string>10.15.7</string>
+			<key>Identifier</key>
+			<string>macOS Catalina Security Update 2021-004</string>
+			<key>Product Key</key>
+			<string>071-41286</string>
+		</dict>
+		<dict>
+			<key>Display Name</key>
+			<string>macOS Catalina 10.15.7 Supplemental Update</string>
+			<key>Display Version</key>
+			<string>10.15.7</string>
+			<key>Identifier</key>
+			<string>macOS Catalina 10.15.7 Supplemental Update</string>
+			<key>Product Key</key>
+			<string>071-05425</string>
+		</dict>
+		<dict>
+			<key>Display Name</key>
+			<string>Safari</string>
+			<key>Display Version</key>
+			<string>15.6.1</string>
+			<key>Identifier</key>
+			<string>Safari15.6.1CatalinaAuto</string>
+			<key>Product Key</key>
+			<string>012-57329</string>
+		</dict>
+		<dict>
+			<key>Display Name</key>
+			<string>macOS Catalina Security Update 2022-003</string>
+			<key>Display Version</key>
+			<string>10.15.7</string>
+			<key>Identifier</key>
+			<string>macOS Catalina Security Update 2022-003</string>
+			<key>Product Key</key>
+			<string>002-64851</string>
+		</dict>
+		<dict>
+			<key>Display Name</key>
+			<string>macOS Catalina Security Update 2021-003</string>
+			<key>Display Version</key>
+			<string>10.15.7</string>
+			<key>Identifier</key>
+			<string>macOS Catalina Security Update 2021-003</string>
+			<key>Product Key</key>
+			<string>071-28858</string>
+		</dict>
+		<dict>
+			<key>Display Name</key>
+			<string>macOS Catalina Security Update 2021-007</string>
+			<key>Display Version</key>
+			<string>10.15.7</string>
+			<key>Identifier</key>
+			<string>macOS Catalina Security Update 2021-007</string>
+			<key>Product Key</key>
+			<string>002-23748</string>
+		</dict>
+		<dict>
+			<key>Display Name</key>
+			<string>macOS Catalina Security Update 2026-001</string>
+			<key>Display Version</key>
+			<string>10.15.8</string>
+			<key>Identifier</key>
+			<string>macOS Catalina Security Update 2026-001</string>
+			<key>Product Key</key>
+			<string>047-49516</string>
+		</dict>
+		<dict>
+			<key>Display Name</key>
+			<string>macOS Catalina Security Update 2022-005</string>
+			<key>Display Version</key>
+			<string>10.15.7</string>
+			<key>Identifier</key>
+			<string>macOS Catalina Security Update 2022-005</string>
+			<key>Product Key</key>
+			<string>012-08543</string>
+		</dict>
+		<dict>
+			<key>Display Name</key>
+			<string>macOS Catalina Security Update 2022-001</string>
+			<key>Display Version</key>
+			<string>10.15.7</string>
+			<key>Identifier</key>
+			<string>macOS Catalina Security Update 2022-001</string>
+			<key>Product Key</key>
+			<string>002-57000</string>
+		</dict>
+	</array>
+</dict>
+</plist>
+
+===== APP STORE COMMERCE PREFERENCES =====
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>AutoUpdate</key>
+	<false/>
+	<key>AutoUpdateRestartRequired</key>
+	<false/>
+	<key>EligibilityCheckDate</key>
+	<date>2026-05-19T23:13:07Z</date>
+	<key>ISBadgeValues</key>
+	<dict/>
+	<key>ISLastUpdatesQueueCheck</key>
+	<date>2026-05-19T23:13:04Z</date>
+	<key>Storefront</key>
+	<string>143441-1,13</string>
+	<key>UnsignedBags</key>
+	<true/>
+	<key>UserAccountUpdater_19H15</key>
+	<dict>
+		<key>date</key>
+		<date>2026-05-20T08:56:28Z</date>
+		<key>oldID</key>
+		<string>com.apple.storeagent</string>
+		<key>oldVers</key>
+		<string>12F45</string>
+	</dict>
+</dict>
+</plist>
+
+===== END =====
+Read-only probe complete. No settings or services were modified.

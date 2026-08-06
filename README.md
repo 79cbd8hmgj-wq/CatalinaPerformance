@@ -76,7 +76,7 @@ See [docs/SAFETY_RULES.md](docs/SAFETY_RULES.md) for the detailed safety contrac
 
 ## Current Status
 
-Initial documentation, reversible Performance Mode scripts, read-only health reports, a local AppKit GUI, a development `.app` packaging helper, the opt-in Foreground Performance Session, the session-scoped App Priority feature, and a read-only Performance Session Dashboard are present. No persistent privileged helper or fan-control behavior is installed.
+Initial documentation, reversible Performance Mode scripts, read-only health reports, a local AppKit GUI, a development `.app` packaging helper, the opt-in Foreground Performance Session, session-scoped App Priority, reversible Background Service Suppression, and a read-only Performance Session Dashboard are present. No persistent privileged helper or fan-control behavior is installed.
 
 ## Local GUI Development
 
@@ -85,11 +85,11 @@ A minimal macOS GUI shell now lives in `app/CatalinaPerformance`. It is a Swift 
 The GUI is intentionally thin:
 
 - It displays the CatalinaPerformance app name, a Performance Mode ON/OFF switch, a small detected-state label, a success/failure status area, script output, and buttons for status refresh, Performance ON, Performance OFF, Emergency Restore, Advanced, and View Session Dashboard.
-- The Advanced window is a scrollable configuration UI organized into Background Services, Power Behavior, Foreground Performance Session, App Priority, Memory / Storage, Thermal / Fan, Experimental, and Emergency / Restore sections.
-- Most Advanced controls are disabled placeholders clearly labeled `Not implemented yet`; the selectable Background Services, Power Behavior, and read-only Memory / Storage checkboxes write script-readable preferences to `~/Library/Application Support/CatalinaPerformance/advanced_preferences.env`. The Performance Mode scripts read only the system-changing Background Services and Power Behavior preferences; Memory / Storage preferences control only the manual read-only report. Missing or invalid preferences default to enabled for current-behavior compatibility. App Priority is an optional temporary process-priority feature, while Thermal / Fan remains read-only.
+- The Advanced window is a scrollable configuration UI organized into Background Services, Background Service Suppression, Power Behavior, Foreground Performance Session, App Priority, Memory / Storage, Thermal / Fan, Experimental, and Emergency / Restore sections.
+- Most Advanced controls remain disabled placeholders. Existing Spotlight/Time Machine and Power Behavior choices write script-readable preferences to `~/Library/Application Support/CatalinaPerformance/advanced_preferences.env`. Background Service Suppression uses a separate versioned session record and exact Catalina target catalog; the optional iCloud Drive preference is stored in UserDefaults and remains disabled when no verified target exists. Memory / Storage preferences control only the manual read-only report. App Priority remains optional, while Thermal / Fan remains read-only.
 - The Power Behavior section can configure the existing `pmset` behavior: **Prevent plugged-in system sleep while Performance Mode is ON** and **Prevent display sleep while Performance Mode is ON** both default to enabled. If either option is disabled, `performance_on.sh` still records the current `pmset` state but skips that specific `pmset -c` change and logs the skip; `performance_off.sh` restores only the selected actions that were recorded.
 - Power Behavior placeholders for preventing disk sleep, disabling Power Nap, and keeping network awake remain visibly disabled and labeled `Not implemented yet`.
-- The App Priority section remembers one selected application. While Performance Mode is ON, a session-scoped privileged agent sets the verified main process and verified same-user helper/child processes to nice `-5`, checks every two seconds for new helpers, and reacquires a relaunched instance. It records PID, ownership, executable path, process start time, and original nice value before each change, then restores only identities that still match on OFF or Emergency Restore. The **Run App Priority Report** button remains read-only and prints a bounded process list for verification. No persistent helper, daemon, login item, or service is installed.
+- The App Priority section remembers one selected application. Stable Firefox (`org.mozilla.firefox`) uses an experimental focused policy: its canonical parent/UI process, verified GPU helper, and one activity-selected content-style process may be changed to nice `-1`, with no more than three simultaneous changes. Firefox Developer Edition, Nightly, and other known browsers retain the conservative main-process-only policy; non-browser sustained workloads retain the verified process-family policy at nice `-5`. A session-scoped privileged agent records full process identity and exact original nice values before every change, then restores only identities that still match on OFF or Emergency Restore. The **Run App Priority Report** button remains read-only. No persistent helper, daemon, login item, or service is installed.
 - The Memory / Storage section provides enabled-by-default read-only options for showing swap usage warnings, low disk space warnings, a memory pressure summary, and top memory-heavy processes. The **Run Memory / Storage Check** button calls `scripts/memory_storage_report.sh`, prints results in the main output area, uses no sudo, and does not delete files, clear caches, tune memory, or change settings.
 - The Thermal / Fan section provides a read-only **Run Thermal / Fan Check** button that calls `scripts/thermal_fan_report.sh`. The report uses safe built-in macOS status commands such as `pmset -g therm` when available, identifies thermal constraints from parsed percentage-style `CPU_Speed_Limit`, `CPU_Scheduler_Limit`, and `GPU_Speed_Limit` values instead of status-note wording. It displays `CPU_Available_CPUs` as informational CPU-count data and prints clear unavailable warnings when CPU temperature or fan RPM cannot be obtained without privileged, SMC, or third-party access. It does not use sudo, control fans, write SMC values, load kexts, modify SIP, change kernel behavior, or alter system settings.
 - Memory / Storage warning thresholds are intentionally conservative and documented in the GUI and script output: swap usage above 1024 MB, disk free space below 10% or below 10 GB, and memory pressure output containing warn/critical states. Top disk-heavy folder scanning remains a disabled placeholder for a future optional read-only manual scan.
@@ -103,19 +103,34 @@ The GUI is intentionally thin:
 
 ### App Priority Session
 
-The **Advanced → App Priority** feature is optional and defaults to OFF. It remembers one application by display name, bundle identifier, application bundle path, and executable path. The same application cannot simultaneously be selected for the Foreground close list.
+The **Advanced → App Priority** feature is optional and defaults to OFF. It remembers one application by display name, bundle identifier, canonical application-bundle path, and the executable declared by that bundle's `CFBundleExecutable`. This prevents a helper process from replacing the real application identity. The same application cannot simultaneously be selected for the Foreground close list.
 
 When Performance Mode turns ON and App Priority is enabled:
 
 1. The normal administrator authorization starts a temporary, session-scoped priority agent; no persistent helper is installed.
-2. The agent validates the selection file and current console-user ownership.
-3. It identifies the selected application's main process plus verified same-user descendants and in-bundle helpers.
-4. It records each process identity and exact original nice value, then applies nice `-5` only when that would be a boost.
-5. Every two seconds it discovers new helpers and reacquires a verified relaunched application instance.
+2. The agent validates the saved bundle identifier, bundle path, and bundle-declared executable against the current console user.
+3. Stable Firefox uses the focused policy: parent/UI, one GPU helper, and one positive-activity content-style process, with a maximum of three changed processes at nice `-1`.
+4. A content-style process must lead by positive cumulative CPU-time delta for two consecutive complete monitor cycles before initial selection or switching. The previous content target is restored before a replacement can be changed.
+5. Firefox Developer Edition, Nightly, and other known browsers remain main-process-only. Non-browser sustained workloads retain the verified same-user process-family policy at nice `-5`.
+6. Every changed process is recorded with PID, UID, canonical executable path, process start time, role, and exact original nice value.
 
-Performance Mode OFF and Emergency Restore cooperatively stop monitoring and restore exact recorded nice values only when PID, UID, executable path, and process start time still match. Exited or PID-reused processes are never mutated. Root-owned processes and critical system processes are excluded. The selected application remains remembered after launch or reboot, but a reboot resets process priority naturally and does not restart the priority monitor or reapply nice `-5`. If broader Performance Mode state remains recorded, use OFF or Emergency Restore to complete its normal recovery path.
+Firefox process selection is activity-based. CatalinaPerformance does not inspect tab URLs or titles, and a content-style process is not proof of visible-tab ownership. Network/socket, RDD/data-decoder, generic utility, audio, crash-helper, idle preallocated, outside-bundle, and unverifiable Firefox processes remain unchanged.
 
-The expected benefit is modest and appears primarily when the CPU is contended. App Priority does not increase CPU frequency, GPU performance, RAM, fan speed, or hardware limits, and it does not modify SIP, install a daemon, or kill an application.
+Performance Mode OFF and Emergency Restore cooperatively stop monitoring and restore exact recorded nice values only when PID, UID, executable path, and process start time still match. A failed old-content restoration blocks switching to a new content target. Exited or PID-reused processes are never mutated. Root-owned processes and critical system processes are excluded. Reboot preserves the remembered selection but does not restart monitoring or reapply priority.
+
+The expected benefit is uncertain and must be measured on Catalina. App Priority cannot improve network latency and may still make browsing slower even when identity, targeting, and restoration are correct. It does not increase CPU frequency, GPU performance, RAM, fan speed, or hardware limits, and it does not modify SIP, install a daemon, or kill an application.
+
+### Background Service Suppression
+
+Performance Mode automatically captures and temporarily changes the exact update preferences and verified user-owned workers listed in the Catalina target catalog. The current Catalina 10.15.7 catalog supports macOS update settings, App Store update settings, Photos workers, Mail workers, and selected Messages/FaceTime workers. Siri/speech and iCloud Drive remain **Unsupported** because the probe did not establish a sufficiently isolated target and reliable restore path. Unsupported categories are reported rather than guessed.
+
+Before mutation, CatalinaPerformance writes an atomic `0600` session record under `~/Library/Application Support/CatalinaPerformance/background_service_suppression/`. Update preferences are restored to their exact prior type, presence, and value. User workers are matched by requesting UID, finite executable path, launch label, PID, and process start identity; only workers confirmed stopped by CatalinaPerformance are eligible for relaunch through their exact `launchctl kickstart gui/<uid>/<label>` identity.
+
+Opening Photos, Mail, Messages, FaceTime, the App Store, or Software Update exempts the related category for the rest of the active Performance Mode session. The coordinator does not repeatedly fight an application the user deliberately opened. A five-second monitor may re-suppress newly spawned workers only for still-eligible supported categories.
+
+The subsystem never intentionally modifies Keychain or Safari-password services, `securityd`, `trustd`, `accountsd`, shared CloudKit services, Apple push infrastructure, AirDrop/networking services, diagnostics, crash reporting, Finder, Dock, WindowServer, audio, or accessibility services. It does not use `killall`, SIGKILL, `launchctl disable`, `launchctl bootout`, delete LaunchAgent files, or install a persistent daemon. OFF and Emergency Restore retry only recorded outstanding restoration work. A stale session is surfaced as **Recovery required** rather than silently discarded.
+
+The measurable benefit may be small when these services were already idle or disabled. Dashboard rows show each category as Not configured, Unsupported, Skipped, Paused, Resumed, Restored, Restore failed, or Unknown; missing evidence is never reported as success.
 
 ### Performance Session Dashboard
 
@@ -129,12 +144,12 @@ The dashboard reports:
 - memory-pressure state and physical memory use;
 - swap use and startup-volume free space;
 - `CPU_Scheduler_Limit` and `CPU_Speed_Limit` when `pmset -g therm` provides them;
-- selected App Priority application CPU, resident memory, verified process count, and confirmed nice `-5` count; and
-- evidence for Spotlight, Time Machine, power settings, UI responsiveness, temporary application closing, and App Priority activation/restoration.
+- selected App Priority application CPU, resident memory, verified process count, and policy-confirmed priority count; and
+- evidence for Spotlight, Time Machine, power settings, UI responsiveness, temporary application closing, App Priority, and per-category Background Service Suppression activation/restoration.
 
-Selected-app values include the same verified main process and helper family used by App Priority. Unsupported or failed measurements display **Unavailable** rather than zero. The initial CPU baseline may be unavailable until two host counter readings exist. `CPU_Available_CPUs` is never treated as a percentage. CPU temperature and fan RPM remain unavailable because the dashboard does not add an SMC or third-party sensor module.
+Selected-app CPU and memory values cover the full verified application family. For stable Firefox, the dashboard separately labels **Tracked Firefox Processes** and **Processes Actually Boosted**, and can show the current parent/UI, GPU-helper, and active-content PIDs. The boosted count comes from sanitized priority-agent status rather than inferring it from every Firefox nice value. Other browsers remain main-process-only and sustained non-browser workloads use the verified process family. Unsupported or failed measurements display **Unavailable** rather than zero. The initial CPU baseline may be unavailable until two host counter readings exist. `CPU_Available_CPUs` is never treated as a percentage. CPU temperature and fan RPM remain unavailable because the dashboard does not add an SMC or third-party sensor module.
 
-The dashboard presents observations rather than a performance score. Higher CPU use is not automatically labeled an improvement, and nice `-5` confirmation does not claim that a workload completed faster. There is no cloud telemetry, raw two-second history export, historical browser, or privileged monitoring prompt.
+The dashboard presents observations rather than a performance score. Higher CPU use is not automatically labeled an improvement, and priority confirmation does not claim that a workload completed faster. There is no cloud telemetry, raw two-second history export, historical browser, or privileged monitoring prompt.
 
 Only the active session and the most recent completed session are retained:
 

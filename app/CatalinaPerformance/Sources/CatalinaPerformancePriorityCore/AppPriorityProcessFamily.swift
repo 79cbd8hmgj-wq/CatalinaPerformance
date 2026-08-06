@@ -21,7 +21,8 @@ public enum AppPriorityProcessFamilyResolver {
     public static func resolve(
         application: AppPriorityApplication,
         requestingUID: UInt32,
-        processes: [AppPriorityProcessIdentity]
+        processes: [AppPriorityProcessIdentity],
+        policyKind: AppPriorityPolicyKind = .verifiedProcessFamily
     ) -> AppPriorityProcessFamilyResult {
         let bundleURL = URL(fileURLWithPath: application.bundlePath, isDirectory: true)
             .resolvingSymlinksInPath().standardizedFileURL
@@ -35,15 +36,17 @@ public enum AppPriorityProcessFamilyResolver {
             $0.effectiveUID == requestingUID && $0.executablePath == executablePath
         }.map { $0.pid })
         var associatedPIDs = mainPIDs
-        var changed = true
-        var depth = 0
-        while changed && depth < 64 {
-            changed = false
-            depth += 1
-            for process in processes where process.effectiveUID == requestingUID {
-                if associatedPIDs.contains(process.parentPID) && !associatedPIDs.contains(process.pid) {
-                    associatedPIDs.insert(process.pid)
-                    changed = true
+        if policyKind != .mainProcessOnly {
+            var changed = true
+            var depth = 0
+            while changed && depth < 64 {
+                changed = false
+                depth += 1
+                for process in processes where process.effectiveUID == requestingUID {
+                    if associatedPIDs.contains(process.parentPID) && !associatedPIDs.contains(process.pid) {
+                        associatedPIDs.insert(process.pid)
+                        changed = true
+                    }
                 }
             }
         }
@@ -51,7 +54,7 @@ public enum AppPriorityProcessFamilyResolver {
         var eligible: [AppPriorityProcessIdentity] = []
         var skipped: [AppPriorityProcessIdentity] = []
         for process in processes {
-            let insideHelperLocation = helperRoots.contains { root in
+            let insideHelperLocation = policyKind != .mainProcessOnly && helperRoots.contains { root in
                 process.executablePath == root || process.executablePath.hasPrefix(root + "/")
             }
             let associated = associatedPIDs.contains(process.pid) || insideHelperLocation

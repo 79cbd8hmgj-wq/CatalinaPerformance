@@ -44,19 +44,35 @@ public enum AppPriorityRecordStatus: String, Codable {
     case failed
 }
 
+public enum AppPriorityBoostRole: String, Codable, Equatable {
+    case generic
+    case parentUI
+    case gpuHelper
+    case contentTarget
+}
+
 public struct AppPriorityRestoreRecord: Codable, Equatable {
     public let identity: AppPriorityProcessIdentity
     public let originalNiceValue: Int32
     public let didChangePriority: Bool
     public var lastObservedStatus: AppPriorityRecordStatus
     public var errorMessage: String?
+    public let role: AppPriorityBoostRole?
 
-    public init(identity: AppPriorityProcessIdentity, originalNiceValue: Int32, didChangePriority: Bool, lastObservedStatus: AppPriorityRecordStatus, errorMessage: String?) {
+    public init(
+        identity: AppPriorityProcessIdentity,
+        originalNiceValue: Int32,
+        didChangePriority: Bool,
+        lastObservedStatus: AppPriorityRecordStatus,
+        errorMessage: String?,
+        role: AppPriorityBoostRole? = nil
+    ) {
         self.identity = identity
         self.originalNiceValue = originalNiceValue
         self.didChangePriority = didChangePriority
         self.lastObservedStatus = lastObservedStatus
         self.errorMessage = errorMessage.map { String($0.prefix(256)) }
+        self.role = role
     }
 }
 
@@ -72,6 +88,40 @@ public struct AppPriorityMonitorIdentity: Codable, Equatable {
     }
 }
 
+public struct FocusedFirefoxRuntimeState: Codable, Equatable {
+    public var parentIdentity: AppPriorityProcessIdentity?
+    public var gpuIdentity: AppPriorityProcessIdentity?
+    public var contentTargetIdentity: AppPriorityProcessIdentity?
+    public var contentSelectionState: FocusedFirefoxContentSelectionState
+    public var trackedProcessCount: Int
+    public var warning: String?
+
+    public init(
+        parentIdentity: AppPriorityProcessIdentity?,
+        gpuIdentity: AppPriorityProcessIdentity?,
+        contentTargetIdentity: AppPriorityProcessIdentity?,
+        contentSelectionState: FocusedFirefoxContentSelectionState,
+        trackedProcessCount: Int,
+        warning: String?
+    ) {
+        self.parentIdentity = parentIdentity
+        self.gpuIdentity = gpuIdentity
+        self.contentTargetIdentity = contentTargetIdentity
+        self.contentSelectionState = contentSelectionState
+        self.trackedProcessCount = trackedProcessCount
+        self.warning = warning.map { String($0.prefix(256)) }
+    }
+
+    public static let empty = FocusedFirefoxRuntimeState(
+        parentIdentity: nil,
+        gpuIdentity: nil,
+        contentTargetIdentity: nil,
+        contentSelectionState: .empty,
+        trackedProcessCount: 0,
+        warning: nil
+    )
+}
+
 public struct AppPriorityRuntimeState: Codable, Equatable {
     public let version: Int
     public let sessionIdentifier: String
@@ -80,15 +130,29 @@ public struct AppPriorityRuntimeState: Codable, Equatable {
     public var monitorIdentity: AppPriorityMonitorIdentity?
     public var records: [AppPriorityRestoreRecord]
     public let startedAt: Date
+    public var policyKind: AppPriorityPolicyKind?
+    public var focusedFirefoxState: FocusedFirefoxRuntimeState?
 
-    public init(sessionIdentifier: String, selectedApplication: AppPriorityApplication, requestingUID: UInt32, monitorIdentity: AppPriorityMonitorIdentity?, records: [AppPriorityRestoreRecord], startedAt: Date) {
-        self.version = 1
+    public init(
+        sessionIdentifier: String,
+        selectedApplication: AppPriorityApplication,
+        requestingUID: UInt32,
+        monitorIdentity: AppPriorityMonitorIdentity?,
+        records: [AppPriorityRestoreRecord],
+        startedAt: Date,
+        policyKind: AppPriorityPolicyKind? = nil,
+        focusedFirefoxState: FocusedFirefoxRuntimeState? = nil,
+        version: Int = 2
+    ) {
+        self.version = version
         self.sessionIdentifier = sessionIdentifier
         self.selectedApplication = selectedApplication
         self.requestingUID = requestingUID
         self.monitorIdentity = monitorIdentity
         self.records = records
         self.startedAt = startedAt
+        self.policyKind = policyKind
+        self.focusedFirefoxState = focusedFirefoxState
     }
 }
 

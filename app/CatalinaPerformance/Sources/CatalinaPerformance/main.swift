@@ -2,6 +2,7 @@ import Foundation
 import CatalinaPerformanceCore
 import CatalinaPerformancePriorityCore
 import CatalinaPerformanceDashboardCore
+import CatalinaPerformanceBackgroundServicesCore
 #if os(Linux)
 import Glibc
 #else
@@ -154,6 +155,10 @@ final class ScriptRunner {
             "CATALINA_PERFORMANCE_FOREGROUND_PREFERENCES_FILE": ForegroundSessionPanelController.preferencesFileURL.path,
             "CATALINA_PERFORMANCE_PRIORITY_SELECTION_FILE": AppPriorityPanelController.preferencesFileURL.path,
             "CATALINA_PERFORMANCE_STATE_DIR": AdvancedPreferences.systemStateDirectoryURL.path,
+            "CATALINA_PERFORMANCE_BACKGROUND_SERVICE_STATE_DIR": AdvancedPreferences.systemStateDirectoryURL
+                .appendingPathComponent("background_service_suppression", isDirectory: true).path,
+            "CATALINA_PERFORMANCE_BACKGROUND_SERVICE_PUBLIC_STATUS_DIR": AdvancedPreferences.configDirectoryURL
+                .appendingPathComponent("background_service_status", isDirectory: true).path,
             "CATALINA_PERFORMANCE_PRIORITY_AGENT_PATH": priorityAgentURL.path
         ]
     }
@@ -240,6 +245,7 @@ extension ScriptRunner: PerformanceModeStateProviding {}
 struct AdvancedPreferences {
     static let pauseSpotlightKey = "advanced.pauseSpotlightWhileOn"
     static let pauseTimeMachineKey = "advanced.pauseTimeMachineWhileOn"
+    static let pauseICloudDriveKey = "advanced.pauseICloudDriveWhileOn"
     static let preventSystemSleepKey = "advanced.preventPluggedInSystemSleepWhileOn"
     static let preventDisplaySleepKey = "advanced.preventDisplaySleepWhileOn"
     static let showSwapUsageWarningKey = "advanced.showSwapUsageWarning"
@@ -252,6 +258,7 @@ struct AdvancedPreferences {
         defaults.register(defaults: [
             pauseSpotlightKey: true,
             pauseTimeMachineKey: true,
+            pauseICloudDriveKey: false,
             preventSystemSleepKey: true,
             preventDisplaySleepKey: true,
             showSwapUsageWarningKey: true,
@@ -280,13 +287,14 @@ struct AdvancedPreferences {
     static func writeScriptConfig(defaults: UserDefaults = .standard) -> Result<URL, Error> {
         let spotlight = defaults.bool(forKey: pauseSpotlightKey) ? "1" : "0"
         let timeMachine = defaults.bool(forKey: pauseTimeMachineKey) ? "1" : "0"
+        let iCloudDrive = defaults.bool(forKey: pauseICloudDriveKey) ? "1" : "0"
         let systemSleep = defaults.bool(forKey: preventSystemSleepKey) ? "1" : "0"
         let displaySleep = defaults.bool(forKey: preventDisplaySleepKey) ? "1" : "0"
         let swapWarning = defaults.bool(forKey: showSwapUsageWarningKey) ? "1" : "0"
         let diskWarning = defaults.bool(forKey: showLowDiskSpaceWarningKey) ? "1" : "0"
         let memoryPressure = defaults.bool(forKey: showMemoryPressureSummaryKey) ? "1" : "0"
         let topMemoryProcesses = defaults.bool(forKey: showTopMemoryProcessesKey) ? "1" : "0"
-        let contents = "# CatalinaPerformance Advanced preferences.\n# Values are 1 for enabled and 0 for disabled. Missing or invalid values default to enabled in scripts.\nPAUSE_SPOTLIGHT_WHILE_ON=\(spotlight)\nPAUSE_TIME_MACHINE_WHILE_ON=\(timeMachine)\nPREVENT_SYSTEM_SLEEP_WHILE_ON=\(systemSleep)\nPREVENT_DISPLAY_SLEEP_WHILE_ON=\(displaySleep)\nSHOW_SWAP_USAGE_WARNING=\(swapWarning)\nSHOW_LOW_DISK_SPACE_WARNING=\(diskWarning)\nSHOW_MEMORY_PRESSURE_SUMMARY=\(memoryPressure)\nSHOW_TOP_MEMORY_PROCESSES=\(topMemoryProcesses)\n"
+        let contents = "# CatalinaPerformance Advanced preferences.\n# Values are 1 for enabled and 0 for disabled. Missing or invalid values default to enabled in scripts.\nPAUSE_SPOTLIGHT_WHILE_ON=\(spotlight)\nPAUSE_TIME_MACHINE_WHILE_ON=\(timeMachine)\nPAUSE_ICLOUD_DRIVE_WHILE_ON=\(iCloudDrive)\nPREVENT_SYSTEM_SLEEP_WHILE_ON=\(systemSleep)\nPREVENT_DISPLAY_SLEEP_WHILE_ON=\(displaySleep)\nSHOW_SWAP_USAGE_WARNING=\(swapWarning)\nSHOW_LOW_DISK_SPACE_WARNING=\(diskWarning)\nSHOW_MEMORY_PRESSURE_SUMMARY=\(memoryPressure)\nSHOW_TOP_MEMORY_PROCESSES=\(topMemoryProcesses)\n"
 
         do {
             try FileManager.default.createDirectory(at: configDirectoryURL, withIntermediateDirectories: true)
@@ -438,6 +446,11 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
     private var advancedWindowController: AdvancedWindowController?
     private var sessionDashboardWindowController: SessionDashboardWindowController?
     private lazy var performanceSessionCoordinator: PerformanceSessionCoordinator = makePerformanceSessionCoordinator()
+    private lazy var backgroundServiceSuppressionCoordinator: BackgroundServiceSuppressionCoordinator = makeBackgroundServiceSuppressionCoordinator()
+    private lazy var backgroundServiceActivityObserver: BackgroundServiceActivityObserving = BackgroundServiceActivityObserver(
+        coordinator: backgroundServiceSuppressionCoordinator
+    )
+    private var latestBackgroundServiceSnapshot: BackgroundServiceStatusSnapshot?
     private var activeSequenceCoordinator: ScriptSequenceCoordinator?
     private var activeSequenceExecutor: AppScriptSequenceExecutor?
 
@@ -456,12 +469,17 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
         self.init(window: window)
         window.delegate = self
         buildInterface()
+        configureBackgroundServiceSuppressionCallbacks()
         isDashboardTransitionInProgress = true
         updateRunControls()
         performanceSessionCoordinator.recoverAtLaunch { [weak self] in
             guard let self = self else { return }
-            self.isDashboardTransitionInProgress = false
-            self.updateRunControls()
+            self.backgroundServiceSuppressionCoordinator.recoverStaleSession { [weak self] snapshot in
+                guard let self = self else { return }
+                self.handleBackgroundServiceSnapshot(snapshot, announceRecovery: true)
+                self.isDashboardTransitionInProgress = false
+                self.updateRunControls()
+            }
         }
     }
 
@@ -547,20 +565,42 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
     @objc private func runPerformanceOn() {
         confirm(
             title: "Turn Performance Mode ON?",
-            message: "This will run the reviewed Performance Mode scripts using the macOS administrator authorization prompt. If App Priority is enabled, one temporary privileged monitor gives the selected app and verified helpers nice -5 for this session only. No persistent helper is installed. Turning Performance Mode OFF or running Emergency Restore attempts exact restoration of recorded priority values. Fan control, cache deletion, SIP changes, kexts, undervolting, and experimental features remain excluded."
+            message: "This will run the reviewed Performance Mode scripts using the macOS administrator authorization prompt. Automatic update settings and verified nonessential user workers may be paused for the session; opening an associated app resumes its category for the remainder of that session. Protected account, Keychain, AirDrop, networking, diagnostic, crash-reporting, and essential macOS services are excluded. App Priority remains optional: stable Firefox uses a focused nice -1 policy for its parent/UI process, GPU helper, and one activity-selected content process; other known browsers use main-process-only nice -2; sustained non-browser workloads use the verified process family at nice -5. Fan control, cache deletion, SIP changes, kexts, undervolting, and experimental features remain excluded."
         ) { [weak self] in
             guard let self = self, self.beginDashboardWrappedAction() else { return }
             let foregroundEnabled = ForegroundSessionPreferences.load().featureEnabled
             let prioritySelection = AppPriorityPreferences.load()
             let selectedApplication = prioritySelection.enabled ? prioritySelection.application : nil
-            self.performanceSessionCoordinator.prepareForOn(selectedApplication: selectedApplication) { [weak self] in
+            let iCloudDriveEnabled = UserDefaults.standard.bool(forKey: AdvancedPreferences.pauseICloudDriveKey)
+
+            self.backgroundServiceSuppressionCoordinator.prepareForPerformanceOn(
+                iCloudDriveEnabled: iCloudDriveEnabled
+            ) { [weak self] snapshot in
                 guard let self = self else { return }
-                self.isDashboardTransitionInProgress = false
-                self.runSequence(
-                    PerformanceSequenceFactory.performanceOn(featureEnabled: foregroundEnabled),
-                    status: "Performance Mode ON requested..."
-                ) { [weak self] result in
-                    self?.performanceSessionCoordinator.onSequenceCompleted(succeeded: result.succeeded)
+                self.handleBackgroundServiceSnapshot(snapshot)
+                self.performanceSessionCoordinator.prepareForOn(selectedApplication: selectedApplication) { [weak self] in
+                    guard let self = self else { return }
+                    self.isDashboardTransitionInProgress = false
+                    self.runSequence(
+                        PerformanceSequenceFactory.performanceOn(featureEnabled: foregroundEnabled),
+                        status: "Performance Mode ON requested..."
+                    ) { [weak self] result in
+                        guard let self = self else { return }
+                        if result.succeeded {
+                            self.backgroundServiceSuppressionCoordinator.performanceOnSucceeded { [weak self] snapshot in
+                                guard let self = self else { return }
+                                self.handleBackgroundServiceSnapshot(snapshot)
+                                self.backgroundServiceActivityObserver.start()
+                                self.performanceSessionCoordinator.onSequenceCompleted(succeeded: true)
+                            }
+                        } else {
+                            self.backgroundServiceSuppressionCoordinator.performanceOnFailed { [weak self] snapshot in
+                                guard let self = self else { return }
+                                self.handleBackgroundServiceSnapshot(snapshot)
+                                self.performanceSessionCoordinator.onSequenceCompleted(succeeded: false)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -570,18 +610,32 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
         // Restore scripts are intentionally attempted even when the feature is
         // currently disabled; they are safe no-ops when no session state exists.
         guard beginDashboardWrappedAction() else { return }
-        performanceSessionCoordinator.prepareForFinalization(reason: .normalOff) { [weak self] in
+        backgroundServiceActivityObserver.stop()
+        backgroundServiceSuppressionCoordinator.prepareForPerformanceOff { [weak self] snapshot in
             guard let self = self else { return }
-            self.isDashboardTransitionInProgress = false
-            self.runSequence(
-                PerformanceSequenceFactory.performanceOff(featureEnabled: true),
-                status: "Performance Mode OFF and foreground restoration requested..."
-            ) { [weak self] result in
+            self.handleBackgroundServiceSnapshot(snapshot)
+            self.performanceSessionCoordinator.prepareForFinalization(reason: .normalOff) { [weak self] in
                 guard let self = self else { return }
-                let evidence = result.commandResults.map { command in
-                    DashboardCommandEvidence(identifier: command.script.rawValue, succeeded: command.succeeded, output: command.output)
+                self.isDashboardTransitionInProgress = false
+                self.runSequence(
+                    PerformanceSequenceFactory.performanceOff(featureEnabled: true),
+                    status: "Performance Mode OFF and foreground restoration requested..."
+                ) { [weak self] result in
+                    guard let self = self else { return }
+                    let evidence = result.commandResults.map { command in
+                        DashboardCommandEvidence(identifier: command.script.rawValue, succeeded: command.succeeded, output: command.output)
+                    }
+                    self.backgroundServiceSuppressionCoordinator.performanceOffFinished(
+                        settingsStatus: self.loadBackgroundServiceSettingsStatus()
+                    ) { [weak self] snapshot in
+                        guard let self = self else { return }
+                        self.handleBackgroundServiceSnapshot(snapshot, announceRecovery: true)
+                        self.performanceSessionCoordinator.finalizationCompleted(
+                            commandEvidence: evidence,
+                            performanceModeStillOn: self.runner.performanceModeIsOn()
+                        )
+                    }
                 }
-                self.performanceSessionCoordinator.finalizationCompleted(commandEvidence: evidence, performanceModeStillOn: self.runner.performanceModeIsOn())
             }
         }
     }
@@ -589,16 +643,34 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
     @objc private func runEmergencyRestore() {
         confirm(
             title: "Run Emergency Restore?",
-            message: "Emergency Restore is a fallback path for recoverable state. It stops the temporary App Priority monitor and attempts exact restoration of recorded priority values before restoring normal Performance Mode state. It will not delete caches, modify SIP, touch fan control, unload arbitrary services, install kexts, undervolt, or use experimental CPU/MSR changes."
+            message: "Emergency Restore is a fallback path for recoverable state. It stops App Priority and background-service monitoring, attempts exact restoration of recorded update settings and verified user workers, then restores normal Performance Mode state. It will not delete caches, modify SIP, touch fan control, unload arbitrary services, install kexts, undervolt, or use experimental CPU/MSR changes."
         ) { [weak self] in
             guard let self = self, self.beginDashboardWrappedAction() else { return }
-            self.performanceSessionCoordinator.prepareForFinalization(reason: .emergencyRestore) { [weak self] in
+            self.backgroundServiceActivityObserver.stop()
+            self.backgroundServiceSuppressionCoordinator.prepareForPerformanceOff { [weak self] snapshot in
                 guard let self = self else { return }
-                self.isDashboardTransitionInProgress = false
-                self.run(.emergencyRestore, status: "Emergency Restore requested...") { [weak self] result in
+                self.handleBackgroundServiceSnapshot(snapshot)
+                self.performanceSessionCoordinator.prepareForFinalization(reason: .emergencyRestore) { [weak self] in
                     guard let self = self else { return }
-                    let evidence = DashboardCommandEvidence(identifier: "emergencyRestore", succeeded: result.succeeded, output: result.output)
-                    self.performanceSessionCoordinator.finalizationCompleted(commandEvidence: [evidence], performanceModeStillOn: self.runner.performanceModeIsOn())
+                    self.isDashboardTransitionInProgress = false
+                    self.run(.emergencyRestore, status: "Emergency Restore requested...") { [weak self] result in
+                        guard let self = self else { return }
+                        let evidence = DashboardCommandEvidence(
+                            identifier: "emergencyRestore",
+                            succeeded: result.succeeded,
+                            output: result.output
+                        )
+                        self.backgroundServiceSuppressionCoordinator.performanceOffFinished(
+                            settingsStatus: self.loadBackgroundServiceSettingsStatus()
+                        ) { [weak self] snapshot in
+                            guard let self = self else { return }
+                            self.handleBackgroundServiceSnapshot(snapshot, announceRecovery: true)
+                            self.performanceSessionCoordinator.finalizationCompleted(
+                                commandEvidence: [evidence],
+                                performanceModeStillOn: self.runner.performanceModeIsOn()
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -610,6 +682,70 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
         }
         sessionDashboardWindowController?.showWindow(nil)
         sessionDashboardWindowController?.window?.makeKeyAndOrderFront(nil)
+    }
+
+    private var backgroundServiceStateDirectoryURL: URL {
+        return AdvancedPreferences.configDirectoryURL
+            .appendingPathComponent("background_service_suppression", isDirectory: true)
+    }
+
+    private var backgroundServiceSettingsStatusURL: URL {
+        return AdvancedPreferences.configDirectoryURL
+            .appendingPathComponent("background_service_status", isDirectory: true)
+            .appendingPathComponent("settings-status.json")
+    }
+
+    private func makeBackgroundServiceSuppressionCoordinator() -> BackgroundServiceSuppressionCoordinator {
+        let catalog = CatalinaBackgroundServiceCatalog.current
+        let workerController = BackgroundServiceWorkerController(
+            inspector: DarwinAppPriorityProcessInspector(),
+            signalMutator: DarwinBackgroundServiceSignalMutator(),
+            launchctlRestorer: DarwinBackgroundServiceLaunchctlRestorer(catalog: catalog),
+            catalog: catalog
+        )
+        return BackgroundServiceSuppressionCoordinator(
+            workerController: workerController,
+            stateStore: BackgroundServiceStateStore(directoryURL: backgroundServiceStateDirectoryURL),
+            settingsStatusProvider: FileBackgroundServiceSettingsStatusProvider(statusURL: backgroundServiceSettingsStatusURL),
+            requestingUID: ProcessDashboardCurrentUserProvider().uid,
+            catalog: catalog,
+            callbackQueue: .main
+        )
+    }
+
+    private func configureBackgroundServiceSuppressionCallbacks() {
+        backgroundServiceSuppressionCoordinator.onStatusChange = { [weak self] snapshot in
+            self?.handleBackgroundServiceSnapshot(snapshot)
+        }
+    }
+
+    private func loadBackgroundServiceSettingsStatus() -> BackgroundServiceSettingsStatus? {
+        return try? BackgroundServiceSettingsStatus.load(from: backgroundServiceSettingsStatusURL)
+    }
+
+    private func handleBackgroundServiceSnapshot(
+        _ snapshot: BackgroundServiceStatusSnapshot,
+        announceRecovery: Bool = false
+    ) {
+        let previousState = latestBackgroundServiceSnapshot?.state
+        latestBackgroundServiceSnapshot = snapshot
+        advancedWindowController?.updateBackgroundServiceStatus(snapshot)
+        let dashboardStatuses = snapshot.categories.map { status in
+            BackgroundServiceDashboardCategoryStatus(
+                categoryRawValue: status.category.rawValue,
+                stateRawValue: status.state.rawValue,
+                note: status.note,
+                updatedAt: status.updatedAt
+            )
+        }
+        performanceSessionCoordinator.replaceBackgroundServiceStatuses(dashboardStatuses)
+
+        if snapshot.state == .recoveryRequired {
+            statusLabel.stringValue = "Status: Background-service recovery required."
+            if announceRecovery && previousState != .recoveryRequired {
+                appendOutput("\n[Background Service Suppression] Recovery required. Run Emergency Restore to retry unresolved recorded restoration.\n")
+            }
+        }
     }
 
     private func makePerformanceSessionCoordinator() -> PerformanceSessionCoordinator {
@@ -633,7 +769,8 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
         let evidence = PerformanceSubsystemEvidenceReader(paths: PerformanceSubsystemPaths(
             systemStateDirectory: AdvancedPreferences.systemStateDirectoryURL,
             foregroundRuntimeDirectory: foregroundRuntimeURL,
-            appPriorityStatusFile: priorityStatusURL
+            appPriorityStatusFile: priorityStatusURL,
+            appPrioritySelectionFile: AppPriorityPanelController.preferencesFileURL
         ))
         return PerformanceSessionCoordinator(
             collector: collector,
@@ -691,6 +828,9 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
             )
         }
         advancedWindowController?.setScriptActionsEnabled(!isScriptRunning, performanceModeIsOn: runner.performanceModeIsOn())
+        if let snapshot = latestBackgroundServiceSnapshot {
+            advancedWindowController?.updateBackgroundServiceStatus(snapshot)
+        }
         advancedWindowController?.showWindow(nil)
         advancedWindowController?.window?.makeKeyAndOrderFront(nil)
     }
@@ -829,6 +969,7 @@ final class AdvancedWindowController: NSWindowController, NSWindowDelegate {
     private let preferences = UserDefaults.standard
     private var memoryStorageButton: NSButton?
     private var appPriorityPanelController: AppPriorityPanelController?
+    private var backgroundServicePanelController: BackgroundServiceSuppressionPanelController?
     private var thermalFanButton: NSButton?
     private var foregroundPanelController: ForegroundSessionPanelController?
     private weak var advancedScrollView: NSScrollView?
@@ -882,6 +1023,10 @@ final class AdvancedWindowController: NSWindowController, NSWindowDelegate {
         foregroundPanel.onConfigurationConflict = onPreferenceWriteFailure
         self.appPriorityPanelController = priorityPanel
 
+        let backgroundServicePanel = BackgroundServiceSuppressionPanelController(defaults: preferences)
+        backgroundServicePanel.onPreferenceWriteFailure = onPreferenceWriteFailure
+        self.backgroundServicePanelController = backgroundServicePanel
+
         AdvancedPreferences.registerDefaults(in: preferences)
         ForegroundSessionPreferences.registerDefaults(in: preferences)
         reportPreferenceWriteResult(AdvancedPreferences.writeScriptConfig(defaults: preferences))
@@ -893,7 +1038,7 @@ final class AdvancedWindowController: NSWindowController, NSWindowDelegate {
 
         let title = NSTextField(labelWithString: "Advanced")
         title.font = NSFont.boldSystemFont(ofSize: 24)
-        let description = wrappedLabel("Configure Advanced preferences. Background-service, power-management, and an optional App Priority boost apply only when Performance Mode is explicitly turned ON. App Priority can temporarily set one selected app and verified helpers to nice -5, then restore recorded values on OFF or Emergency Restore. Memory / Storage and Thermal / Fan remain read-only and do not delete files, clear caches, tune memory, control fans, write SMC values, or change experimental system settings.")
+        let description = wrappedLabel("Configure Advanced preferences. Background-service, power-management, and an optional App Priority boost apply only when Performance Mode is explicitly turned ON. App Priority uses main-process-only nice -2 for known browsers and verified-family nice -5 for sustained CPU workloads, then restores recorded values on OFF or Emergency Restore. Memory / Storage and Thermal / Fan remain read-only and do not delete files, clear caches, tune memory, control fans, write SMC values, or change experimental system settings.")
 
         let stack = NSStackView()
         stack.orientation = .vertical
@@ -908,10 +1053,11 @@ final class AdvancedWindowController: NSWindowController, NSWindowDelegate {
         stack.addArrangedSubview(description)
         stack.addArrangedSubview(section("Background Services", controls: [
             advancedCheckbox("Pause Spotlight indexing while Performance Mode is ON", key: AdvancedPreferences.pauseSpotlightKey),
-            advancedCheckbox("Pause Time Machine automatic backups while Performance Mode is ON", key: AdvancedPreferences.pauseTimeMachineKey),
-            disabledCheckbox("Pause software update checks — Not implemented yet"),
-            disabledCheckbox("Pause selected launch agents — Not implemented yet")
+            advancedCheckbox("Pause Time Machine automatic backups while Performance Mode is ON", key: AdvancedPreferences.pauseTimeMachineKey)
         ]))
+        if let backgroundServiceView = backgroundServicePanelController?.makeSectionView() {
+            stack.addArrangedSubview(backgroundServiceView)
+        }
         stack.addArrangedSubview(section("Power Behavior", controls: [
             advancedCheckbox("Prevent plugged-in system sleep while Performance Mode is ON", key: AdvancedPreferences.preventSystemSleepKey),
             advancedCheckbox("Prevent display sleep while Performance Mode is ON", key: AdvancedPreferences.preventDisplaySleepKey),
@@ -1102,8 +1248,14 @@ final class AdvancedWindowController: NSWindowController, NSWindowDelegate {
     func setScriptActionsEnabled(_ enabled: Bool, performanceModeIsOn: Bool) {
         memoryStorageButton?.isEnabled = enabled
         appPriorityPanelController?.setInteractionState(actionsEnabled: enabled, performanceModeIsOn: performanceModeIsOn)
+        backgroundServicePanelController?.setInteractionState(actionsEnabled: enabled, performanceModeIsOn: performanceModeIsOn)
         thermalFanButton?.isEnabled = enabled
         foregroundPanelController?.setActionsEnabled(enabled)
+    }
+
+
+    func updateBackgroundServiceStatus(_ snapshot: BackgroundServiceStatusSnapshot) {
+        backgroundServicePanelController?.update(snapshot: snapshot)
     }
 
     func updateForegroundSummary(from output: String) {
@@ -1154,7 +1306,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             controller.showPreferenceWriteFailure("Unable to write Foreground Session preferences to \(ForegroundSessionPanelController.preferencesFileURL.path): \(error.localizedDescription)")
         }
         do {
-            try AppPriorityPreferences.load().writeAtomically(to: AppPriorityPanelController.preferencesFileURL)
+            let loaded = AppPriorityPreferences.load()
+            let migrated: AppPrioritySelection
+            do {
+                migrated = try AppPriorityPreferences.canonicalizedSelection(loaded)
+            } catch {
+                let cleared = AppPrioritySelection(enabled: false, application: nil)
+                try AppPriorityPreferences.save(cleared)
+                try cleared.writeAtomically(to: AppPriorityPanelController.preferencesFileURL)
+                throw AppPriorityApplicationIdentityError.bundleMetadataUnavailable
+            }
+            if migrated != loaded {
+                try AppPriorityPreferences.save(migrated)
+            }
+            try migrated.writeAtomically(to: AppPriorityPanelController.preferencesFileURL)
+        } catch AppPriorityApplicationIdentityError.bundleMetadataUnavailable {
+            controller.showPreferenceWriteFailure("The selected application's bundle metadata could not be validated. App Priority was disabled.")
         } catch {
             controller.showPreferenceWriteFailure("Unable to write App Priority preferences to \(AppPriorityPanelController.preferencesFileURL.path): \(error.localizedDescription)")
         }

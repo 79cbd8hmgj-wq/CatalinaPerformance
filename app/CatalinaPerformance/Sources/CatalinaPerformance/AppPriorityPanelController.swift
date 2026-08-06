@@ -31,6 +31,7 @@ final class AppPriorityPanelController: NSObject {
     private let applicationPopup = NSPopUpButton(frame: .zero, pullsDown: false)
     private let refreshButton = NSButton(title: "Refresh Running Apps", target: nil, action: nil)
     private let reportButton = NSButton(title: "Run App Priority Report", target: nil, action: nil)
+    private let policyLabel = NSTextField(wrappingLabelWithString: "Choose an application to see its priority policy.")
     private let statusLabel = NSTextField(wrappingLabelWithString: "Ready for Performance Mode")
     private var statusTimer: Timer?
     private var actionsEnabled = true
@@ -50,6 +51,8 @@ final class AppPriorityPanelController: NSObject {
         refreshButton.action = #selector(refreshRunningApplications)
         reportButton.target = self
         reportButton.action = #selector(runReport)
+        policyLabel.maximumNumberOfLines = 0
+        policyLabel.textColor = .secondaryLabelColor
         statusLabel.maximumNumberOfLines = 0
         statusLabel.textColor = .secondaryLabelColor
     }
@@ -68,7 +71,7 @@ final class AppPriorityPanelController: NSObject {
         header.alignment = .leading
         header.spacing = 6
 
-        let explanation = NSTextField(wrappingLabelWithString: "While Performance Mode is ON, CatalinaPerformance gives one selected app and its verified same-user helper processes a modest CPU scheduling advantage at nice -5. The original nice values are recorded and restored when Performance Mode turns OFF or Emergency Restore runs.")
+        let explanation = NSTextField(wrappingLabelWithString: "App Priority is intended for sustained CPU-heavy work. Stable Firefox uses an experimental focused policy at nice -1. Other known browsers use a conservative main-process-only policy at nice -2. Non-browser apps use the verified process family at nice -5. Original nice values are recorded and restored when Performance Mode turns OFF or Emergency Restore runs.")
         explanation.maximumNumberOfLines = 0
         explanation.textColor = .secondaryLabelColor
 
@@ -79,10 +82,7 @@ final class AppPriorityPanelController: NSObject {
         appRow.spacing = 8
         applicationPopup.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        let targetLabel = NSTextField(labelWithString: "Target priority: Nice -5")
-        targetLabel.textColor = .secondaryLabelColor
-
-        let content = NSStackView(views: [header, explanation, enableCheckbox, appRow, targetLabel, statusLabel, reportButton])
+        let content = NSStackView(views: [header, explanation, enableCheckbox, appRow, policyLabel, statusLabel, reportButton])
         content.orientation = .vertical
         content.alignment = .leading
         content.spacing = 8
@@ -111,6 +111,7 @@ final class AppPriorityPanelController: NSObject {
             applicationPopup.widthAnchor.constraint(greaterThanOrEqualToConstant: 260)
         ])
 
+        migratePersistedSelection()
         enableCheckbox.state = lastPersistedSelection.enabled ? .on : .off
         refreshRunningApplications()
         writeSelection(lastPersistedSelection, showError: true)
@@ -139,40 +140,66 @@ final class AppPriorityPanelController: NSObject {
     }
 
     @objc private func refreshRunningApplications() {
-        let saved = AppPriorityPreferences.load(from: defaults).application
+        migratePersistedSelection()
+        let saved = lastPersistedSelection.application
+        let canonicalizer = AppPriorityApplicationCanonicalizer()
         let running = NSWorkspace.shared.runningApplications.compactMap { runningApplication -> AppPriorityApplication? in
             guard runningApplication.activationPolicy == .regular,
                   !runningApplication.isTerminated,
                   let bundleIdentifier = runningApplication.bundleIdentifier,
                   !bundleIdentifier.isEmpty,
-                  let bundleURL = runningApplication.bundleURL,
-                  let executableURL = runningApplication.executableURL else { return nil }
+                  let bundleURL = runningApplication.bundleURL else { return nil }
             let displayName = runningApplication.localizedName ?? bundleIdentifier
             guard !AppPriorityApplicationFilter.isExcluded(bundleIdentifier: bundleIdentifier, displayName: displayName) else { return nil }
-            return AppPriorityApplication(
+            return try? canonicalizer.canonicalApplication(
                 displayName: displayName,
                 bundleIdentifier: bundleIdentifier,
-                bundlePath: bundleURL.resolvingSymlinksInPath().standardizedFileURL.path,
-                executablePath: executableURL.resolvingSymlinksInPath().standardizedFileURL.path
+                bundleURL: bundleURL
             )
         }
+        let applications = canonicalizer.deduplicate(running)
 
-        var byIdentifier: [String: AppPriorityApplication] = [:]
-        running.forEach { byIdentifier[$0.bundleIdentifier] = $0 }
         applicationPopup.removeAllItems()
         applicationPopup.addItem(withTitle: "No app selected")
         applicationPopup.lastItem?.representedObject = nil
 
-        byIdentifier.values.sorted { lhs, rhs in
-            lhs.displayName.localizedCaseInsensitiveCompare(rhs.displayName) == .orderedAscending
-        }.forEach { application in
+        for application in applications {
             addPopupItem(application: application, title: "\(application.displayName) — \(application.bundleIdentifier)")
         }
 
-        if let saved = saved, byIdentifier[saved.bundleIdentifier] == nil {
-            addPopupItem(application: saved, title: "\(saved.displayName) — selected, not currently running")
+        if let saved = saved {
+            let savedIsRunning = applications.contains {
+                $0.bundleIdentifier == saved.bundleIdentifier && $0.bundlePath == saved.bundlePath
+            }
+            if !savedIsRunning {
+                addPopupItem(application: saved, title: "\(saved.displayName) — selected, not currently running")
+            }
         }
         selectApplication(saved)
+        updatePolicyCopy(for: saved)
+    }
+
+    private func migratePersistedSelection() {
+        let loaded = AppPriorityPreferences.load(from: defaults)
+        do {
+            let migrated = try AppPriorityPreferences.canonicalizedSelection(loaded)
+            if migrated != loaded {
+                try AppPriorityPreferences.save(migrated, to: defaults)
+                try migrated.writeAtomically(to: Self.preferencesFileURL)
+            }
+            lastPersistedSelection = migrated
+        } catch {
+            let cleared = AppPrioritySelection(enabled: false, application: nil)
+            do {
+                try AppPriorityPreferences.save(cleared, to: defaults)
+                try cleared.writeAtomically(to: Self.preferencesFileURL)
+                lastPersistedSelection = cleared
+            } catch {
+                onPreferenceWriteFailure?("Unable to clear invalid App Priority preferences: \(error.localizedDescription)")
+                return
+            }
+            onPreferenceWriteFailure?("The selected application's bundle metadata could not be validated.")
+        }
     }
 
     private func addPopupItem(application: AppPriorityApplication, title: String) {
@@ -187,7 +214,7 @@ final class AppPriorityPanelController: NSObject {
         }
         for index in 0..<applicationPopup.numberOfItems {
             guard let candidate = applicationFromItem(applicationPopup.item(at: index)) else { continue }
-            if candidate.bundleIdentifier == application.bundleIdentifier {
+            if candidate.bundleIdentifier == application.bundleIdentifier && candidate.bundlePath == application.bundlePath {
                 applicationPopup.selectItem(at: index)
                 return
             }
@@ -205,7 +232,9 @@ final class AppPriorityPanelController: NSObject {
     }
 
     @objc private func applicationChanged() {
-        persistCandidate(enabled: enableCheckbox.state == .on, application: applicationFromItem(applicationPopup.selectedItem))
+        let application = applicationFromItem(applicationPopup.selectedItem)
+        updatePolicyCopy(for: application)
+        persistCandidate(enabled: enableCheckbox.state == .on, application: application)
     }
 
     private func persistCandidate(enabled: Bool, application: AppPriorityApplication?) {
@@ -231,6 +260,7 @@ final class AppPriorityPanelController: NSObject {
             try AppPriorityPreferences.save(candidate, to: defaults)
             try candidate.writeAtomically(to: Self.preferencesFileURL)
             lastPersistedSelection = candidate
+            updatePolicyCopy(for: application)
             refreshStatus()
         } catch {
             restoreControlsFromLastSelection()
@@ -241,6 +271,7 @@ final class AppPriorityPanelController: NSObject {
     private func restoreControlsFromLastSelection() {
         enableCheckbox.state = lastPersistedSelection.enabled ? .on : .off
         selectApplication(lastPersistedSelection.application)
+        updatePolicyCopy(for: lastPersistedSelection.application)
     }
 
     private func writeSelection(_ selection: AppPrioritySelection, showError: Bool) {
@@ -260,26 +291,78 @@ final class AppPriorityPanelController: NSObject {
     }
 
     private func refreshStatus() {
+        let selection = AppPriorityPreferences.load(from: defaults)
+        guard selection.enabled else {
+            statusLabel.stringValue = "Disabled"
+            return
+        }
         if let data = try? Data(contentsOf: Self.statusFileURL),
            let status = try? JSONDecoder().decode(AppPriorityStatus.self, from: data) {
             statusLabel.stringValue = statusText(status)
             return
         }
-        let selection = AppPriorityPreferences.load(from: defaults)
-        statusLabel.stringValue = selection.enabled ? "Ready for Performance Mode" : "Disabled"
+        statusLabel.stringValue = "Ready for Performance Mode"
     }
 
     private func statusText(_ status: AppPriorityStatus) -> String {
+        if status.policyKind == .focusedFirefox, let focused = status.focusedFirefox {
+            return focusedFirefoxStatusText(status: status, details: focused)
+        }
+        let targetText = status.targetNiceValue.map { " at nice \($0)" } ?? ""
         switch status.state {
         case .disabled: return "Disabled"
         case .ready: return "Ready for Performance Mode"
         case .waitingForSelectedApp: return "Waiting for selected app"
         case .starting: return "Starting priority monitor…"
-        case .active: return "Active — \(status.boostedCount) verified process\(status.boostedCount == 1 ? "" : "es") at nice -5"
-        case .activeWithSkipped: return "Active — \(status.boostedCount) boosted, \(status.skippedCount) skipped"
+        case .active: return "Active — \(status.boostedCount) confirmed process\(status.boostedCount == 1 ? "" : "es")\(targetText)"
+        case .activeWithSkipped: return "Active — \(status.boostedCount) confirmed, \(status.skippedCount) skipped\(targetText)"
         case .restorePending: return "Restore pending — \(status.boostedCount) process record\(status.boostedCount == 1 ? "" : "s")"
         case .restored: return "Restored"
         case .failed: return "Failed — \(status.message)"
+        }
+    }
+
+    private func focusedFirefoxStatusText(
+        status: AppPriorityStatus,
+        details: FocusedFirefoxStatusDetails
+    ) -> String {
+        let parent = details.parentPID.map { "PID \($0)" } ?? "not currently available"
+        let gpu = details.gpuPID.map { "PID \($0)" } ?? "not currently available"
+        let content: String
+        if let pid = details.contentPID {
+            content = "PID \(pid)"
+        } else if details.waitingForStableContent {
+            content = "waiting for stable active content process"
+        } else {
+            content = "not currently available"
+        }
+        var lines = [
+            "\(status.message)",
+            "Tracked Firefox processes: \(details.trackedProcessCount)",
+            "Processes actually boosted: \(details.actuallyBoostedCount)",
+            "Parent/UI: \(parent)",
+            "GPU Helper: \(gpu)",
+            "Active Content: \(content)"
+        ]
+        if let warning = details.warning, !warning.isEmpty {
+            lines.append("Warning: \(warning)")
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    private func updatePolicyCopy(for application: AppPriorityApplication?) {
+        guard let application = application else {
+            policyLabel.stringValue = "Choose an application to see its priority policy."
+            return
+        }
+        let policy = AppPriorityPolicy.policy(for: application)
+        switch policy.kind {
+        case .focusedFirefox:
+            policyLabel.stringValue = "Firefox focused policy\nParent/UI + GPU helper + one activity-selected content process\nMaximum boosted: 3 processes at nice -1\nExperimental: compare against App Priority OFF"
+        case .mainProcessOnly:
+            policyLabel.stringValue = "Browser policy: main process only at nice \(policy.targetNiceValue). This avoids raising every browser helper above WindowServer and other interactive services."
+        case .verifiedProcessFamily:
+            policyLabel.stringValue = "Sustained-workload policy: selected app plus verified same-user helpers at nice \(policy.targetNiceValue)."
         }
     }
 

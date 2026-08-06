@@ -1,0 +1,88 @@
+VISUAL_PERFORMANCE_PROBE_SCHEMA=1
+SYSTEM
+os_name=Darwin
+os_version=10.15.7
+os_build=19H15
+hardware_model=MacBookPro9,2
+requesting_uid=501
+current_uid=501
+
+DOCK_AUTO_HIDE
+candidate_id=dockAutoHide
+candidate_domain=com.apple.dock
+candidate_key=autohide
+read_status=0
+read_type=Type is boolean
+read_value=1
+
+FINDER_ANIMATIONS
+candidate_id=finderAnimations
+candidate_domain=com.apple.finder
+candidate_key=DisableAllAnimations
+read_status=0
+read_type=Type is boolean
+read_value=1
+
+DOCK_LAUNCH_ANIMATION
+candidate_id=dockLaunchAnimation
+candidate_domain=com.apple.dock
+candidate_key=launchanim
+read_status=0
+read_type=Type is boolean
+read_value=0
+
+MISSION_CONTROL_TRANSITIONS
+candidate_id=missionControlTransitions
+candidate_domain=com.apple.dock
+candidate_key=expose-animation-duration
+read_status=0
+read_type=Type is float
+read_value=0.1
+
+WINDOW_OPENING_ANIMATIONS
+candidate_id=windowOpeningAnimations
+candidate_domain=NSGlobalDomain
+candidate_key=NSAutomaticWindowAnimationsEnabled
+read_status=0
+read_type=Type is boolean
+read_value=0
+
+REDUCE_MOTION
+candidate_id=reduceMotion
+candidate_domain=com.apple.universalaccess
+candidate_key=reduceMotion
+read_status=1
+read_type=ABSENT
+read_value=ABSENT
+
+REDUCE_TRANSPARENCY
+candidate_id=reduceTransparency
+candidate_domain=com.apple.universalaccess
+candidate_key=reduceTransparency
+read_status=1
+read_type=ABSENT
+read_value=ABSENT
+
+MINIMIZE_EFFECT
+candidate_id=minimizeEffect
+candidate_domain=com.apple.dock
+candidate_key=mineffect
+read_status=0
+read_type=Type is string
+read_value=scale
+
+DOCK_AUTO_HIDE_DELAY
+candidate_id=dockAutoHideDelay
+candidate_domain=com.apple.dock
+candidate_key=autohide-delay
+read_status=0
+read_type=Type is float
+read_value=0
+
+DOCK_AUTO_HIDE_ANIMATION
+candidate_id=dockAutoHideAnimation
+candidate_domain=com.apple.dock
+candidate_key=autohide-time-modifier
+read_status=0
+read_type=Type is float
+read_value=0

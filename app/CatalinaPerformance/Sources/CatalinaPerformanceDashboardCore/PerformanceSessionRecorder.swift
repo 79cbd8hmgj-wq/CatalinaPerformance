@@ -13,6 +13,7 @@ public protocol PerformanceSessionRecording: AnyObject {
     func addOrCoalesceError(operation: String, message: String, at date: Date)
     func activeRecord() -> PerformanceSessionRecord?
     func replaceSubsystemStatuses(_ statuses: [PerformanceSubsystemStatus])
+    func replaceBackgroundServiceStatuses(_ statuses: [BackgroundServiceDashboardCategoryStatus])
     func restoreActiveRecord(_ record: PerformanceSessionRecord)
     func discard()
 }
@@ -42,6 +43,7 @@ public final class PerformanceSessionRecorder: PerformanceSessionRecording {
                 subsystemStatuses: PerformanceSubsystem.allCases.map {
                     PerformanceSubsystemStatus(subsystem: $0, state: .pending, updatedAt: startedAt, note: nil)
                 },
+                backgroundServiceStatuses: nil,
                 monitoringGaps: [],
                 metricErrors: [],
                 completionReason: nil
@@ -105,7 +107,10 @@ public final class PerformanceSessionRecorder: PerformanceSessionRecording {
             record.phase = .completed
             record.completedAt = completedAt
             record.completionReason = reason
-            record.subsystemStatuses = subsystemStatuses
+            record.subsystemStatuses = mergingBackgroundSubsystemStatus(
+                incoming: subsystemStatuses,
+                existing: record.subsystemStatuses
+            )
             let report = completedReport(from: record, phase: .completed, reason: reason, completedAt: completedAt)
             recordValue = nil
             return report
@@ -127,7 +132,10 @@ public final class PerformanceSessionRecorder: PerformanceSessionRecording {
             record.phase = .interrupted
             record.completedAt = completedAt
             record.completionReason = .interrupted
-            record.subsystemStatuses = subsystemStatuses
+            record.subsystemStatuses = mergingBackgroundSubsystemStatus(
+                incoming: subsystemStatuses,
+                existing: record.subsystemStatuses
+            )
             let report = completedReport(from: record, phase: .interrupted, reason: .interrupted, completedAt: completedAt)
             recordValue = nil
             return report
@@ -157,7 +165,25 @@ public final class PerformanceSessionRecorder: PerformanceSessionRecording {
     public func replaceSubsystemStatuses(_ statuses: [PerformanceSubsystemStatus]) {
         queue.sync {
             guard var record = recordValue else { return }
-            record.subsystemStatuses = statuses
+            record.subsystemStatuses = mergingBackgroundSubsystemStatus(
+                incoming: statuses,
+                existing: record.subsystemStatuses
+            )
+            recordValue = record
+        }
+    }
+
+    public func replaceBackgroundServiceStatuses(_ statuses: [BackgroundServiceDashboardCategoryStatus]) {
+        queue.sync {
+            guard var record = recordValue else { return }
+            record.backgroundServiceStatuses = statuses
+            let updatedAt = statuses.map { $0.updatedAt }.max() ?? record.latest.capturedAt
+            let summary = BackgroundServiceDashboardSummary.status(for: statuses, at: updatedAt)
+            var subsystemStatuses = record.subsystemStatuses.filter {
+                $0.subsystem != .backgroundServiceSuppression
+            }
+            subsystemStatuses.append(summary)
+            record.subsystemStatuses = orderedSubsystemStatuses(subsystemStatuses)
             recordValue = record
         }
     }
@@ -168,6 +194,23 @@ public final class PerformanceSessionRecorder: PerformanceSessionRecording {
 
     public func restoreActiveRecord(_ record: PerformanceSessionRecord) {
         queue.sync { recordValue = record }
+    }
+
+    private func mergingBackgroundSubsystemStatus(
+        incoming: [PerformanceSubsystemStatus],
+        existing: [PerformanceSubsystemStatus]
+    ) -> [PerformanceSubsystemStatus] {
+        var merged = incoming
+        if !merged.contains(where: { $0.subsystem == .backgroundServiceSuppression }),
+           let preserved = existing.first(where: { $0.subsystem == .backgroundServiceSuppression }) {
+            merged.append(preserved)
+        }
+        return orderedSubsystemStatuses(merged)
+    }
+
+    private func orderedSubsystemStatuses(_ statuses: [PerformanceSubsystemStatus]) -> [PerformanceSubsystemStatus] {
+        let bySubsystem = Dictionary(uniqueKeysWithValues: statuses.map { ($0.subsystem, $0) })
+        return PerformanceSubsystem.allCases.compactMap { bySubsystem[$0] }
     }
 
     private func coalesceError(operation: String, message: String, at date: Date, record: inout PerformanceSessionRecord) {
@@ -208,6 +251,7 @@ public final class PerformanceSessionRecorder: PerformanceSessionRecording {
             aggregates: record.aggregates,
             sampleCount: record.sampleCount,
             subsystemStatuses: record.subsystemStatuses,
+            backgroundServiceStatuses: record.backgroundServiceStatuses,
             monitoringGaps: record.monitoringGaps,
             metricErrors: record.metricErrors,
             completionReason: reason

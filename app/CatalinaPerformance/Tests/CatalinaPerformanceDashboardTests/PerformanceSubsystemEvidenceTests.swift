@@ -7,12 +7,14 @@ final class PerformanceSubsystemEvidenceTests: XCTestCase {
     private var system: URL!
     private var foreground: URL!
     private var priority: URL!
+    private var prioritySelection: URL!
 
     override func setUpWithError() throws {
         root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         system = root.appendingPathComponent("system_state", isDirectory: true)
         foreground = root.appendingPathComponent("foreground", isDirectory: true)
         priority = root.appendingPathComponent("status.json")
+        prioritySelection = root.appendingPathComponent("selection.json")
         try FileManager.default.createDirectory(at: system, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: foreground, withIntermediateDirectories: true)
     }
@@ -35,12 +37,26 @@ final class PerformanceSubsystemEvidenceTests: XCTestCase {
     }
 
     func testSanitizedPriorityStatusMapsActiveAndRestored() throws {
+        try AppPrioritySelection(enabled: true, application: fixtureApplication()).writeAtomically(to: prioritySelection)
         let active = AppPriorityStatus(state: .active, boostedCount: 3, skippedCount: 0, message: "Active", sessionIdentifier: "s")
         try JSONEncoder().encode(active).write(to: priority)
         XCTAssertEqual(reader().activationStatuses(at: Date()).status(for: .appPriority)?.state, .applied)
         let restored = AppPriorityStatus(state: .restored, boostedCount: 0, skippedCount: 0, message: "Restored", sessionIdentifier: nil)
         try JSONEncoder().encode(restored).write(to: priority)
         XCTAssertEqual(reader().restorationStatuses(commandEvidence: [DashboardCommandEvidence(identifier: "performanceOff", succeeded: true, output: "")], at: Date()).status(for: .appPriority)?.state, .restored)
+    }
+
+    func testDisabledPrioritySelectionOverridesStaleRestoredStatus() throws {
+        try AppPrioritySelection(enabled: false, application: nil).writeAtomically(to: prioritySelection)
+        let stale = AppPriorityStatus(state: .restored, boostedCount: 0, skippedCount: 0, message: "Restored", sessionIdentifier: nil)
+        try JSONEncoder().encode(stale).write(to: priority)
+
+        let status = reader().restorationStatuses(
+            commandEvidence: [DashboardCommandEvidence(identifier: "performanceOff", succeeded: true, output: "")],
+            at: Date()
+        ).status(for: .appPriority)
+
+        XCTAssertEqual(status?.state, .notConfigured)
     }
 
     func testMissingRestoreProofIsUnknown() {
@@ -59,7 +75,16 @@ final class PerformanceSubsystemEvidenceTests: XCTestCase {
     }
 
     private func reader() -> PerformanceSubsystemEvidenceReader {
-        PerformanceSubsystemEvidenceReader(paths: PerformanceSubsystemPaths(systemStateDirectory: system, foregroundRuntimeDirectory: foreground, appPriorityStatusFile: priority))
+        PerformanceSubsystemEvidenceReader(paths: PerformanceSubsystemPaths(systemStateDirectory: system, foregroundRuntimeDirectory: foreground, appPriorityStatusFile: priority, appPrioritySelectionFile: prioritySelection))
+    }
+
+    private func fixtureApplication() -> AppPriorityApplication {
+        AppPriorityApplication(
+            displayName: "Fixture",
+            bundleIdentifier: "local.fixture",
+            bundlePath: "/Applications/Fixture.app",
+            executablePath: "/Applications/Fixture.app/Contents/MacOS/Fixture"
+        )
     }
 }
 

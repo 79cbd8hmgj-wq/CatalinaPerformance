@@ -7,6 +7,8 @@ public enum AppPriorityProcessError: Error, Equatable, CustomStringConvertible {
     case readFailed(pid: Int32, code: Int32)
     case priorityReadFailed(pid: Int32, code: Int32)
     case priorityWriteFailed(pid: Int32, code: Int32)
+    case argumentsReadFailed(pid: Int32, code: Int32)
+    case resourceReadFailed(pid: Int32, code: Int32)
     case invalidProcessData(pid: Int32)
 
     public var description: String {
@@ -16,6 +18,8 @@ public enum AppPriorityProcessError: Error, Equatable, CustomStringConvertible {
         case .readFailed(let pid, let code): return "Unable to read process \(pid) (\(code))."
         case .priorityReadFailed(let pid, let code): return "Unable to read priority for process \(pid) (\(code))."
         case .priorityWriteFailed(let pid, let code): return "Unable to set priority for process \(pid) (\(code))."
+        case .argumentsReadFailed(let pid, let code): return "Unable to read arguments for process \(pid) (\(code))."
+        case .resourceReadFailed(let pid, let code): return "Unable to read resource counters for process \(pid) (\(code))."
         case .invalidProcessData(let pid): return "Process \(pid) returned invalid identity data."
         }
     }
@@ -61,7 +65,12 @@ public protocol AppPriorityPriorityMutating {
     func setPriority(pid: Int32, value: Int32) throws
 }
 
-public final class DarwinAppPriorityProcessInspector: AppPriorityProcessInspecting, AppPriorityPriorityMutating {
+public protocol AppPriorityProcessActivityInspecting {
+    func arguments(pid: Int32) throws -> [String]
+    func cpuTimeNanoseconds(pid: Int32) throws -> UInt64
+}
+
+public final class DarwinAppPriorityProcessInspector: AppPriorityProcessInspecting, AppPriorityPriorityMutating, AppPriorityProcessActivityInspecting {
     public init() {}
 
     public func allProcesses() throws -> [AppPriorityProcessIdentity] {
@@ -83,6 +92,44 @@ public final class DarwinAppPriorityProcessInspector: AppPriorityProcessInspecti
         let result = cp_read_process(pid, &info)
         guard result == 0 else { throw AppPriorityProcessError.readFailed(pid: pid, code: result) }
         return try identity(from: info)
+    }
+
+
+    public func arguments(pid: Int32) throws -> [String] {
+        var buffer = [CChar](repeating: 0, count: Int(CP_PROCESS_ARGUMENTS_MAX))
+        let result = buffer.withUnsafeMutableBufferPointer { pointer -> Int32 in
+            return cp_read_process_arguments(pid, pointer.baseAddress, Int32(pointer.count))
+        }
+        guard result >= 0 else {
+            throw AppPriorityProcessError.argumentsReadFailed(pid: pid, code: result)
+        }
+        if result == 0 { return [] }
+
+        var values: [String] = []
+        var start = 0
+        let count = Int(result)
+        for index in 0..<count where buffer[index] == 0 {
+            if index > start {
+                let bytes = buffer[start..<index].map { UInt8(bitPattern: $0) }
+                if let value = String(bytes: bytes, encoding: .utf8) {
+                    values.append(value)
+                }
+            }
+            start = index + 1
+        }
+        return values
+    }
+
+    public func cpuTimeNanoseconds(pid: Int32) throws -> UInt64 {
+        var resources = CPProcessResourceInfo()
+        let result = cp_read_process_resources(pid, &resources)
+        guard result == 0 else {
+            throw AppPriorityProcessError.resourceReadFailed(pid: pid, code: result)
+        }
+        guard resources.pid == pid else {
+            throw AppPriorityProcessError.invalidProcessData(pid: pid)
+        }
+        return resources.cpuTimeNanoseconds
     }
 
     public func priority(pid: Int32) throws -> Int32 {

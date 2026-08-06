@@ -167,6 +167,52 @@ int32_t cp_read_process_resources(pid_t pid, CPProcessResourceInfo *output) {
 }
 
 
+
+int32_t cp_read_process_arguments(pid_t pid, char *buffer, int32_t capacity) {
+    if (pid <= 0 || buffer == NULL || capacity <= 0) return -EINVAL;
+    if (capacity > CP_PROCESS_ARGUMENTS_MAX) capacity = CP_PROCESS_ARGUMENTS_MAX;
+    memset(buffer, 0, (size_t)capacity);
+
+    char kernelBuffer[CP_PROCESS_ARGUMENTS_MAX];
+    memset(kernelBuffer, 0, sizeof(kernelBuffer));
+    size_t kernelLength = sizeof(kernelBuffer);
+    int mib[3] = { CTL_KERN, KERN_PROCARGS2, pid };
+    if (sysctl(mib, 3, kernelBuffer, &kernelLength, NULL, 0) != 0) {
+        return errno == 0 ? -EIO : -errno;
+    }
+    if (kernelLength < sizeof(int)) return -EIO;
+
+    int argc = 0;
+    memcpy(&argc, kernelBuffer, sizeof(argc));
+    if (argc <= 0) return -EIO;
+
+    size_t cursor = sizeof(argc);
+    const char *end = kernelBuffer + kernelLength;
+    const char *executableEnd = memchr(kernelBuffer + cursor, '\0', kernelLength - cursor);
+    if (executableEnd == NULL) return -EIO;
+    cursor = (size_t)(executableEnd - kernelBuffer) + 1;
+    while (cursor < kernelLength && kernelBuffer[cursor] == '\0') cursor++;
+
+    int copiedArguments = 0;
+    int32_t outputLength = 0;
+    while (copiedArguments < argc && cursor < kernelLength) {
+        const char *argumentStart = kernelBuffer + cursor;
+        size_t remaining = (size_t)(end - argumentStart);
+        const char *argumentEnd = memchr(argumentStart, '\0', remaining);
+        if (argumentEnd == NULL) return -EIO;
+        size_t argumentLength = (size_t)(argumentEnd - argumentStart);
+        if (argumentLength + 1 > (size_t)(capacity - outputLength)) return -E2BIG;
+        memcpy(buffer + outputLength, argumentStart, argumentLength);
+        outputLength += (int32_t)argumentLength;
+        buffer[outputLength++] = '\0';
+        copiedArguments++;
+        cursor += argumentLength + 1;
+    }
+
+    if (copiedArguments != argc) return -EIO;
+    return outputLength;
+}
+
 int32_t cp_read_process(pid_t pid, CPProcessInfo *output) {
     if (pid <= 0 || output == NULL) return -EINVAL;
     struct proc_bsdinfo bsd;
@@ -239,6 +285,7 @@ int32_t cp_read_host_cpu_ticks(CPHostCPUTicks *output) { (void)output; return -E
 int32_t cp_read_host_memory(CPHostMemoryInfo *output) { (void)output; return -ENOTSUP; }
 int32_t cp_read_swap(CPSwapInfo *output) { (void)output; return -ENOTSUP; }
 int32_t cp_read_process_resources(pid_t pid, CPProcessResourceInfo *output) { (void)pid; (void)output; return -ENOTSUP; }
+int32_t cp_read_process_arguments(pid_t pid, char *buffer, int32_t capacity) { (void)pid; (void)buffer; (void)capacity; return -ENOTSUP; }
 
 int32_t cp_list_processes(CPProcessInfo *buffer, int32_t capacity) {
     (void)buffer; (void)capacity; return -ENOTSUP;

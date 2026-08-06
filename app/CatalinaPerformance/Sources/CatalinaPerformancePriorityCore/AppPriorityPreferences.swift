@@ -30,6 +30,15 @@ public enum AppPriorityPreferences {
             defaults.removeObject(forKey: selectedApplicationKey)
         }
     }
+
+    public static func canonicalizedSelection(
+        _ selection: AppPrioritySelection,
+        canonicalizer: AppPriorityApplicationCanonicalizer = AppPriorityApplicationCanonicalizer()
+    ) throws -> AppPrioritySelection {
+        guard let application = selection.application else { return selection }
+        let migrated = try canonicalizer.migrate(application)
+        return AppPrioritySelection(enabled: selection.enabled, application: migrated)
+    }
 }
 
 public extension AppPrioritySelection {

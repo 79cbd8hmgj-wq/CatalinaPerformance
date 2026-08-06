@@ -25,6 +25,22 @@ final class AppPriorityProcessFamilyTests: XCTestCase {
         XCTAssertTrue(result.mainProcessFound)
     }
 
+    func testMainProcessOnlyScopeExcludesChildrenAndDetachedHelpers() {
+        let main = process(pid: 100, ppid: 1, path: firefox.executablePath, name: "firefox")
+        let child = process(pid: 101, ppid: 100, path: "/usr/libexec/firefox-child")
+        let detached = process(pid: 200, ppid: 1, path: "/Applications/Firefox.app/Contents/Frameworks/Firefox Helper.app/Contents/MacOS/Firefox Helper")
+
+        let result = AppPriorityProcessFamilyResolver.resolve(
+            application: firefox,
+            requestingUID: 501,
+            processes: [main, child, detached],
+            policyKind: .mainProcessOnly
+        )
+
+        XCTAssertEqual(result.eligible.map { $0.pid }, [100])
+        XCTAssertTrue(result.mainProcessFound)
+    }
+
     func testRejectsRootOtherUserAndCriticalProcessesEvenWhenAssociated() {
         let main = process(pid: 100, ppid: 1, path: firefox.executablePath, name: "firefox")
         let rootChild = process(pid: 101, ppid: 100, uid: 0, path: "/usr/bin/root-helper")
@@ -48,5 +64,21 @@ final class AppPriorityProcessFamilyTests: XCTestCase {
         let result = AppPriorityProcessFamilyResolver.resolve(application: firefox, requestingUID: 501, processes: [detached])
         XCTAssertEqual(result.eligible.map { $0.pid }, [200])
         XCTAssertFalse(result.mainProcessFound)
+    }
+
+    func testFocusedFirefoxReturnsFullTrackedFamilyWithoutDefiningMutationSet() {
+        let main = process(pid: 100, ppid: 1, path: firefox.executablePath, name: "firefox")
+        let child = process(pid: 101, ppid: 100, path: "/Applications/Firefox.app/Contents/MacOS/plugin-container", name: "plugin-container")
+        let detached = process(pid: 200, ppid: 1, path: "/Applications/Firefox.app/Contents/MacOS/gpu-helper", name: "Firefox GPU Helper")
+
+        let result = AppPriorityProcessFamilyResolver.resolve(
+            application: firefox,
+            requestingUID: 501,
+            processes: [main, child, detached],
+            policyKind: .focusedFirefox
+        )
+
+        XCTAssertEqual(result.eligible.map { $0.pid }, [100, 101, 200])
+        XCTAssertTrue(result.mainProcessFound)
     }
 }

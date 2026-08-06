@@ -120,8 +120,13 @@ validate_preferences_file() {
         /^[[:space:]]*($|#)/ { next }
         $1 == "PAUSE_SPOTLIGHT_WHILE_ON" || \
         $1 == "PAUSE_TIME_MACHINE_WHILE_ON" || \
+        $1 == "PAUSE_ICLOUD_DRIVE_WHILE_ON" || \
         $1 == "PREVENT_SYSTEM_SLEEP_WHILE_ON" || \
-        $1 == "PREVENT_DISPLAY_SLEEP_WHILE_ON" { next }
+        $1 == "PREVENT_DISPLAY_SLEEP_WHILE_ON" || \
+        $1 == "SHOW_SWAP_USAGE_WARNING" || \
+        $1 == "SHOW_LOW_DISK_SPACE_WARNING" || \
+        $1 == "SHOW_MEMORY_PRESSURE_SUMMARY" || \
+        $1 == "SHOW_TOP_MEMORY_PROCESSES" { next }
         { bad=1 }
         END { exit bad ? 1 : 0 }
     ' "$PREFERENCES_FILE" 2>/dev/null || log "Warning: Advanced preferences file $PREFERENCES_FILE contains malformed or unknown entries; only known keys will be read."

@@ -165,6 +165,9 @@ final class SessionDashboardWindowController: NSWindowController, NSWindowDelega
         if !viewModel.completedRows.isEmpty {
             addFullWidthArrangedSubview(completedSection(title: "Last Completed Session", rows: viewModel.completedRows))
         }
+        if !viewModel.priorityDetailRows.isEmpty {
+            addFullWidthArrangedSubview(section(title: "Focused Firefox Targets", metricRows: viewModel.priorityDetailRows))
+        }
         if !viewModel.subsystemRows.isEmpty {
             let heading = viewModel.screenKind == .completed || viewModel.screenKind == .interrupted ? "Restoration" : "Active Changes"
             addFullWidthArrangedSubview(section(title: heading, metricRows: viewModel.subsystemRows))

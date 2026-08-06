@@ -46,6 +46,85 @@ final class SessionDashboardPresentationTests: XCTestCase {
         for prohibited in ["score", "grade", "improved by", "faster"] { XCTAssertFalse(allText.contains(prohibited)) }
     }
 
+    func testGenericPresentationRetainsVerifiedProcessAndPriorityStatusLabels() {
+        let record = activeRecord(cpu: .available(10, at: date(1)))
+        let active = SessionDashboardPresenter(nowProvider: { self.date(2) }).makeViewModel(
+            from: PerformanceSessionCoordinatorState(content: .active(record), warningMessage: nil)
+        )
+        XCTAssertNotNil(active.selectedAppRows.first { $0.label == "Verified Processes" })
+        XCTAssertNotNil(active.selectedAppRows.first { $0.label == "Priority Status" })
+        XCTAssertTrue(active.priorityDetailRows.isEmpty)
+    }
+
+    func testFocusedFirefoxActivePresentationSeparatesTrackedBoostedAndTargetRoles() {
+        let snapshot = focusedSnapshot(contentPID: 844, waitingForStableContent: false)
+        let application = firefoxApplication()
+        let record = PerformanceSessionRecord(
+            sessionIdentifier: "focused-active",
+            phase: .active,
+            startedAt: date(0),
+            completedAt: nil,
+            selectedApplication: application,
+            baseline: snapshot,
+            latest: snapshot,
+            finalPreRestore: nil,
+            postRestore: nil,
+            aggregates: SessionMetricAggregates(),
+            sampleCount: 2,
+            subsystemStatuses: [],
+            monitoringGaps: [],
+            metricErrors: [],
+            completionReason: nil
+        )
+
+        let viewModel = SessionDashboardPresenter(nowProvider: { self.date(2) }).makeViewModel(
+            from: PerformanceSessionCoordinatorState(content: .active(record), warningMessage: nil)
+        )
+
+        XCTAssertEqual(viewModel.selectedAppRows.first { $0.label == "Tracked Firefox Processes" }?.current, "13")
+        XCTAssertEqual(viewModel.selectedAppRows.first { $0.label == "Processes Actually Boosted" }?.current, "3 confirmed")
+        XCTAssertEqual(viewModel.priorityDetailRows.first { $0.label == "Parent/UI" }?.current, "PID 612")
+        XCTAssertEqual(viewModel.priorityDetailRows.first { $0.label == "GPU Helper" }?.current, "PID 616")
+        XCTAssertEqual(viewModel.priorityDetailRows.first { $0.label == "Active Content" }?.current, "PID 844")
+        XCTAssertFalse(viewModel.selectedAppRows.contains { $0.label == "Verified Processes" })
+    }
+
+    func testFocusedFirefoxCompletedPresentationUsesFinalSnapshotAndWaitingText() {
+        let snapshot = focusedSnapshot(contentPID: nil, waitingForStableContent: true)
+        var aggregates = SessionMetricAggregates()
+        aggregates.recordBaseline(snapshot)
+        aggregates.recordSample(snapshot)
+        aggregates.recordFinalPreRestore(snapshot)
+        let report = CompletedPerformanceSessionReport(
+            sessionIdentifier: "focused-completed",
+            phase: .completed,
+            startedAt: date(0),
+            completedAt: date(5),
+            selectedApplication: firefoxApplication(),
+            baseline: snapshot,
+            finalPreRestore: snapshot,
+            postRestore: snapshot,
+            aggregates: aggregates,
+            sampleCount: 1,
+            subsystemStatuses: [],
+            monitoringGaps: [],
+            metricErrors: [],
+            completionReason: .normalOff
+        )
+
+        let viewModel = SessionDashboardPresenter().makeViewModel(
+            from: PerformanceSessionCoordinatorState(content: .completed(report), warningMessage: nil)
+        )
+
+        XCTAssertNotNil(viewModel.completedRows.first { $0.label == "Tracked Firefox Processes" })
+        XCTAssertNotNil(viewModel.completedRows.first { $0.label == "Processes Actually Boosted" })
+        XCTAssertNil(viewModel.completedRows.first { $0.label == "Verified Processes" })
+        XCTAssertEqual(
+            viewModel.priorityDetailRows.first { $0.label == "Active Content" }?.current,
+            "Waiting for stable active content process"
+        )
+    }
+
     func testCompletedPresentationIncludesCompletionTimeAndRestoreResult() {
         let record = activeRecord(cpu: .available(10, at: date(1)))
         let statuses = PerformanceSubsystem.allCases.map {
@@ -70,6 +149,43 @@ final class SessionDashboardPresentationTests: XCTestCase {
         let model = SessionDashboardPresenter().makeViewModel(from: PerformanceSessionCoordinatorState(content: .completed(report), warningMessage: nil))
         XCTAssertNotNil(model.completionText)
         XCTAssertEqual(model.restoreResultText, "Successful")
+    }
+
+    private func firefoxApplication() -> AppPriorityApplication {
+        AppPriorityApplication(
+            displayName: "Firefox",
+            bundleIdentifier: "org.mozilla.firefox",
+            bundlePath: "/Applications/Firefox.app",
+            executablePath: "/Applications/Firefox.app/Contents/MacOS/firefox"
+        )
+    }
+
+    private func focusedSnapshot(contentPID: Int32?, waitingForStableContent: Bool) -> SessionMetricSnapshot {
+        let d = date(1)
+        return SessionMetricSnapshot(
+            capturedAt: d,
+            systemCPUPercent: .available(10, at: d),
+            memoryPressure: .available(.normal, at: d),
+            physicalMemoryUsedBytes: .available(4_000_000_000, at: d),
+            swapUsedBytes: .available(140_000_000, at: d),
+            diskFreeBytes: .available(20_000_000_000, at: d),
+            schedulerLimitPercent: .available(100, at: d),
+            speedLimitPercent: .available(100, at: d),
+            selectedAppCPUPercent: .available(30, at: d),
+            selectedAppResidentBytes: .available(1_000_000_000, at: d),
+            selectedAppVerifiedProcessCount: .available(13, at: d),
+            selectedAppPriorityConfirmedCount: .available(3, at: d),
+            focusedFirefoxPriority: FocusedFirefoxMetricDetails(
+                policySummary: "Focused Firefox policy",
+                trackedProcessCount: 13,
+                actuallyBoostedCount: 3,
+                parentPID: 612,
+                gpuPID: 616,
+                contentPID: contentPID,
+                waitingForStableContent: waitingForStableContent,
+                warning: nil
+            )
+        )
     }
 
     private func activeRecord(cpu: MetricReading<Double>) -> PerformanceSessionRecord {

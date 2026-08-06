@@ -140,6 +140,48 @@ final class AppPriorityAgentServiceTests: XCTestCase {
         XCTAssertTrue(store.stopRequested())
     }
 
+
+    func testStartPublishesFocusedFirefoxPolicyMetadata() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let firefox = AppPriorityApplication(
+            displayName: "Firefox",
+            bundleIdentifier: "org.mozilla.firefox",
+            bundlePath: "/Applications/Firefox.app",
+            executablePath: "/Applications/Firefox.app/Contents/MacOS/firefox"
+        )
+        var store: AppPriorityStateStore!
+        var startingStatus: AppPriorityStatus?
+        let launcher = FakeLauncher {
+            startingStatus = store.loadStatus()
+            if let current = startingStatus {
+                try? store.writeStatus(AppPriorityStatus(
+                    state: .active,
+                    boostedCount: 0,
+                    skippedCount: 0,
+                    message: "Active",
+                    sessionIdentifier: current.sessionIdentifier,
+                    targetNiceValue: current.targetNiceValue,
+                    targetScope: current.targetScope,
+                    policyKind: current.policyKind
+                ))
+            }
+        }
+        let service = AppPriorityAgentService(
+            selectionProvider: { _ in ValidatedAppPrioritySelection(enabled: true, application: firefox, requestingUID: 501) },
+            storeProvider: { uid in store = AppPriorityStateStore(runtimeRoot: root, requestingUID: uid); return store },
+            monitorProvider: { _, _, _, _ in fatalError("not called") },
+            lockProvider: FakeLock([.acquired(1), .acquired(2)]),
+            launcher: launcher,
+            clock: NoSleepClock(),
+            agentPath: "/tmp/agent"
+        )
+
+        XCTAssertEqual(try service.start(uid: 501), .success)
+        XCTAssertEqual(startingStatus?.targetNiceValue, -1)
+        XCTAssertEqual(startingStatus?.policyKind, .focusedFirefox)
+    }
+
     func testStopAndRestoreFallsBackToRecoveryWhenMonitorIsGone() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }

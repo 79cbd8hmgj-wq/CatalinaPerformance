@@ -15,6 +15,7 @@ let package = Package(
             publicHeadersPath: "include"
         ),
         .target(name: "CatalinaPerformanceCore", dependencies: []),
+        .target(name: "CatalinaPerformanceVisualPerformanceCore", dependencies: []),
         .target(
             name: "CatalinaPerformancePriorityCore",
             dependencies: ["CatalinaProcessSupport"]
@@ -28,11 +29,17 @@ let package = Package(
             ]
         ),
         .target(
+            name: "CatalinaPerformanceBackgroundServicesCore",
+            dependencies: ["CatalinaPerformancePriorityCore"]
+        ),
+        .target(
             name: "CatalinaPerformance",
             dependencies: [
                 "CatalinaPerformanceCore",
                 "CatalinaPerformancePriorityCore",
-                "CatalinaPerformanceDashboardCore"
+                "CatalinaPerformanceDashboardCore",
+                "CatalinaPerformanceBackgroundServicesCore",
+                "CatalinaPerformanceVisualPerformanceCore"
             ]
         ),
         .target(
@@ -53,6 +60,17 @@ let package = Package(
                 "CatalinaPerformanceDashboardCore",
                 "CatalinaPerformancePriorityCore",
                 "CatalinaProcessSupport"
+            ]
+        ),
+        .testTarget(
+            name: "CatalinaPerformanceVisualPerformanceTests",
+            dependencies: ["CatalinaPerformanceVisualPerformanceCore"]
+        ),
+        .testTarget(
+            name: "CatalinaPerformanceBackgroundServicesTests",
+            dependencies: [
+                "CatalinaPerformanceBackgroundServicesCore",
+                "CatalinaPerformancePriorityCore"
             ]
         )
     ]

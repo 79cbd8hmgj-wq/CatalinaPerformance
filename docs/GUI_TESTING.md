@@ -78,20 +78,54 @@ Use harmless applications such as TextEdit and Calculator. Save all work before 
 
 Do not use unsaved production documents for refusal/save-dialog tests. The feature cannot recreate identical windows or unsaved state after an application exits.
 
+## Background Service Suppression Catalina Matrix
+
+1. Confirm the Advanced panel lists macOS Updates, App Store Updates, Photos, Mail, Messages/FaceTime, Siri/Speech, and iCloud Drive separately. On the captured Catalina build, Siri/Speech and iCloud Drive should report **Unsupported** rather than being mutated.
+2. Save baseline output for the supported preference keys and exact target processes before turning Performance Mode ON.
+3. Turn Performance Mode ON and confirm only the finite catalog targets change: update preferences are paused and only matching user-owned worker identities receive SIGTERM.
+4. Confirm the dashboard shows each supported category independently and does not convert missing evidence into Restored.
+5. Open Photos, Mail, Messages, FaceTime, App Store, and Software Update one category at a time. Confirm the corresponding category becomes `Resumed — user opened ...` and remains exempt for the rest of that session.
+6. Turn Performance Mode OFF and verify every update key returns to its exact prior presence/type/value and only workers recorded as running and successfully stopped are restarted.
+7. Repeat ON/OFF to verify idempotency. Then repeat using Emergency Restore.
+8. Force-quit CatalinaPerformance while ON, reopen it, and verify stale-session recovery restores user-owned workers without an automatic password prompt while root-setting recovery remains clearly outstanding until explicit restore authorization.
+9. During active suppression, verify Safari password autofill, Keychain Access, AirDrop, Wi-Fi/DNS/browsing, a push notification, Finder, Dock, audio, and accessibility remain normal. Confirm diagnostic and crash-report processes are unchanged.
+10. Compare alternating OFF/ON sessions without claiming causality. Record when targets were already idle or disabled.
+
 ## App Priority Catalina Matrix
 
-Use disposable TextEdit documents and noncritical browser tabs. Record each target's baseline with `ps -o pid,ppid,user,ni,comm -p <pid>` before changing Performance Mode.
+Use disposable TextEdit documents and noncritical Firefox tabs. Record original nice values before each run. Stable Firefox testing must use the same Firefox profile, same starting tabs, same query, and the same completion criterion.
 
-1. Select TextEdit, enable App Priority, turn Performance Mode ON, and verify the TextEdit main process changes to nice `-5`; turn OFF and verify its exact original value returns.
-2. Select Firefox and verify its main and eligible helper processes change to `-5`. Open a new tab or trigger a new helper and verify it is detected within four seconds.
-3. Quit and relaunch Firefox while Performance Mode remains ON. Verify a newly tracked main-process identity and its helpers receive the boost.
-4. Select Terminal and run an eligible same-user child command. Verify the child is included, while a root-owned child created through `sudo` is excluded.
-5. Verify one administrator authorization prompt occurs for ON and the normal OFF authorization flow still occurs.
-6. Cancel ON authorization after any user-level Foreground changes. Verify user-level rollback runs and no App Priority monitor remains.
-7. Save an application selection while that app is absent. Turn ON, verify the status says Waiting, then launch the app and verify it is boosted.
-8. Verify App Priority selection and enable controls are locked while Performance Mode is ON, while status continues updating.
-9. Verify an application cannot be selected both for App Priority and for the Foreground close list, regardless of which feature is configured first.
-10. While App Priority is active, run Emergency Restore. Verify monitoring stops and every still-matching record returns to its exact original nice value.
-11. Reboot after saving an App Priority selection. Verify the selection remains remembered, no priority monitor starts automatically, and nice `-5` is not reapplied. If the broader Performance Mode marker remains recorded, use OFF or Emergency Restore to complete its normal recovery path.
+### Functional and restoration checks
 
-The expected benefit is primarily under CPU contention. These tests do not validate higher CPU frequency, GPU, RAM, fan, or hardware performance because App Priority changes none of those.
+1. Select TextEdit, enable App Priority, turn Performance Mode ON, and verify the verified same-user family uses nice `-5`; turn OFF and verify every still-matching process returns to its exact original value.
+2. Select stable Firefox and confirm the saved executable is `/Applications/Firefox.app/Contents/MacOS/firefox`, not `plugin-container`, `Firefox GPU Helper`, or another helper.
+3. Turn ON and compare the dashboard with:
+
+```bash
+ps -ww -axo pid=,ppid=,ni=,%cpu=,rss=,command= | grep -i '[F]irefox'
+```
+
+4. Confirm no more than three CatalinaPerformance-managed Firefox processes are at nice `-1`: the canonical parent/UI process, at most one verified GPU helper, and at most one positive-activity content-style process.
+5. Confirm socket/network, RDD/data-decoder, utility, audio, crash-helper, idle preallocated, outside-bundle, and unverifiable processes retain their original priorities.
+6. Confirm **Tracked Firefox Processes** may exceed **Processes Actually Boosted** and that dashboard parent/GPU/content PIDs match `ps` and `about:processes`.
+7. Open another CPU-active page and observe for at least six seconds. A replacement content process must lead for two complete monitor cycles. The old target must return to its exact original nice value before the replacement becomes `-1`; a failed old restore must block the switch.
+8. Quit and relaunch Firefox while ON. Confirm the new canonical parent and helpers are reacquired, CPU baselines reset, and stale PIDs are not reused.
+9. Select Terminal and run an eligible same-user child command. Confirm the child can use the non-browser family policy while a root-owned `sudo` child is excluded.
+10. Verify one administrator authorization prompt occurs for ON and the normal OFF authorization flow remains.
+11. Cancel ON authorization after any user-level Foreground changes. Confirm rollback runs and no priority monitor remains.
+12. Save an app that is not running, turn ON, and confirm **Waiting for selected app**; launch it and verify acquisition.
+13. Confirm App Priority controls are locked while ON and Foreground close-list conflicts are refused in both configuration directions.
+14. Run normal OFF, then repeat using Emergency Restore. Both paths must continue core Spotlight, Time Machine, power, UI, and temporary-app restoration even if one priority record cannot be restored.
+15. Reboot after saving a selection. Confirm the selection remains, no monitor starts automatically, and no priority policy is reapplied.
+
+### Alternating Firefox timing protocol
+
+Run at least five App Priority OFF trials and five focused-ON trials in alternating order, such as `OFF, ON, ON, OFF, OFF, ON`, until both groups contain five results. For every trial:
+
+- use the same Firefox profile and starting tabs;
+- perform the same new-tab Google search;
+- use the same start and completion points;
+- record elapsed time and a brief subjective responsiveness note;
+- record thermal scheduler/speed limits and whether the focused PIDs were correct.
+
+One run is not evidence. A technically correct focused policy may be neutral or slower. Retain the experiment only if repeated Catalina results justify it. App Priority cannot improve network latency, and combined Firefox CPU can exceed 100% across cores.

@@ -75,4 +75,85 @@ final class AppPriorityStateStoreTests: XCTestCase {
         store.removeRuntimeFilesAfterSuccessfulRestore()
         XCTAssertNil(store.runtimeStateIfPresent())
     }
+
+
+    func testVersionOneRuntimeStateDecodesWithoutFocusedFields() throws {
+        let json = """
+        {
+          "version": 1,
+          "sessionIdentifier": "legacy-session",
+          "selectedApplication": {
+            "displayName": "Firefox",
+            "bundleIdentifier": "org.mozilla.firefox",
+            "bundlePath": "/Applications/Firefox.app",
+            "executablePath": "/Applications/Firefox.app/Contents/MacOS/firefox"
+          },
+          "requestingUID": 501,
+          "monitorIdentity": null,
+          "records": [],
+          "startedAt": "1970-01-01T00:01:40Z"
+        }
+        """
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let state = try decoder.decode(AppPriorityRuntimeState.self, from: Data(json.utf8))
+        XCTAssertEqual(state.version, 1)
+        XCTAssertNil(state.focusedFirefoxState)
+        XCTAssertNil(state.policyKind)
+    }
+
+    func testFocusedRuntimeStateRoundTripsRoleTaggedRecordsAndSelectorState() throws {
+        let temporaryRoot = root()
+        defer { try? FileManager.default.removeItem(at: temporaryRoot) }
+        let store = AppPriorityStateStore(runtimeRoot: temporaryRoot, requestingUID: 501)
+        let application = AppPriorityApplication(
+            displayName: "Firefox",
+            bundleIdentifier: "org.mozilla.firefox",
+            bundlePath: "/Applications/Firefox.app",
+            executablePath: "/Applications/Firefox.app/Contents/MacOS/firefox"
+        )
+        let parent = AppPriorityProcessIdentity(pid: 612, parentPID: 1, effectiveUID: 501, executablePath: application.executablePath, startSeconds: 10, startMicroseconds: 1, processName: "firefox", niceValue: 0)
+        let gpu = AppPriorityProcessIdentity(pid: 616, parentPID: 612, effectiveUID: 501, executablePath: "/Applications/Firefox.app/Contents/MacOS/gpu-helper.app/Contents/MacOS/Firefox GPU Helper", startSeconds: 11, startMicroseconds: 1, processName: "Firefox GPU Helper", niceValue: 0)
+        let content = AppPriorityProcessIdentity(pid: 844, parentPID: 612, effectiveUID: 501, executablePath: "/Applications/Firefox.app/Contents/MacOS/plugin-container.app/Contents/MacOS/plugin-container", startSeconds: 12, startMicroseconds: 1, processName: "plugin-container", niceValue: 0)
+        let selectorState = FocusedFirefoxContentSelectionState(
+            priorCounters: [FocusedFirefoxCPUCounter(identity: content, cumulativeNanoseconds: 5_000)],
+            currentTarget: content,
+            candidateIdentity: nil,
+            candidateWinCount: 0
+        )
+        let focused = FocusedFirefoxRuntimeState(
+            parentIdentity: parent,
+            gpuIdentity: gpu,
+            contentTargetIdentity: content,
+            contentSelectionState: selectorState,
+            trackedProcessCount: 13,
+            warning: nil
+        )
+        let record = AppPriorityRestoreRecord(
+            identity: content,
+            originalNiceValue: 0,
+            didChangePriority: true,
+            lastObservedStatus: .changed,
+            errorMessage: nil,
+            role: .contentTarget
+        )
+        let runtime = AppPriorityRuntimeState(
+            sessionIdentifier: "focused-session",
+            selectedApplication: application,
+            requestingUID: 501,
+            monitorIdentity: nil,
+            records: [record],
+            startedAt: Date(timeIntervalSince1970: 100),
+            policyKind: .focusedFirefox,
+            focusedFirefoxState: focused
+        )
+
+        try store.writeRuntimeState(runtime)
+        let decoded = try store.loadRuntimeState()
+
+        XCTAssertEqual(decoded.version, 2)
+        XCTAssertEqual(decoded.policyKind, .focusedFirefox)
+        XCTAssertEqual(decoded.focusedFirefoxState, focused)
+        XCTAssertEqual(decoded.records.first?.role, .contentTarget)
+    }
 }

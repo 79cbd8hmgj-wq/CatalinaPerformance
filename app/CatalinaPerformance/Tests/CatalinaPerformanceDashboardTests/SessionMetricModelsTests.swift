@@ -55,6 +55,24 @@ final class SessionMetricModelsTests: XCTestCase {
         XCTAssertGreaterThan(aggregates.selectedAppResidentBytes.average ?? 0, 1_000_000)
     }
 
+
+    func testLegacySnapshotWithoutFocusedFirefoxDetailsDecodesWithNil() throws {
+        let capturedAt = date(10)
+        let snapshot = SessionMetricSnapshot.unavailable(capturedAt: capturedAt, note: "legacy")
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        var object = try JSONSerialization.jsonObject(with: encoder.encode(snapshot)) as! [String: Any]
+        object.removeValue(forKey: "focusedFirefoxPriority")
+        let legacyData = try JSONSerialization.data(withJSONObject: object)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let decoded = try decoder.decode(SessionMetricSnapshot.self, from: legacyData)
+
+        XCTAssertNil(decoded.focusedFirefoxPriority)
+        XCTAssertEqual(decoded.selectedAppPriorityConfirmedCount.availability, .unavailable)
+    }
+
     func testMemoryPressurePeakUsesSeverityOrdering() {
         var aggregate = MemoryPressureMetricAggregate()
         aggregate.recordSample(.available(.normal, at: date(0)))

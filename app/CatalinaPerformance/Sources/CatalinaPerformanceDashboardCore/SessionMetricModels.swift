@@ -58,6 +58,37 @@ public struct MetricReading<Value: Codable & Equatable>: Codable, Equatable {
     }
 }
 
+public struct FocusedFirefoxMetricDetails: Codable, Equatable {
+    public let policySummary: String
+    public let trackedProcessCount: Int
+    public let actuallyBoostedCount: Int
+    public let parentPID: Int32?
+    public let gpuPID: Int32?
+    public let contentPID: Int32?
+    public let waitingForStableContent: Bool
+    public let warning: String?
+
+    public init(
+        policySummary: String,
+        trackedProcessCount: Int,
+        actuallyBoostedCount: Int,
+        parentPID: Int32?,
+        gpuPID: Int32?,
+        contentPID: Int32?,
+        waitingForStableContent: Bool,
+        warning: String?
+    ) {
+        self.policySummary = policySummary
+        self.trackedProcessCount = trackedProcessCount
+        self.actuallyBoostedCount = actuallyBoostedCount
+        self.parentPID = parentPID
+        self.gpuPID = gpuPID
+        self.contentPID = contentPID
+        self.waitingForStableContent = waitingForStableContent
+        self.warning = warning.map { String($0.prefix(256)) }
+    }
+}
+
 public struct SessionMetricSnapshot: Codable, Equatable {
     public let capturedAt: Date
     public let systemCPUPercent: MetricReading<Double>
@@ -71,6 +102,7 @@ public struct SessionMetricSnapshot: Codable, Equatable {
     public let selectedAppResidentBytes: MetricReading<UInt64>
     public let selectedAppVerifiedProcessCount: MetricReading<Int>
     public let selectedAppPriorityConfirmedCount: MetricReading<Int>
+    public let focusedFirefoxPriority: FocusedFirefoxMetricDetails?
 
     public init(
         capturedAt: Date,
@@ -84,7 +116,8 @@ public struct SessionMetricSnapshot: Codable, Equatable {
         selectedAppCPUPercent: MetricReading<Double>,
         selectedAppResidentBytes: MetricReading<UInt64>,
         selectedAppVerifiedProcessCount: MetricReading<Int>,
-        selectedAppPriorityConfirmedCount: MetricReading<Int>
+        selectedAppPriorityConfirmedCount: MetricReading<Int>,
+        focusedFirefoxPriority: FocusedFirefoxMetricDetails? = nil
     ) {
         self.capturedAt = capturedAt
         self.systemCPUPercent = systemCPUPercent
@@ -98,6 +131,7 @@ public struct SessionMetricSnapshot: Codable, Equatable {
         self.selectedAppResidentBytes = selectedAppResidentBytes
         self.selectedAppVerifiedProcessCount = selectedAppVerifiedProcessCount
         self.selectedAppPriorityConfirmedCount = selectedAppPriorityConfirmedCount
+        self.focusedFirefoxPriority = focusedFirefoxPriority
     }
 
     public static func unavailable(capturedAt: Date, note: String) -> SessionMetricSnapshot {
@@ -113,7 +147,8 @@ public struct SessionMetricSnapshot: Codable, Equatable {
             selectedAppCPUPercent: .unavailable(at: capturedAt, note: note),
             selectedAppResidentBytes: .unavailable(at: capturedAt, note: note),
             selectedAppVerifiedProcessCount: .unavailable(at: capturedAt, note: note),
-            selectedAppPriorityConfirmedCount: .unavailable(at: capturedAt, note: note)
+            selectedAppPriorityConfirmedCount: .unavailable(at: capturedAt, note: note),
+            focusedFirefoxPriority: nil
         )
     }
 }
@@ -348,6 +383,7 @@ public enum PerformanceSubsystem: String, Codable, CaseIterable {
     case uiResponsiveness
     case temporarilyClosedApplications
     case appPriority
+    case backgroundServiceSuppression
 }
 
 public enum PerformanceSubsystemState: String, Codable {
@@ -372,6 +408,98 @@ public struct PerformanceSubsystemStatus: Codable, Equatable {
         self.state = state
         self.updatedAt = updatedAt
         self.note = note
+    }
+}
+
+public struct BackgroundServiceDashboardCategoryStatus: Codable, Equatable {
+    public let categoryRawValue: String
+    public let stateRawValue: String
+    public let note: String?
+    public let updatedAt: Date
+
+    public init(categoryRawValue: String, stateRawValue: String, note: String?, updatedAt: Date) {
+        self.categoryRawValue = categoryRawValue
+        self.stateRawValue = stateRawValue
+        self.note = note
+        self.updatedAt = updatedAt
+    }
+}
+
+public enum BackgroundServiceDashboardSummary {
+    public static func status(
+        for categories: [BackgroundServiceDashboardCategoryStatus],
+        at date: Date
+    ) -> PerformanceSubsystemStatus {
+        guard !categories.isEmpty else {
+            return PerformanceSubsystemStatus(
+                subsystem: .backgroundServiceSuppression,
+                state: .unknown,
+                updatedAt: date,
+                note: "Per-category background-service evidence is missing."
+            )
+        }
+
+        let states = categories.map { $0.stateRawValue }
+        if states.allSatisfy({ $0 == "notConfigured" }) {
+            return PerformanceSubsystemStatus(
+                subsystem: .backgroundServiceSuppression,
+                state: .notConfigured,
+                updatedAt: date,
+                note: nil
+            )
+        }
+
+        if states.contains("restoreFailed") || states.contains("restoring") {
+            return PerformanceSubsystemStatus(
+                subsystem: .backgroundServiceSuppression,
+                state: .partiallyRestored,
+                updatedAt: date,
+                note: "One or more background-service categories still require restoration."
+            )
+        }
+
+        let resolvedRestoreStates: Set<String> = [
+            "restored", "resumedByUser", "notConfigured", "unsupported", "skipped"
+        ]
+        if states.contains("restored") && states.allSatisfy({ resolvedRestoreStates.contains($0) }) {
+            return PerformanceSubsystemStatus(
+                subsystem: .backgroundServiceSuppression,
+                state: .restored,
+                updatedAt: date,
+                note: nil
+            )
+        }
+
+        let appliedStates: Set<String> = [
+            "paused", "resumedByUser", "notConfigured", "unsupported"
+        ]
+        if states.allSatisfy({ appliedStates.contains($0) }) &&
+            states.contains(where: { $0 == "paused" || $0 == "resumedByUser" }) {
+            return PerformanceSubsystemStatus(
+                subsystem: .backgroundServiceSuppression,
+                state: .applied,
+                updatedAt: date,
+                note: nil
+            )
+        }
+
+        if states.contains(where: {
+            ["pending", "capturing", "suppressing", "degraded", "skipped", "paused", "resumedByUser"].contains($0)
+        }) {
+            return PerformanceSubsystemStatus(
+                subsystem: .backgroundServiceSuppression,
+                state: .partiallyApplied,
+                updatedAt: date,
+                note: "One or more requested background-service categories were skipped, unsupported, or degraded."
+            )
+        }
+
+        return PerformanceSubsystemStatus(
+            subsystem: .backgroundServiceSuppression,
+            state: .unknown,
+            updatedAt: date,
+            note: "Background-service state could not be classified."
+        )
     }
 }
 
@@ -416,6 +544,7 @@ public struct PerformanceSessionRecord: Codable, Equatable {
     public var aggregates: SessionMetricAggregates
     public var sampleCount: Int
     public var subsystemStatuses: [PerformanceSubsystemStatus]
+    public var backgroundServiceStatuses: [BackgroundServiceDashboardCategoryStatus]?
     public var monitoringGaps: [MonitoringGap]
     public var metricErrors: [MetricErrorSummary]
     public var completionReason: PerformanceSessionCompletionReason?
@@ -435,6 +564,7 @@ public struct PerformanceSessionRecord: Codable, Equatable {
         aggregates: SessionMetricAggregates,
         sampleCount: Int,
         subsystemStatuses: [PerformanceSubsystemStatus],
+        backgroundServiceStatuses: [BackgroundServiceDashboardCategoryStatus]? = nil,
         monitoringGaps: [MonitoringGap],
         metricErrors: [MetricErrorSummary],
         completionReason: PerformanceSessionCompletionReason?
@@ -453,6 +583,7 @@ public struct PerformanceSessionRecord: Codable, Equatable {
         self.aggregates = aggregates
         self.sampleCount = sampleCount
         self.subsystemStatuses = subsystemStatuses
+        self.backgroundServiceStatuses = backgroundServiceStatuses
         self.monitoringGaps = monitoringGaps
         self.metricErrors = metricErrors
         self.completionReason = completionReason
@@ -473,6 +604,7 @@ public struct CompletedPerformanceSessionReport: Codable, Equatable {
     public let aggregates: SessionMetricAggregates
     public let sampleCount: Int
     public let subsystemStatuses: [PerformanceSubsystemStatus]
+    public let backgroundServiceStatuses: [BackgroundServiceDashboardCategoryStatus]?
     public let monitoringGaps: [MonitoringGap]
     public let metricErrors: [MetricErrorSummary]
     public let completionReason: PerformanceSessionCompletionReason
@@ -491,6 +623,7 @@ public struct CompletedPerformanceSessionReport: Codable, Equatable {
         aggregates: SessionMetricAggregates,
         sampleCount: Int,
         subsystemStatuses: [PerformanceSubsystemStatus],
+        backgroundServiceStatuses: [BackgroundServiceDashboardCategoryStatus]? = nil,
         monitoringGaps: [MonitoringGap],
         metricErrors: [MetricErrorSummary],
         completionReason: PerformanceSessionCompletionReason
@@ -508,6 +641,7 @@ public struct CompletedPerformanceSessionReport: Codable, Equatable {
         self.aggregates = aggregates
         self.sampleCount = sampleCount
         self.subsystemStatuses = subsystemStatuses
+        self.backgroundServiceStatuses = backgroundServiceStatuses
         self.monitoringGaps = monitoringGaps
         self.metricErrors = metricErrors
         self.completionReason = completionReason

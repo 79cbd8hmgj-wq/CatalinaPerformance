@@ -5,11 +5,18 @@ public struct PerformanceSubsystemPaths {
     public let systemStateDirectory: URL
     public let foregroundRuntimeDirectory: URL
     public let appPriorityStatusFile: URL
+    public let appPrioritySelectionFile: URL?
 
-    public init(systemStateDirectory: URL, foregroundRuntimeDirectory: URL, appPriorityStatusFile: URL) {
+    public init(
+        systemStateDirectory: URL,
+        foregroundRuntimeDirectory: URL,
+        appPriorityStatusFile: URL,
+        appPrioritySelectionFile: URL? = nil
+    ) {
         self.systemStateDirectory = systemStateDirectory
         self.foregroundRuntimeDirectory = foregroundRuntimeDirectory
         self.appPriorityStatusFile = appPriorityStatusFile
+        self.appPrioritySelectionFile = appPrioritySelectionFile
     }
 }
 
@@ -149,6 +156,9 @@ public final class PerformanceSubsystemEvidenceReader: PerformanceSubsystemEvide
     }
 
     private func activationPriorityStatus(at date: Date) -> PerformanceSubsystemStatus {
+        if readPriorityConfigured() == false {
+            return status(.appPriority, .notConfigured, date, nil)
+        }
         guard let priority = readPriorityStatus() else { return status(.appPriority, .notConfigured, date, nil) }
         switch priority.state {
         case .active, .activeWithSkipped:
@@ -226,6 +236,9 @@ public final class PerformanceSubsystemEvidenceReader: PerformanceSubsystemEvide
     }
 
     private func restorationPriorityStatus(anyCommandSucceeded: Bool, anyCommandFailed: Bool, at date: Date) -> PerformanceSubsystemStatus {
+        if readPriorityConfigured() == false {
+            return status(.appPriority, .notConfigured, date, nil)
+        }
         guard let priority = readPriorityStatus() else { return status(.appPriority, .notConfigured, date, nil) }
         switch priority.state {
         case .restored:
@@ -239,6 +252,15 @@ public final class PerformanceSubsystemEvidenceReader: PerformanceSubsystemEvide
         default:
             return status(.appPriority, anyCommandFailed ? .unknown : .unknown, date, "Priority restoration is not proven.")
         }
+    }
+
+    private func readPriorityConfigured() -> Bool? {
+        guard let selectionFile = paths.appPrioritySelectionFile else { return nil }
+        guard !selectionFile.path.contains("/private/"),
+              let data = try? Data(contentsOf: selectionFile),
+              data.count <= 65_536,
+              let selection = try? JSONDecoder().decode(AppPrioritySelection.self, from: data) else { return nil }
+        return selection.enabled && selection.application != nil
     }
 
     private func readPriorityStatus() -> AppPriorityStatus? {
@@ -271,6 +293,7 @@ public final class PerformanceSubsystemEvidenceReader: PerformanceSubsystemEvide
         case .uiResponsiveness: return "ui"
         case .temporarilyClosedApplications: return "application"
         case .appPriority: return "priority"
+        case .backgroundServiceSuppression: return "background service"
         }
     }
 }

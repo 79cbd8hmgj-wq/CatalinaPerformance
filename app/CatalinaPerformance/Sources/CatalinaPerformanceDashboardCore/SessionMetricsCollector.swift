@@ -123,7 +123,8 @@ public final class SessionMetricsCollector: SessionMetricsCollecting {
             selectedAppCPUPercent: selected.cpu,
             selectedAppResidentBytes: selected.resident,
             selectedAppVerifiedProcessCount: selected.processCount,
-            selectedAppPriorityConfirmedCount: selected.confirmedCount
+            selectedAppPriorityConfirmedCount: selected.confirmedCount,
+            focusedFirefoxPriority: selected.focusedFirefox
         )
     }
 
@@ -228,7 +229,8 @@ public final class SessionMetricsCollector: SessionMetricsCollecting {
         cpu: MetricReading<Double>,
         resident: MetricReading<UInt64>,
         processCount: MetricReading<Int>,
-        confirmedCount: MetricReading<Int>
+        confirmedCount: MetricReading<Int>,
+        focusedFirefox: FocusedFirefoxMetricDetails?
     ) {
         let selection = selectionProvider.currentSelection()
         guard selection.enabled, let application = selection.application else {
@@ -239,7 +241,8 @@ public final class SessionMetricsCollector: SessionMetricsCollecting {
                 .unsupported(at: date, note: note),
                 .unsupported(at: date, note: note),
                 .unsupported(at: date, note: note),
-                .unsupported(at: date, note: note)
+                .unsupported(at: date, note: note),
+                nil
             )
         }
 
@@ -250,10 +253,10 @@ public final class SessionMetricsCollector: SessionMetricsCollecting {
                 requestingUID: currentUserProvider.uid,
                 processes: processes
             )
+            let policy = AppPriorityPolicy.policy(for: application)
             var currentCPU: [SelectedProcessKey: UInt64] = [:]
             var resident: UInt64 = 0
             var residentSampleCount = 0
-            var confirmed = 0
             var validCount = 0
             var deltaNanoseconds: UInt64 = 0
 
@@ -277,7 +280,6 @@ public final class SessionMetricsCollector: SessionMetricsCollecting {
                         resident = addition.overflow ? UInt64.max : addition.partialValue
                         residentSampleCount += 1
                     }
-                    if identity.niceValue <= -5 { confirmed += 1 }
                     validCount += 1
                 } catch {
                     continue
@@ -300,17 +302,65 @@ public final class SessionMetricsCollector: SessionMetricsCollecting {
                 cpuReading = .unavailable(at: date, note: "A second selected-app counter reading is required.")
             }
 
-            let statusNote: String?
-            if let status = statusProvider.currentStatus() {
+            let status = statusProvider.currentStatus()
+            let activeStatus: AppPriorityStatus?
+            if let status = status {
                 switch status.state {
-                case .starting, .waitingForSelectedApp, .active, .activeWithSkipped, .restorePending:
-                    statusNote = status.message
-                default:
-                    statusNote = nil
+                case .starting, .waitingForSelectedApp, .active, .activeWithSkipped:
+                    activeStatus = status
+                case .disabled, .ready, .restorePending, .restored, .failed:
+                    activeStatus = nil
                 }
             } else {
-                statusNote = nil
+                activeStatus = nil
             }
+
+            let confirmedReading: MetricReading<Int>
+            let focusedDetails: FocusedFirefoxMetricDetails?
+            if let activeStatus = activeStatus {
+                if policy.kind == .focusedFirefox {
+                    if activeStatus.policyKind == .focusedFirefox,
+                       let focused = activeStatus.focusedFirefox {
+                        confirmedReading = MetricReading(
+                            value: focused.actuallyBoostedCount,
+                            availability: .available,
+                            capturedAt: date,
+                            note: activeStatus.message
+                        )
+                        focusedDetails = FocusedFirefoxMetricDetails(
+                            policySummary: policy.summary,
+                            trackedProcessCount: focused.trackedProcessCount,
+                            actuallyBoostedCount: focused.actuallyBoostedCount,
+                            parentPID: focused.parentPID,
+                            gpuPID: focused.gpuPID,
+                            contentPID: focused.contentPID,
+                            waitingForStableContent: focused.waitingForStableContent,
+                            warning: focused.warning
+                        )
+                    } else {
+                        confirmedReading = .unavailable(
+                            at: date,
+                            note: "Focused Firefox App Priority status is unavailable."
+                        )
+                        focusedDetails = nil
+                    }
+                } else if activeStatus.policyKind == policy.kind || activeStatus.policyKind == nil {
+                    confirmedReading = MetricReading(
+                        value: activeStatus.boostedCount,
+                        availability: .available,
+                        capturedAt: date,
+                        note: activeStatus.message
+                    )
+                    focusedDetails = nil
+                } else {
+                    confirmedReading = .unavailable(at: date, note: "App Priority status does not match the selected policy.")
+                    focusedDetails = nil
+                }
+            } else {
+                confirmedReading = .unavailable(at: date, note: "Active App Priority status is unavailable.")
+                focusedDetails = nil
+            }
+
             let residentReading: MetricReading<UInt64>
             if residentSampleCount > 0 {
                 residentReading = .available(resident, at: date)
@@ -324,7 +374,8 @@ public final class SessionMetricsCollector: SessionMetricsCollecting {
                 cpuReading,
                 residentReading,
                 .available(validCount, at: date),
-                MetricReading(value: confirmed, availability: .available, capturedAt: date, note: statusNote)
+                confirmedReading,
+                focusedDetails
             )
         } catch {
             previousProcessCPU.removeAll()
@@ -334,7 +385,8 @@ public final class SessionMetricsCollector: SessionMetricsCollecting {
                 .unavailable(at: date, note: note),
                 .unavailable(at: date, note: note),
                 .unavailable(at: date, note: note),
-                .unavailable(at: date, note: note)
+                .unavailable(at: date, note: note),
+                nil
             )
         }
     }

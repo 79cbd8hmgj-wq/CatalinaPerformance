@@ -190,7 +190,17 @@ public final class AppPriorityAgentService {
         }
         store.clearStopRequest()
         let session = UUID().uuidString
-        try store.writeStatus(AppPriorityStatus(state: .starting, boostedCount: 0, skippedCount: 0, message: "Starting App Priority monitor", sessionIdentifier: session))
+        let policy = selection.application.map { AppPriorityPolicy.policy(for: $0) }
+        try store.writeStatus(AppPriorityStatus(
+            state: .starting,
+            boostedCount: 0,
+            skippedCount: 0,
+            message: policy.map { "Starting App Priority monitor — \($0.summary)" } ?? "Starting App Priority monitor",
+            sessionIdentifier: session,
+            targetNiceValue: policy?.targetNiceValue,
+            targetScope: policy?.legacyScope,
+            policyKind: policy?.kind
+        ))
         try launcher.launch(agentPath: agentPath, uid: uid, sessionIdentifier: session, logURL: store.paths.monitorLogFile)
         for _ in 0..<50 {
             if let status = store.loadStatus(), status.sessionIdentifier == session {
@@ -295,7 +305,15 @@ public enum AppPriorityAgentProductionFactory {
         }
         let monitorProvider: AppPriorityAgentService.MonitorProvider = { selection, store, session, identity in
             let system = DarwinAppPriorityProcessInspector()
-            return try AppPriorityMonitor(selection: selection, inspector: system, mutator: system, stateStore: store, sessionIdentifier: session, monitorIdentity: identity)
+            return try AppPriorityMonitor(
+                selection: selection,
+                inspector: system,
+                activityInspector: system,
+                mutator: system,
+                stateStore: store,
+                sessionIdentifier: session,
+                monitorIdentity: identity
+            )
         }
         return AppPriorityAgentService(selectionProvider: selectionProvider, storeProvider: storeProvider, monitorProvider: monitorProvider, agentPath: agentPath)
     }

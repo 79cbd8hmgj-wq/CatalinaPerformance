@@ -15,21 +15,89 @@ final class SessionMetricsCollectorTests: XCTestCase {
         XCTAssertEqual(collector.capture(at: date(2), refreshThermal: false).systemCPUPercent.value ?? -1, 60, accuracy: 0.001)
     }
 
-    func testSelectedAppUsesVerifiedFamilyAndCanExceedOneHundredPercent() {
-        let app = AppPriorityApplication(displayName: "Firefox", bundleIdentifier: "org.mozilla.firefox", bundlePath: "/Applications/Firefox.app", executablePath: "/Applications/Firefox.app/Contents/MacOS/firefox")
-        let main = identity(pid: 10, parent: 1, path: app.executablePath, nice: -5)
-        let child = identity(pid: 11, parent: 10, path: "/Applications/Firefox.app/Contents/Frameworks/helper", nice: -10)
-        let unrelated = identity(pid: 12, parent: 1, path: "/usr/bin/other", nice: 0)
+    func testFocusedFirefoxUsesStatusForActuallyBoostedCountAndKeepsFullFamilyMetrics() {
+        let app = AppPriorityApplication(
+            displayName: "Firefox",
+            bundleIdentifier: "org.mozilla.firefox",
+            bundlePath: "/Applications/Firefox.app",
+            executablePath: "/Applications/Firefox.app/Contents/MacOS/firefox"
+        )
+        var processes: [AppPriorityProcessIdentity] = [
+            identity(pid: 612, parent: 1, path: app.executablePath, nice: -1)
+        ]
+        for offset in 0..<12 {
+            processes.append(identity(
+                pid: Int32(700 + offset),
+                parent: 612,
+                path: "/Applications/Firefox.app/Contents/Frameworks/helper-\(offset)",
+                nice: -1
+            ))
+        }
+        var sequences: [Int32: [ProcessResourceSample]] = [:]
+        for identity in processes {
+            sequences[identity.pid] = [resource(pid: identity.pid, cpu: UInt64(identity.pid) * 1_000_000)]
+        }
+        let status = AppPriorityStatus(
+            state: .active,
+            boostedCount: 3,
+            skippedCount: 0,
+            message: "App Priority active",
+            sessionIdentifier: "focused",
+            targetNiceValue: -1,
+            policyKind: .focusedFirefox,
+            focusedFirefox: FocusedFirefoxStatusDetails(
+                trackedProcessCount: 13,
+                actuallyBoostedCount: 3,
+                parentPID: 612,
+                gpuPID: 616,
+                contentPID: 844,
+                waitingForStableContent: false,
+                warning: nil
+            )
+        )
+        let collector = makeCollector(
+            native: FakeNativeMetrics(hostTicks: [], processSequences: sequences),
+            selection: AppPrioritySelection(enabled: true, application: app),
+            status: status,
+            processes: processes
+        )
+
+        let snapshot = collector.capture(at: date(0), refreshThermal: true)
+
+        XCTAssertEqual(snapshot.selectedAppVerifiedProcessCount.value, 13)
+        XCTAssertEqual(snapshot.selectedAppPriorityConfirmedCount.value, 3)
+        XCTAssertEqual(snapshot.focusedFirefoxPriority?.contentPID, 844)
+        XCTAssertEqual(snapshot.focusedFirefoxPriority?.trackedProcessCount, 13)
+    }
+
+    func testMissingStatusDoesNotInferBoostedCountFromNiceValues() {
+        let app = AppPriorityApplication(
+            displayName: "Firefox",
+            bundleIdentifier: "org.mozilla.firefox",
+            bundlePath: "/Applications/Firefox.app",
+            executablePath: "/Applications/Firefox.app/Contents/MacOS/firefox"
+        )
+        let processes = [
+            identity(pid: 612, parent: 1, path: app.executablePath, nice: -1),
+            identity(pid: 616, parent: 612, path: "/Applications/Firefox.app/Contents/Frameworks/helper", nice: -1)
+        ]
         let native = FakeNativeMetrics(hostTicks: [], processSequences: [
-            10: [resource(pid: 10, cpu: 1_000_000_000), resource(pid: 10, cpu: 3_000_000_000)],
-            11: [resource(pid: 11, cpu: 1_000_000_000), resource(pid: 11, cpu: 2_000_000_000)]
+            612: [resource(pid: 612, cpu: 100)],
+            616: [resource(pid: 616, cpu: 100)]
         ])
-        let collector = makeCollector(native: native, selection: AppPrioritySelection(enabled: true, application: app), processes: [main, child, unrelated])
-        _ = collector.capture(at: date(0), refreshThermal: true)
-        let second = collector.capture(at: date(2), refreshThermal: false)
-        XCTAssertEqual(second.selectedAppVerifiedProcessCount.value, 2)
-        XCTAssertEqual(second.selectedAppPriorityConfirmedCount.value, 2)
-        XCTAssertEqual(second.selectedAppCPUPercent.value ?? -1, 150, accuracy: 0.001)
+        let collector = makeCollector(
+            native: native,
+            selection: AppPrioritySelection(enabled: true, application: app),
+            status: nil,
+            processes: processes
+        )
+
+        let snapshot = collector.capture(at: date(0), refreshThermal: true)
+
+        XCTAssertEqual(snapshot.selectedAppVerifiedProcessCount.value, 2)
+        XCTAssertEqual(snapshot.selectedAppPriorityConfirmedCount.availability, .unavailable)
+        XCTAssertNil(snapshot.selectedAppPriorityConfirmedCount.value)
+        XCTAssertNil(snapshot.focusedFirefoxPriority)
     }
 
     func testDisabledSelectionIsUnsupportedNotZero() {
@@ -87,6 +155,7 @@ final class SessionMetricsCollectorTests: XCTestCase {
         native: FakeNativeMetrics,
         thermal: FakeThermalProvider = FakeThermalProvider(),
         selection: AppPrioritySelection = AppPrioritySelection(enabled: false, application: nil),
+        status: AppPriorityStatus? = nil,
         processes: [AppPriorityProcessIdentity] = []
     ) -> SessionMetricsCollector {
         SessionMetricsCollector(
@@ -94,7 +163,7 @@ final class SessionMetricsCollectorTests: XCTestCase {
             thermalProvider: thermal,
             diskSpaceProvider: FakeDiskSpaceProvider(),
             selectionProvider: FakeSelectionProvider(selection: selection),
-            statusProvider: FakeStatusProvider(),
+            statusProvider: FakeStatusProvider(status: status),
             currentUserProvider: FakeUserProvider(uid: 501),
             processInspector: FakeProcessInspector(processes: processes)
         )
@@ -149,7 +218,10 @@ private final class FakeThermalProvider: ThermalLimitProviding {
 }
 private struct FakeDiskSpaceProvider: DashboardDiskSpaceProviding { func startupVolumeFreeBytes() throws -> UInt64 { 5000 } }
 private struct FakeSelectionProvider: AppPrioritySelectionProviding { let selection: AppPrioritySelection; func currentSelection() -> AppPrioritySelection { selection } }
-private struct FakeStatusProvider: AppPriorityStatusProviding { func currentStatus() -> AppPriorityStatus? { nil } }
+private struct FakeStatusProvider: AppPriorityStatusProviding {
+    let status: AppPriorityStatus?
+    func currentStatus() -> AppPriorityStatus? { status }
+}
 private struct FakeUserProvider: DashboardCurrentUserProviding { let uid: UInt32 }
 private final class FakeProcessInspector: AppPriorityProcessInspecting {
     let processes: [AppPriorityProcessIdentity]

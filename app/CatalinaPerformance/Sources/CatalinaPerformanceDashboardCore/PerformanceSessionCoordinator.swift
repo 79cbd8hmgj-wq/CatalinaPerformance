@@ -247,6 +247,24 @@ public final class PerformanceSessionCoordinator {
         }
     }
 
+    public func replaceBackgroundServiceStatuses(_ statuses: [BackgroundServiceDashboardCategoryStatus]) {
+        stateQueue.async {
+            self.recorder.replaceBackgroundServiceStatuses(statuses)
+            let warning = self.persistActiveRecord()
+            guard let record = self.recorder.activeRecord() else { return }
+            switch record.phase {
+            case .preparing:
+                self.publish(content: .preparing, warning: warning)
+            case .active:
+                self.publish(content: .active(record), warning: warning)
+            case .finalizing:
+                self.publish(content: .finalizing(record), warning: warning)
+            case .completed, .interrupted:
+                break
+            }
+        }
+    }
+
     public func refreshNow() {
         stateQueue.async { self.startSampleIfPossible() }
     }

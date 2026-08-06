@@ -52,6 +52,7 @@ public struct SessionDashboardViewModel: Equatable {
     public let sampleCountText: String?
     public let systemRows: [SessionDashboardMetricRow]
     public let selectedAppRows: [SessionDashboardMetricRow]
+    public let priorityDetailRows: [SessionDashboardMetricRow]
     public let completedRows: [SessionDashboardCompletedRow]
     public let subsystemRows: [SessionDashboardMetricRow]
     public let warningText: String?
@@ -67,6 +68,7 @@ public struct SessionDashboardViewModel: Equatable {
         sampleCountText: String?,
         systemRows: [SessionDashboardMetricRow],
         selectedAppRows: [SessionDashboardMetricRow],
+        priorityDetailRows: [SessionDashboardMetricRow],
         completedRows: [SessionDashboardCompletedRow],
         subsystemRows: [SessionDashboardMetricRow],
         warningText: String?
@@ -81,6 +83,7 @@ public struct SessionDashboardViewModel: Equatable {
         self.sampleCountText = sampleCountText
         self.systemRows = systemRows
         self.selectedAppRows = selectedAppRows
+        self.priorityDetailRows = priorityDetailRows
         self.completedRows = completedRows
         self.subsystemRows = subsystemRows
         self.warningText = warningText
@@ -116,6 +119,7 @@ public final class SessionDashboardPresenter {
                 sampleCountText: nil,
                 systemRows: [],
                 selectedAppRows: [],
+                priorityDetailRows: [],
                 completedRows: [],
                 subsystemRows: [],
                 warningText: state.warningMessage
@@ -130,7 +134,7 @@ public final class SessionDashboardPresenter {
                 restoreResultText: nil,
                 priorityTargetText: nil,
                 sampleCountText: nil,
-                systemRows: [], selectedAppRows: [], completedRows: [], subsystemRows: [],
+                systemRows: [], selectedAppRows: [], priorityDetailRows: [], completedRows: [], subsystemRows: [],
                 warningText: state.warningMessage
             )
         case .active(let record):
@@ -156,12 +160,16 @@ public final class SessionDashboardPresenter {
             limitRow(label: "CPU Scheduler Limit", reading: snapshot.schedulerLimitPercent),
             limitRow(label: "CPU Speed Limit", reading: snapshot.speedLimitPercent)
         ]
+        let focused = snapshot.focusedFirefoxPriority
+        let processLabel = focused == nil ? "Verified Processes" : "Tracked Firefox Processes"
+        let priorityLabel = focused == nil ? "Priority Status" : "Processes Actually Boosted"
         let selected = [
-            metricRow(label: "Verified Processes", reading: snapshot.selectedAppVerifiedProcessCount, format: countText, progress: false),
+            metricRow(label: processLabel, reading: snapshot.selectedAppVerifiedProcessCount, format: countText, progress: false),
             metricRow(label: "Combined CPU Usage", reading: snapshot.selectedAppCPUPercent, format: percentOneDecimal, progress: false),
             metricRow(label: "Combined Memory", reading: snapshot.selectedAppResidentBytes, format: byteText, progress: false),
-            priorityCountRow(snapshot.selectedAppPriorityConfirmedCount)
+            priorityCountRow(snapshot.selectedAppPriorityConfirmedCount, label: priorityLabel)
         ]
+        let priorityDetails = focused.map(priorityRows) ?? []
         return SessionDashboardViewModel(
             screenKind: finalizing ? .finalizing : .active,
             title: "Session Dashboard",
@@ -173,22 +181,28 @@ public final class SessionDashboardPresenter {
             sampleCountText: "\(record.sampleCount)",
             systemRows: system,
             selectedAppRows: selected,
+            priorityDetailRows: priorityDetails,
             completedRows: [],
-            subsystemRows: subsystemRows(record.subsystemStatuses),
+            subsystemRows: subsystemRows(record.subsystemStatuses) + backgroundServiceRows(record.backgroundServiceStatuses),
             warningText: warning
         )
     }
 
     private func completedViewModel(report: CompletedPerformanceSessionReport, interrupted: Bool, warning: String?) -> SessionDashboardViewModel {
+        let focused = report.finalPreRestore?.focusedFirefoxPriority
+        let processLabel = focused == nil ? "Verified Processes" : "Tracked Firefox Processes"
+        let priorityLabel = focused == nil ? "Priority Status" : "Processes Actually Boosted"
         let rows = [
             completedRow(label: "System CPU", aggregate: report.aggregates.systemCPUPercent, formatter: percentOneDecimal),
             completedRow(label: "Memory Used", aggregate: report.aggregates.physicalMemoryUsedBytes, formatter: byteDoubleText),
             completedRow(label: "Swap Used", aggregate: report.aggregates.swapUsedBytes, formatter: byteDoubleText),
             completedRow(label: "Selected-App CPU", aggregate: report.aggregates.selectedAppCPUPercent, formatter: percentOneDecimal),
             completedRow(label: "Selected-App Memory", aggregate: report.aggregates.selectedAppResidentBytes, formatter: byteDoubleText),
-            completedRow(label: "Verified Processes", aggregate: report.aggregates.selectedAppVerifiedProcessCount, formatter: countDoubleText),
+            completedRow(label: processLabel, aggregate: report.aggregates.selectedAppVerifiedProcessCount, formatter: countDoubleText),
+            completedRow(label: priorityLabel, aggregate: report.aggregates.selectedAppPriorityConfirmedCount, formatter: confirmedCountDoubleText),
             completedRow(label: "Scheduler Limit", aggregate: report.aggregates.schedulerLimitPercent, formatter: percentWhole)
         ]
+        let priorityDetails = focused.map(priorityRows) ?? []
         return SessionDashboardViewModel(
             screenKind: interrupted ? .interrupted : .completed,
             title: interrupted ? "Interrupted Session" : "Last Completed Session",
@@ -200,8 +214,9 @@ public final class SessionDashboardPresenter {
             sampleCountText: "\(report.sampleCount)",
             systemRows: [],
             selectedAppRows: [],
+            priorityDetailRows: priorityDetails,
             completedRows: rows,
-            subsystemRows: subsystemRows(report.subsystemStatuses),
+            subsystemRows: subsystemRows(report.subsystemStatuses) + backgroundServiceRows(report.backgroundServiceStatuses),
             warningText: warning
         )
     }
@@ -240,16 +255,44 @@ public final class SessionDashboardPresenter {
         return SessionDashboardMetricRow(label: label, current: current, secondary: secondary, progressFraction: fraction, accessibilityDescription: "\(label): \(current)")
     }
 
-    private func priorityCountRow(_ reading: MetricReading<Int>) -> SessionDashboardMetricRow {
+    private func priorityCountRow(_ reading: MetricReading<Int>, label: String) -> SessionDashboardMetricRow {
         let current: String
         if reading.availability == .unsupported {
             current = "Not configured"
         } else if let value = reading.value, reading.availability == .available || reading.availability == .stale {
-            current = "\(value) at nice −5"
+            current = "\(value) confirmed"
         } else {
             current = "Unavailable"
         }
-        return SessionDashboardMetricRow(label: "Priority Status", current: current, secondary: reading.note, progressFraction: nil, accessibilityDescription: "Priority Status: \(current)")
+        return SessionDashboardMetricRow(label: label, current: current, secondary: reading.note, progressFraction: nil, accessibilityDescription: "\(label): \(current)")
+    }
+
+    private func priorityRows(_ details: FocusedFirefoxMetricDetails) -> [SessionDashboardMetricRow] {
+        let parent = details.parentPID.map { "PID \($0)" } ?? "not currently available"
+        let gpu = details.gpuPID.map { "PID \($0)" } ?? "not currently available"
+        let content: String
+        if let pid = details.contentPID {
+            content = "PID \(pid)"
+        } else if details.waitingForStableContent {
+            content = "Waiting for stable active content process"
+        } else {
+            content = "not currently available"
+        }
+        return [
+            detailRow(label: "Parent/UI", value: parent, secondary: nil),
+            detailRow(label: "GPU Helper", value: gpu, secondary: nil),
+            detailRow(label: "Active Content", value: content, secondary: details.warning)
+        ]
+    }
+
+    private func detailRow(label: String, value: String, secondary: String?) -> SessionDashboardMetricRow {
+        return SessionDashboardMetricRow(
+            label: label,
+            current: value,
+            secondary: secondary,
+            progressFraction: nil,
+            accessibilityDescription: "\(label): \(value)"
+        )
     }
 
     private func display<Value: Codable & Equatable>(_ reading: MetricReading<Value>, format: (Value) -> String) -> String {
@@ -289,7 +332,72 @@ public final class SessionDashboardPresenter {
         case .uiResponsiveness: return "UI Responsiveness"
         case .temporarilyClosedApplications: return "Temporary App Closing"
         case .appPriority: return "App Priority"
+        case .backgroundServiceSuppression: return "Background Service Suppression"
         }
+    }
+
+    private let backgroundServiceCategoryOrder: [(rawValue: String, label: String)] = [
+        ("softwareUpdate", "macOS Updates"),
+        ("appStoreUpdates", "App Store Updates"),
+        ("photos", "Photos Workers"),
+        ("mail", "Mail Workers"),
+        ("messagesFaceTime", "Messages / FaceTime Workers"),
+        ("siriSpeech", "Siri / Speech Workers"),
+        ("iCloudDrive", "iCloud Drive")
+    ]
+
+    private func backgroundServiceRows(
+        _ statuses: [BackgroundServiceDashboardCategoryStatus]?
+    ) -> [SessionDashboardMetricRow] {
+        let byCategory = Dictionary(uniqueKeysWithValues: (statuses ?? []).map { ($0.categoryRawValue, $0) })
+        return backgroundServiceCategoryOrder.map { item in
+            guard let status = byCategory[item.rawValue] else {
+                return SessionDashboardMetricRow(
+                    label: item.label,
+                    current: "Unknown",
+                    secondary: "Per-category evidence is missing.",
+                    progressFraction: nil,
+                    accessibilityDescription: "\(item.label): Unknown"
+                )
+            }
+            let current = backgroundServiceStateText(status)
+            return SessionDashboardMetricRow(
+                label: item.label,
+                current: current,
+                secondary: backgroundServiceSecondaryText(status),
+                progressFraction: nil,
+                accessibilityDescription: "\(item.label): \(current)"
+            )
+        }
+    }
+
+    private func backgroundServiceStateText(_ status: BackgroundServiceDashboardCategoryStatus) -> String {
+        switch status.stateRawValue {
+        case "notConfigured": return "Not configured"
+        case "unsupported": return "Unsupported"
+        case "skipped": return "Skipped"
+        case "paused": return "Paused"
+        case "resumedByUser":
+            if let note = status.note, !note.isEmpty {
+                return "Resumed — \(note)"
+            }
+            return "Resumed"
+        case "restored": return "Restored"
+        case "restoreFailed": return "Restore failed"
+        case "pending": return "Pending"
+        case "capturing": return "Capturing"
+        case "suppressing": return "Pausing"
+        case "degraded": return "Skipped"
+        case "restoring": return "Restoring"
+        default: return "Unknown"
+        }
+    }
+
+    private func backgroundServiceSecondaryText(_ status: BackgroundServiceDashboardCategoryStatus) -> String? {
+        if status.stateRawValue == "resumedByUser" {
+            return nil
+        }
+        return status.note
     }
 
     private func subsystemStateText(_ state: PerformanceSubsystemState) -> String {
@@ -326,6 +434,7 @@ public final class SessionDashboardPresenter {
     private func byteDoubleText(_ value: Double) -> String { byteFormatter.string(fromByteCount: Int64(max(0, min(Double(Int64.max), value)))) }
     private func countText(_ value: Int) -> String { "\(value)" }
     private func countDoubleText(_ value: Double) -> String { String(format: "%.0f", value) }
+    private func confirmedCountDoubleText(_ value: Double) -> String { String(format: "%.0f confirmed", value) }
     private func pressureText(_ value: MemoryPressureLevel) -> String {
         switch value { case .normal: return "Normal"; case .warning: return "Warning"; case .critical: return "Critical" }
     }

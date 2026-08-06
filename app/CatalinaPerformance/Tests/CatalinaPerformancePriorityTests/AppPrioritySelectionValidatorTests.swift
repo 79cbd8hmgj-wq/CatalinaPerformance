@@ -48,6 +48,108 @@ final class AppPrioritySelectionValidatorTests: XCTestCase {
         XCTAssertEqual(result.application?.bundleIdentifier, value.app.bundleIdentifier)
     }
 
+
+    func testAcceptsCanonicalStableFirefoxSelection() throws {
+        let value = try fixture(bundleIdentifier: "org.mozilla.firefox")
+        defer { try? FileManager.default.removeItem(at: value.root) }
+
+        let result = try AppPrioritySelectionValidator().validate(
+            selectionFileURL: value.selection,
+            requestingUID: UInt32(getuid()),
+            consoleUID: UInt32(getuid()),
+            expectedHomeDirectory: value.home
+        )
+
+        XCTAssertEqual(result.application?.bundleIdentifier, "org.mozilla.firefox")
+        XCTAssertEqual(result.application?.executablePath, value.app.executablePath)
+    }
+
+    func testRejectsFirefoxHelperExecutableInsteadOfDeclaredExecutable() throws {
+        let value = try fixture(bundleIdentifier: "org.mozilla.firefox")
+        defer { try? FileManager.default.removeItem(at: value.root) }
+        let helperDirectory = URL(fileURLWithPath: value.app.bundlePath, isDirectory: true)
+            .appendingPathComponent("Contents/MacOS/plugin-container.app/Contents/MacOS", isDirectory: true)
+        try FileManager.default.createDirectory(at: helperDirectory, withIntermediateDirectories: true)
+        let helper = helperDirectory.appendingPathComponent("plugin-container")
+        try Data("#!/bin/sh\nexit 0\n".utf8).write(to: helper)
+        try FileManager.default.setAttributes([.posixPermissions: NSNumber(value: Int16(0o755))], ofItemAtPath: helper.path)
+        let tampered = AppPriorityApplication(
+            displayName: "Firefox",
+            bundleIdentifier: "org.mozilla.firefox",
+            bundlePath: value.app.bundlePath,
+            executablePath: helper.path
+        )
+        try AppPrioritySelection(enabled: true, application: tampered).writeAtomically(to: value.selection)
+
+        XCTAssertThrowsError(try AppPrioritySelectionValidator().validate(
+            selectionFileURL: value.selection,
+            requestingUID: UInt32(getuid()),
+            consoleUID: UInt32(getuid()),
+            expectedHomeDirectory: value.home
+        )) { error in
+            XCTAssertEqual(error as? AppPriorityValidationError, .executablePathMismatch)
+        }
+    }
+
+    func testRejectsMissingBundleDeclaredExecutable() throws {
+        let value = try fixture()
+        defer { try? FileManager.default.removeItem(at: value.root) }
+        try FileManager.default.removeItem(atPath: value.app.executablePath)
+
+        XCTAssertThrowsError(try AppPrioritySelectionValidator().validate(
+            selectionFileURL: value.selection,
+            requestingUID: UInt32(getuid()),
+            consoleUID: UInt32(getuid()),
+            expectedHomeDirectory: value.home
+        )) { error in
+            XCTAssertEqual(error as? AppPriorityValidationError, .executablePathMismatch)
+        }
+    }
+
+    func testAcceptsCanonicalBundleSymlinkWhenExecutableRemainsInsideBundle() throws {
+        let value = try fixture()
+        defer { try? FileManager.default.removeItem(at: value.root) }
+        let alias = value.root.appendingPathComponent("FixtureAlias.app")
+        try FileManager.default.createSymbolicLink(
+            at: alias,
+            withDestinationURL: URL(fileURLWithPath: value.app.bundlePath, isDirectory: true)
+        )
+        let aliased = AppPriorityApplication(
+            displayName: value.app.displayName,
+            bundleIdentifier: value.app.bundleIdentifier,
+            bundlePath: alias.path,
+            executablePath: alias.appendingPathComponent("Contents/MacOS/FixtureApp").path
+        )
+        try AppPrioritySelection(enabled: true, application: aliased).writeAtomically(to: value.selection)
+
+        let result = try AppPrioritySelectionValidator().validate(
+            selectionFileURL: value.selection,
+            requestingUID: UInt32(getuid()),
+            consoleUID: UInt32(getuid()),
+            expectedHomeDirectory: value.home
+        )
+
+        XCTAssertEqual(result.application?.bundlePath, value.app.bundlePath)
+        XCTAssertEqual(result.application?.executablePath, value.app.executablePath)
+    }
+
+    func testRejectsDeclaredExecutableSymlinkThatEscapesBundle() throws {
+        let value = try fixture()
+        defer { try? FileManager.default.removeItem(at: value.root) }
+        let executable = URL(fileURLWithPath: value.app.executablePath)
+        try FileManager.default.removeItem(at: executable)
+        try FileManager.default.createSymbolicLink(at: executable, withDestinationURL: URL(fileURLWithPath: "/bin/sh"))
+
+        XCTAssertThrowsError(try AppPrioritySelectionValidator().validate(
+            selectionFileURL: value.selection,
+            requestingUID: UInt32(getuid()),
+            consoleUID: UInt32(getuid()),
+            expectedHomeDirectory: value.home
+        )) { error in
+            XCTAssertEqual(error as? AppPriorityValidationError, .executablePathMismatch)
+        }
+    }
+
     func testRejectsGroupWritableSelectionFile() throws {
         let value = try fixture()
         defer { try? FileManager.default.removeItem(at: value.root) }

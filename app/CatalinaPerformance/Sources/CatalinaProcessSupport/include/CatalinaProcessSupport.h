@@ -6,6 +6,7 @@
 
 #define CP_PROCESS_NAME_MAX 64
 #define CP_PROCESS_PATH_MAX 4096
+#define CP_PROCESS_ARGUMENTS_MAX 16384
 
 typedef struct {
     pid_t pid;
@@ -62,6 +63,7 @@ int32_t cp_read_host_cpu_ticks(CPHostCPUTicks *output);
 int32_t cp_read_host_memory(CPHostMemoryInfo *output);
 int32_t cp_read_swap(CPSwapInfo *output);
 int32_t cp_read_process_resources(pid_t pid, CPProcessResourceInfo *output);
+int32_t cp_read_process_arguments(pid_t pid, char *buffer, int32_t capacity);
 
 int32_t cp_list_processes(CPProcessInfo *buffer, int32_t capacity);
 int32_t cp_read_process(pid_t pid, CPProcessInfo *output);

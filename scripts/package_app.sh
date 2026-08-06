@@ -116,12 +116,18 @@ foreground_session_restore.sh
 foreground_session_state.sh
 ui_responsiveness_apply.sh
 ui_responsiveness_restore.sh
+background_service_probe.sh
+background_service_settings_apply.sh
+background_service_settings_restore.sh
+background_service_settings_status.sh
 "
 for runtime_script in $RUNTIME_SCRIPTS; do
     require_runtime_script "$SCRIPT_DIR/$runtime_script"
 done
 require_runtime_script "$SCRIPT_DIR/lib/foreground_session_common.sh"
 require_runtime_script "$SCRIPT_DIR/lib/app_priority_wrapper_common.sh"
+require_runtime_script "$SCRIPT_DIR/lib/background_service_settings_common.sh"
+require_runtime_script "$SCRIPT_DIR/lib/background_service_wrapper_common.sh"
 
 printf 'Using developer directory: %s\n' "$XCODE_PATH"
 printf 'Building CatalinaPerformance GUI package: %s\n' "$PACKAGE_DIR"
@@ -151,6 +157,8 @@ for runtime_script in $RUNTIME_SCRIPTS; do
 done
 install -m 755 "$SCRIPT_DIR/lib/foreground_session_common.sh" "$BUNDLED_LIB_DIR/foreground_session_common.sh" || exit 1
 install -m 755 "$SCRIPT_DIR/lib/app_priority_wrapper_common.sh" "$BUNDLED_LIB_DIR/app_priority_wrapper_common.sh" || exit 1
+install -m 755 "$SCRIPT_DIR/lib/background_service_settings_common.sh" "$BUNDLED_LIB_DIR/background_service_settings_common.sh" || exit 1
+install -m 755 "$SCRIPT_DIR/lib/background_service_wrapper_common.sh" "$BUNDLED_LIB_DIR/background_service_wrapper_common.sh" || exit 1
 
 cat > "$INFO_PLIST" <<'PLIST_EOF'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -201,7 +209,13 @@ for required_runtime in \
     "$BIN_DIR/$PRIORITY_AGENT_NAME" \
     "$BUNDLED_SCRIPTS_DIR/performance_on_with_priority.sh" \
     "$BUNDLED_SCRIPTS_DIR/performance_off_with_priority.sh" \
-    "$BUNDLED_SCRIPTS_DIR/emergency_restore_with_priority.sh"
+    "$BUNDLED_SCRIPTS_DIR/emergency_restore_with_priority.sh" \
+    "$BUNDLED_SCRIPTS_DIR/background_service_probe.sh" \
+    "$BUNDLED_SCRIPTS_DIR/background_service_settings_apply.sh" \
+    "$BUNDLED_SCRIPTS_DIR/background_service_settings_restore.sh" \
+    "$BUNDLED_SCRIPTS_DIR/background_service_settings_status.sh" \
+    "$BUNDLED_LIB_DIR/background_service_settings_common.sh" \
+    "$BUNDLED_LIB_DIR/background_service_wrapper_common.sh"
 do
     if [ ! -x "$required_runtime" ]; then
         error "Packaged priority resource is missing or not executable: $required_runtime"
@@ -213,6 +227,7 @@ printf 'Packaged priority agent: %s\n' "$BIN_DIR/$PRIORITY_AGENT_NAME"
 printf 'Packaged Performance ON wrapper: %s\n' "$BUNDLED_SCRIPTS_DIR/performance_on_with_priority.sh"
 printf 'Packaged Performance OFF wrapper: %s\n' "$BUNDLED_SCRIPTS_DIR/performance_off_with_priority.sh"
 printf 'Packaged Emergency Restore wrapper: %s\n' "$BUNDLED_SCRIPTS_DIR/emergency_restore_with_priority.sh"
+printf 'Packaged Background Service scripts: %s\n' "$BUNDLED_SCRIPTS_DIR"
 printf 'Created %s\n' "$APP_BUNDLE"
 printf 'Launch with: open %s\n' "$APP_BUNDLE"
 printf 'This bundle is unsigned, not notarized, and intended only for local development. Runtime scripts and the session-scoped priority agent are bundled inside the app.\n'

@@ -88,10 +88,16 @@ public struct ValidatedAppPrioritySelection: Equatable {
 public final class AppPrioritySelectionValidator {
     private let fileManager: FileManager
     private let metadataProvider: AppPriorityFileMetadataProviding
+    private let canonicalizer: AppPriorityApplicationCanonicalizer
 
-    public init(fileManager: FileManager = .default, metadataProvider: AppPriorityFileMetadataProviding = DarwinAppPriorityFileMetadataProvider()) {
+    public init(
+        fileManager: FileManager = .default,
+        metadataProvider: AppPriorityFileMetadataProviding = DarwinAppPriorityFileMetadataProvider(),
+        canonicalizer: AppPriorityApplicationCanonicalizer? = nil
+    ) {
         self.fileManager = fileManager
         self.metadataProvider = metadataProvider
+        self.canonicalizer = canonicalizer ?? AppPriorityApplicationCanonicalizer(fileManager: fileManager)
     }
 
     public func validate(
@@ -147,50 +153,59 @@ public final class AppPrioritySelectionValidator {
     }
 
     private func validateApplication(_ application: AppPriorityApplication) throws -> AppPriorityApplication {
-        guard !AppPriorityApplicationFilter.isExcluded(bundleIdentifier: application.bundleIdentifier, displayName: application.displayName) else {
+        guard !AppPriorityApplicationFilter.isExcluded(
+            bundleIdentifier: application.bundleIdentifier,
+            displayName: application.displayName
+        ) else {
             throw AppPriorityValidationError.unsafeApplication
         }
 
-        let canonicalBundle = URL(fileURLWithPath: application.bundlePath, isDirectory: true)
+        let savedBundle = URL(fileURLWithPath: application.bundlePath, isDirectory: true)
             .resolvingSymlinksInPath()
             .standardizedFileURL
         var isDirectory: ObjCBool = false
-        guard fileManager.fileExists(atPath: canonicalBundle.path, isDirectory: &isDirectory), isDirectory.boolValue else {
+        guard fileManager.fileExists(atPath: savedBundle.path, isDirectory: &isDirectory),
+              isDirectory.boolValue else {
             throw AppPriorityValidationError.unsafeApplication
         }
 
-        let infoURL = canonicalBundle.appendingPathComponent("Contents/Info.plist")
-        guard let data = try? Data(contentsOf: infoURL),
-              let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
-              let dictionary = plist as? [String: Any],
-              let actualIdentifier = dictionary["CFBundleIdentifier"] as? String,
-              let executableName = dictionary["CFBundleExecutable"] as? String,
-              !actualIdentifier.isEmpty,
-              !executableName.isEmpty else {
+        let canonical: AppPriorityApplication
+        do {
+            canonical = try canonicalizer.migrate(application)
+        } catch AppPriorityApplicationIdentityError.bundleIdentifierMismatch {
+            throw AppPriorityValidationError.bundleIdentifierMismatch
+        } catch AppPriorityApplicationIdentityError.executableMissing {
+            throw AppPriorityValidationError.executablePathMismatch
+        } catch {
             throw AppPriorityValidationError.unsafeApplication
         }
-        guard actualIdentifier == application.bundleIdentifier else {
+
+        guard canonical.bundleIdentifier == application.bundleIdentifier else {
             throw AppPriorityValidationError.bundleIdentifierMismatch
         }
+        guard canonical.bundlePath == savedBundle.path else {
+            throw AppPriorityValidationError.unsafeApplication
+        }
 
-        let declaredExecutable = canonicalBundle
-            .appendingPathComponent("Contents/MacOS", isDirectory: true)
-            .appendingPathComponent(executableName)
-            .resolvingSymlinksInPath()
-            .standardizedFileURL
         let savedExecutable = URL(fileURLWithPath: application.executablePath)
             .resolvingSymlinksInPath()
             .standardizedFileURL
-        guard declaredExecutable.path == savedExecutable.path,
-              fileManager.isExecutableFile(atPath: declaredExecutable.path) else {
+        let canonicalExecutable = URL(fileURLWithPath: canonical.executablePath)
+            .resolvingSymlinksInPath()
+            .standardizedFileURL
+        guard savedExecutable.path == canonicalExecutable.path else {
             throw AppPriorityValidationError.executablePathMismatch
         }
 
-        return AppPriorityApplication(
-            displayName: application.displayName,
-            bundleIdentifier: actualIdentifier,
-            bundlePath: canonicalBundle.path,
-            executablePath: declaredExecutable.path
-        )
+        let executableRoot = savedBundle
+            .appendingPathComponent("Contents/MacOS", isDirectory: true)
+            .standardizedFileURL.path
+        guard canonicalExecutable.path.hasPrefix(executableRoot + "/"),
+              fileManager.isExecutableFile(atPath: canonicalExecutable.path) else {
+            throw AppPriorityValidationError.executablePathMismatch
+        }
+
+        return canonical
     }
+
 }

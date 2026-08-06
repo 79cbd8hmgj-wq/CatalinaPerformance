@@ -10,6 +10,7 @@ cp "$ROOT/scripts/performance_on_with_priority.sh" "$TMP/"
 cp "$ROOT/scripts/performance_off_with_priority.sh" "$TMP/"
 cp "$ROOT/scripts/emergency_restore_with_priority.sh" "$TMP/"
 cp "$ROOT/scripts/lib/app_priority_wrapper_common.sh" "$TMP/lib/"
+cp "$ROOT/scripts/lib/background_service_wrapper_common.sh" "$TMP/lib/"
 
 cat > "$TMP/fake-agent" <<'AGENT'
 #!/bin/sh
@@ -21,6 +22,14 @@ case "$1" in
     *) exit 1 ;;
 esac
 AGENT
+cat > "$TMP/background_service_settings_apply.sh" <<'CORE'
+#!/bin/sh
+exit 10
+CORE
+cat > "$TMP/background_service_settings_restore.sh" <<'CORE'
+#!/bin/sh
+exit 10
+CORE
 cat > "$TMP/performance_on.sh" <<'CORE'
 #!/bin/sh
 printf 'core:on\n' >> "$FAKE_LOG"
@@ -36,7 +45,7 @@ cat > "$TMP/emergency_restore.sh" <<'CORE'
 printf 'core:emergency\n' >> "$FAKE_LOG"
 exit "${FAKE_EMERGENCY_EXIT:-0}"
 CORE
-chmod +x "$TMP"/*.sh "$TMP/fake-agent" "$TMP/lib/app_priority_wrapper_common.sh"
+chmod +x "$TMP"/*.sh "$TMP/fake-agent" "$TMP/lib/app_priority_wrapper_common.sh" "$TMP/lib/background_service_wrapper_common.sh"
 
 PASS=0
 FAIL=0
