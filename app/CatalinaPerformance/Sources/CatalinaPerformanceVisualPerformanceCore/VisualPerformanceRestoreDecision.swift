@@ -15,42 +15,33 @@ public enum VisualRestoreDisposition: Equatable {
 
 public enum VisualScalarNormalizer {
     public static func boolean(from rawValue: String) -> Bool? {
-        let normalized = rawValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        switch normalized {
-        case "1", "true", "yes":
-            return true
-        case "0", "false", "no":
-            return false
-        default:
-            return nil
+        switch rawValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "1", "true", "yes": return true
+        case "0", "false", "no": return false
+        default: return nil
         }
     }
 
     public static func integer(from rawValue: String) -> Int64? {
-        let normalized = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !normalized.isEmpty else { return nil }
-        return Int64(normalized)
+        return Int64(rawValue.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     public static func floatingPoint(from rawValue: String) -> Double? {
-        let normalized = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !normalized.isEmpty, let value = Double(normalized), value.isFinite else {
-            return nil
-        }
-        return value
+        let value = Double(rawValue.trimmingCharacters(in: .whitespacesAndNewlines))
+        return value?.isFinite == true ? value : nil
     }
 
-    public static func value(from rawValue: String, expectedType: VisualScalarType) -> VisualScalarValue? {
+    public static func value(
+        from rawValue: String,
+        expectedType: VisualScalarType
+    ) -> VisualScalarValue? {
         switch expectedType {
         case .boolean:
-            guard let value = boolean(from: rawValue) else { return nil }
-            return .boolean(value)
+            return boolean(from: rawValue).map(VisualScalarValue.boolean)
         case .integer:
-            guard let value = integer(from: rawValue) else { return nil }
-            return .integer(value)
+            return integer(from: rawValue).map(VisualScalarValue.integer)
         case .floatingPoint:
-            guard let value = floatingPoint(from: rawValue) else { return nil }
-            return .floatingPoint(value)
+            return floatingPoint(from: rawValue).map(VisualScalarValue.floatingPoint)
         case .string:
             return .string(rawValue.trimmingCharacters(in: .whitespacesAndNewlines))
         }
@@ -62,55 +53,55 @@ public enum VisualRestoreDecision {
         record: VisualSettingRecord,
         current: VisualPreferenceObservation
     ) -> VisualRestoreDisposition {
-        guard let appliedValue = record.appliedValue else {
+        guard let applied = record.appliedValue else {
             return .cannotSafelyDecide("No verified applied value was recorded.")
         }
-        guard isFiniteIfNeeded(appliedValue) else {
-            return .cannotSafelyDecide("The recorded applied value is not finite.")
-        }
-
         switch current {
-        case .absent:
-            return .preserveManualChange
-        case .unsupportedType:
+        case .absent, .unsupportedType:
             return .preserveManualChange
         case .present(let currentValue):
-            guard isFiniteIfNeeded(currentValue) else {
-                return .cannotSafelyDecide("The current value is not finite.")
-            }
-            guard currentValue.scalarType == appliedValue.scalarType else {
+            guard currentValue.scalarType == applied.scalarType else {
                 return .preserveManualChange
             }
-            guard valuesMatch(currentValue, appliedValue) else {
+            guard valuesMatch(currentValue, applied) else {
                 return .preserveManualChange
             }
-
             if record.priorWasPresent {
-                guard let priorValue = record.priorValue else {
-                    return .cannotSafelyDecide("The prior value was marked present but was not recorded.")
+                guard let prior = record.priorValue else {
+                    return .cannotSafelyDecide(
+                        "The prior value was marked present but was not recorded."
+                    )
                 }
-                guard isFiniteIfNeeded(priorValue) else {
-                    return .cannotSafelyDecide("The recorded prior value is not finite.")
-                }
-                return .restorePrior(priorValue)
+                return .restorePrior(prior)
             }
-            guard record.priorValue == nil else {
-                return .cannotSafelyDecide("The prior key was marked absent but contains a recorded value.")
-            }
-            return .deletePreviouslyAbsent
+            return record.priorValue == nil
+                ? .deletePreviouslyAbsent
+                : .cannotSafelyDecide(
+                    "The prior key was marked absent but contains a recorded value."
+                )
         }
     }
 
-    private static func isFiniteIfNeeded(_ value: VisualScalarValue) -> Bool {
-        switch value {
-        case .floatingPoint(let number):
-            return number.isFinite
-        default:
+    public static func observationsMatch(
+        _ left: VisualPreferenceObservation,
+        _ right: VisualPreferenceObservation
+    ) -> Bool {
+        switch (left, right) {
+        case (.absent, .absent):
             return true
+        case (.present(let first), .present(let second)):
+            return valuesMatch(first, second)
+        case (.unsupportedType(let first), .unsupportedType(let second)):
+            return first == second
+        default:
+            return false
         }
     }
 
-    private static func valuesMatch(_ left: VisualScalarValue, _ right: VisualScalarValue) -> Bool {
+    public static func valuesMatch(
+        _ left: VisualScalarValue,
+        _ right: VisualScalarValue
+    ) -> Bool {
         switch (left, right) {
         case (.boolean(let first), .boolean(let second)):
             return first == second
