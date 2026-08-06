@@ -5,17 +5,24 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 . "$SCRIPT_DIR/lib/foreground_session_common.sh"
 
 dry_run=0
+legacy_test=0
 for argument in "$@"; do
     case $argument in
         --dry-run) dry_run=1 ;;
+        --legacy-test) legacy_test=1 ;;
         --yes) : ;;
         *) printf 'Unknown argument: %s\n' "$argument" >&2; exit 2 ;;
     esac
 done
 
+if [ "$legacy_test" -ne 1 ]; then
+    printf 'Legacy UI responsiveness apply is disabled. New sessions use the Swift Visual Performance subsystem.\n' >&2
+    exit 2
+fi
+
 feature_enabled=$(cp_read_boolean_preference FOREGROUND_SESSION_ENABLED 0)
 if [ "$feature_enabled" != "1" ]; then
-    printf 'Foreground Performance Session is disabled. No UI preferences were changed.\n'
+    printf 'Legacy Foreground Performance Session is disabled. No UI preferences were changed.\n'
     exit 0
 fi
 
@@ -34,12 +41,12 @@ fi
 [ "$window" = "1" ] && printf 'NSGlobalDomain\tNSAutomaticWindowAnimationsEnabled\tbool\tfalse\n' >> "$preference_rows"
 
 if [ ! -s "$preference_rows" ]; then
-    printf 'No UI responsiveness options are enabled.\n'
+    printf 'No legacy UI responsiveness options are enabled.\n'
     exit 0
 fi
 
 if [ "$dry_run" -eq 1 ]; then
-    printf 'UI responsiveness dry run; no preferences were changed.\n'
+    printf 'Legacy UI responsiveness dry run; no preferences were changed.\n'
     tab=$(printf '\t')
     while IFS="$tab" read -r domain key applied_type applied_value; do
         printf 'Would write %s %s as %s=%s\n' "$domain" "$key" "$applied_type" "$applied_value"
@@ -48,7 +55,7 @@ if [ "$dry_run" -eq 1 ]; then
 fi
 
 if ! cp_prepare_storage; then
-    printf 'Unable to create and verify Foreground Session storage. No UI preferences were changed.\n' >&2
+    printf 'Unable to create and verify legacy Foreground Session storage. No UI preferences were changed.\n' >&2
     exit 1
 fi
 
@@ -58,7 +65,7 @@ state_file="$runtime_dir/ui_preferences.tsv"
 log_file="$logs_dir/apply.log"
 
 if [ -r "$state_file" ] && awk -F '\t' 'NR > 1 && $8 != "restored" { pending=1 } END { exit(pending ? 0 : 1) }' "$state_file"; then
-    printf 'UI responsiveness restore is still pending. Restore it before applying again.\n' >&2
+    printf 'Legacy UI responsiveness restore is still pending. Restore it before applying again.\n' >&2
     exit 1
 fi
 
@@ -94,11 +101,9 @@ while IFS="$tab" read -r domain key applied_type applied_value; do
     printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\tpending\n' "$domain" "$key" "$previous_exists" "$previous_type" "$previous_value" "$applied_type" "$applied_value" >> "$new_state" || exit 1
 done < "$preference_rows"
 
-# The complete pre-state must be durable and readable before the first write.
 cat "$new_state" >/dev/null 2>&1 || { rm -f "$new_state"; exit 1; }
 mv "$new_state" "$state_file" || exit 1
 
-apply_failed=0
 tail -n +2 "$state_file" | while IFS="$tab" read -r domain key previous_exists previous_type previous_value applied_type applied_value restore_status; do
     case $applied_type in
         bool) flag=-bool ;;
@@ -118,15 +123,15 @@ done
 
 if [ -e "$runtime_dir/.ui_apply_failed.$$" ]; then
     rm -f "$runtime_dir/.ui_apply_failed.$$"
-    printf 'A UI preference write failed. Attempting immediate rollback.\n' >&2
+    printf 'A legacy UI preference write failed. Attempting immediate rollback.\n' >&2
     if /bin/sh "$SCRIPT_DIR/ui_responsiveness_restore.sh" --yes; then
-        printf 'UI preference rollback completed.\n' >&2
+        printf 'Legacy UI preference rollback completed.\n' >&2
     else
-        printf 'UI preference rollback is incomplete; state was preserved for retry.\n' >&2
+        printf 'Legacy UI preference rollback is incomplete; state was preserved for retry.\n' >&2
     fi
     exit 1
 fi
 
 applied_count=$(awk 'NR > 1 { count++ } END { print count+0 }' "$state_file")
-printf 'Applied %s reversible UI responsiveness preference(s).\n' "$applied_count"
-printf 'Finder and Dock changes may take effect after those components naturally restart; this patch does not signal or forcibly restart them.\n'
+printf 'Applied %s legacy reversible UI responsiveness preference(s).\n' "$applied_count"
+printf 'This diagnostic path does not signal or forcibly restart Finder or Dock.\n'
