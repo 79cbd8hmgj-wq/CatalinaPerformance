@@ -20,7 +20,12 @@ public struct SequenceCommandResult: Equatable {
     public let output: String
     public let succeeded: Bool
 
-    public init(script: SequenceScript, command: String, output: String, succeeded: Bool) {
+    public init(
+        script: SequenceScript,
+        command: String,
+        output: String,
+        succeeded: Bool
+    ) {
         self.script = script
         self.command = command
         self.output = output
@@ -29,7 +34,10 @@ public struct SequenceCommandResult: Equatable {
 }
 
 public protocol SequenceScriptExecuting: AnyObject {
-    func execute(_ script: SequenceScript, completion: @escaping (SequenceCommandResult) -> Void)
+    func execute(
+        _ script: SequenceScript,
+        completion: @escaping (SequenceCommandResult) -> Void
+    )
 }
 
 public struct ScriptSequenceStep: Equatable {
@@ -37,7 +45,11 @@ public struct ScriptSequenceStep: Equatable {
     public let continueAfterFailure: Bool
     public let rollbackOnFailure: [SequenceScript]
 
-    public init(script: SequenceScript, continueAfterFailure: Bool = false, rollbackOnFailure: [SequenceScript] = []) {
+    public init(
+        script: SequenceScript,
+        continueAfterFailure: Bool = false,
+        rollbackOnFailure: [SequenceScript] = []
+    ) {
         self.script = script
         self.continueAfterFailure = continueAfterFailure
         self.rollbackOnFailure = rollbackOnFailure
@@ -64,7 +76,10 @@ public final class ScriptSequenceCoordinator {
         self.executor = executor
     }
 
-    public func run(steps: [ScriptSequenceStep], completion: @escaping (ScriptSequenceResult) -> Void) {
+    public func run(
+        steps: [ScriptSequenceStep],
+        completion: @escaping (ScriptSequenceResult) -> Void
+    ) {
         var results: [SequenceCommandResult] = []
         var hadPrimaryFailure = false
         var didComplete = false
@@ -72,10 +87,19 @@ public final class ScriptSequenceCoordinator {
         func finish() {
             guard !didComplete else { return }
             didComplete = true
-            completion(ScriptSequenceResult(commandResults: results, hadPrimaryFailure: hadPrimaryFailure))
+            completion(
+                ScriptSequenceResult(
+                    commandResults: results,
+                    hadPrimaryFailure: hadPrimaryFailure
+                )
+            )
         }
 
-        func runScripts(_ scripts: [SequenceScript], index: Int, then next: @escaping () -> Void) {
+        func runScripts(
+            _ scripts: [SequenceScript],
+            index: Int,
+            then next: @escaping () -> Void
+        ) {
             guard index < scripts.count else {
                 next()
                 return
@@ -116,41 +140,40 @@ public final class ScriptSequenceCoordinator {
 
 public enum PerformanceSequenceFactory {
     public static func performanceOn(featureEnabled: Bool) -> [ScriptSequenceStep] {
-        guard featureEnabled else { return [ScriptSequenceStep(script: .performanceOn)] }
+        guard featureEnabled else {
+            return [ScriptSequenceStep(script: .performanceOn)]
+        }
         return [
             ScriptSequenceStep(script: .foregroundApply),
-            ScriptSequenceStep(script: .uiApply, rollbackOnFailure: [.foregroundRestore]),
-            ScriptSequenceStep(script: .performanceOn, rollbackOnFailure: [.uiRestore, .foregroundRestore])
+            ScriptSequenceStep(
+                script: .performanceOn,
+                rollbackOnFailure: [.foregroundRestore]
+            )
         ]
+    }
+
+    public static func performanceOffCore() -> [ScriptSequenceStep] {
+        return [ScriptSequenceStep(script: .performanceOff, continueAfterFailure: true)]
+    }
+
+    public static func foregroundRestore() -> [ScriptSequenceStep] {
+        return [ScriptSequenceStep(script: .foregroundRestore, continueAfterFailure: true)]
     }
 
     public static func performanceOff(featureEnabled: Bool) -> [ScriptSequenceStep] {
-        guard featureEnabled else { return [ScriptSequenceStep(script: .performanceOff)] }
-        return [
-            ScriptSequenceStep(script: .performanceOff, continueAfterFailure: true),
-            ScriptSequenceStep(script: .uiRestore, continueAfterFailure: true),
-            ScriptSequenceStep(script: .foregroundRestore, continueAfterFailure: true)
-        ]
+        guard featureEnabled else { return performanceOffCore() }
+        return performanceOffCore() + foregroundRestore()
     }
 
     public static func manualDryRun() -> [ScriptSequenceStep] {
-        return [
-            ScriptSequenceStep(script: .foregroundApplyDryRun),
-            ScriptSequenceStep(script: .uiApplyDryRun)
-        ]
+        return [ScriptSequenceStep(script: .foregroundApplyDryRun)]
     }
 
     public static func manualApply() -> [ScriptSequenceStep] {
-        return [
-            ScriptSequenceStep(script: .foregroundApply),
-            ScriptSequenceStep(script: .uiApply, rollbackOnFailure: [.foregroundRestore])
-        ]
+        return [ScriptSequenceStep(script: .foregroundApply)]
     }
 
     public static func manualRestore() -> [ScriptSequenceStep] {
-        return [
-            ScriptSequenceStep(script: .uiRestore, continueAfterFailure: true),
-            ScriptSequenceStep(script: .foregroundRestore, continueAfterFailure: true)
-        ]
+        return foregroundRestore()
     }
 }
