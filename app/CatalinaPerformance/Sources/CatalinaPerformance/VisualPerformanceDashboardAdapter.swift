@@ -35,8 +35,11 @@ final class VisualPerformanceDashboardAdapter {
                 case .completed, .interrupted:
                     record = try self.stateStore.loadLastCompleted()
                 case .empty, .warning:
-                    record = try self.stateStore.loadActive() ??
-                        self.stateStore.loadLastCompleted()
+                    if let active = try self.stateStore.loadActive() {
+                        record = active
+                    } else {
+                        record = try self.stateStore.loadLastCompleted()
+                    }
                 }
                 rows = record.map(self.rows) ?? []
             } catch {
@@ -57,13 +60,14 @@ final class VisualPerformanceDashboardAdapter {
     private func rows(
         for record: VisualPerformanceSessionRecord
     ) -> [SessionDashboardMetricRow] {
+        let aggregate = aggregateText(record.aggregateStatus)
         var result = [
             SessionDashboardMetricRow(
                 label: "Visual Performance",
-                current: aggregateText(record.aggregateStatus),
+                current: aggregate,
                 secondary: nil,
                 progressFraction: nil,
-                accessibilityDescription: "Visual Performance: \(aggregateText(record.aggregateStatus))"
+                accessibilityDescription: "Visual Performance: \(aggregate)"
             )
         ]
         result.append(contentsOf: record.settings.map { setting in
