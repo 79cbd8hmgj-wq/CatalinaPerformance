@@ -6,7 +6,12 @@ public struct ForegroundApplication: Equatable {
     public let isRunning: Bool
     public let isRegularGUIApplication: Bool
 
-    public init(displayName: String, bundleIdentifier: String, isRunning: Bool, isRegularGUIApplication: Bool) {
+    public init(
+        displayName: String,
+        bundleIdentifier: String,
+        isRunning: Bool,
+        isRegularGUIApplication: Bool
+    ) {
         self.displayName = displayName
         self.bundleIdentifier = bundleIdentifier
         self.isRunning = isRunning
@@ -34,25 +39,40 @@ public enum ForegroundApplicationFilter {
               !bundleIdentifier.contains("..") else {
             return false
         }
-        let allowed = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-")
+        let allowed = CharacterSet(
+            charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-"
+        )
         return bundleIdentifier.unicodeScalars.allSatisfy { allowed.contains($0) }
     }
 
-    public static func isExcluded(bundleIdentifier: String, displayName: String) -> Bool {
+    public static func isExcluded(
+        bundleIdentifier: String,
+        displayName: String
+    ) -> Bool {
         if excludedBundleIdentifiers.contains(bundleIdentifier) { return true }
         if bundleIdentifier.hasPrefix("com.googlecode.iterm2.") { return true }
-        let normalizedName = displayName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return normalizedName == "catalinaperformance" || normalizedName == "terminal" || normalizedName == "iterm" || normalizedName == "iterm2"
+        let normalizedName = displayName
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        return normalizedName == "catalinaperformance" ||
+            normalizedName == "terminal" ||
+            normalizedName == "iterm" ||
+            normalizedName == "iterm2"
     }
 
-    public static func eligibleApplications(from applications: [ForegroundApplication]) -> [ForegroundApplication] {
+    public static func eligibleApplications(
+        from applications: [ForegroundApplication]
+    ) -> [ForegroundApplication] {
         var seen = Set<String>()
         return applications
             .filter { application in
                 guard application.isRunning,
                       application.isRegularGUIApplication,
                       isValid(bundleIdentifier: application.bundleIdentifier),
-                      !isExcluded(bundleIdentifier: application.bundleIdentifier, displayName: application.displayName),
+                      !isExcluded(
+                        bundleIdentifier: application.bundleIdentifier,
+                        displayName: application.displayName
+                      ),
                       !seen.contains(application.bundleIdentifier) else {
                     return false
                 }
@@ -71,6 +91,9 @@ public enum ForegroundApplicationFilter {
 
 public struct ForegroundSessionPreferences: Equatable {
     public static let featureEnabledKey = "advanced.foregroundSession.enabled"
+
+    // Legacy keys remain readable so existing installations can recover old UI state.
+    // New Foreground Session configuration no longer writes visual preferences.
     public static let disableFinderAnimationsKey = "advanced.foregroundSession.disableFinderAnimations"
     public static let shortenDockAnimationsKey = "advanced.foregroundSession.shortenDockAnimations"
     public static let disableWindowAnimationsKey = "advanced.foregroundSession.disableWindowAnimations"
@@ -106,13 +129,17 @@ public struct ForegroundSessionPreferences: Equatable {
         ])
     }
 
-    public static func load(from defaults: UserDefaults = .standard) -> ForegroundSessionPreferences {
+    public static func load(
+        from defaults: UserDefaults = .standard
+    ) -> ForegroundSessionPreferences {
         return ForegroundSessionPreferences(
             featureEnabled: defaults.bool(forKey: featureEnabledKey),
             disableFinderAnimations: defaults.bool(forKey: disableFinderAnimationsKey),
             shortenDockAnimations: defaults.bool(forKey: shortenDockAnimationsKey),
             disableWindowAnimations: defaults.bool(forKey: disableWindowAnimationsKey),
-            selectedBundleIdentifiers: defaults.stringArray(forKey: selectedBundleIdentifiersKey) ?? []
+            selectedBundleIdentifiers: defaults.stringArray(
+                forKey: selectedBundleIdentifiersKey
+            ) ?? []
         )
     }
 
@@ -120,30 +147,47 @@ public struct ForegroundSessionPreferences: Equatable {
         var seen = Set<String>()
         return selectedBundleIdentifiers
             .filter { identifier in
-                ForegroundApplicationFilter.isValid(bundleIdentifier: identifier)
-                    && !ForegroundApplicationFilter.isExcluded(bundleIdentifier: identifier, displayName: "")
-                    && seen.insert(identifier).inserted
+                ForegroundApplicationFilter.isValid(bundleIdentifier: identifier) &&
+                    !ForegroundApplicationFilter.isExcluded(
+                        bundleIdentifier: identifier,
+                        displayName: ""
+                    ) &&
+                    seen.insert(identifier).inserted
             }
             .sorted()
     }
 
     public var serializedEnvironment: String {
         var lines = [
-            "FOREGROUND_SESSION_ENABLED=\(featureEnabled ? 1 : 0)",
-            "DISABLE_FINDER_ANIMATIONS=\(disableFinderAnimations ? 1 : 0)",
-            "SHORTEN_DOCK_ANIMATIONS=\(shortenDockAnimations ? 1 : 0)",
-            "DISABLE_WINDOW_ANIMATIONS=\(disableWindowAnimations ? 1 : 0)"
+            "FOREGROUND_SESSION_ENABLED=\(featureEnabled ? 1 : 0)"
         ]
-        lines.append(contentsOf: safeSelectedBundleIdentifiers.map { "SELECTED_BUNDLE_ID=\($0)" })
+        lines.append(
+            contentsOf: safeSelectedBundleIdentifiers.map {
+                "SELECTED_BUNDLE_ID=\($0)"
+            }
+        )
         return lines.joined(separator: "\n") + "\n"
     }
 
     @discardableResult
-    public func write(to url: URL, fileManager: FileManager = .default) throws -> URL {
+    public func write(
+        to url: URL,
+        fileManager: FileManager = .default
+    ) throws -> URL {
         let directory = url.deletingLastPathComponent()
-        try fileManager.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
-        let temporaryURL = directory.appendingPathComponent(".\(url.lastPathComponent).\(UUID().uuidString).tmp")
-        try serializedEnvironment.write(to: temporaryURL, atomically: false, encoding: .utf8)
+        try fileManager.createDirectory(
+            at: directory,
+            withIntermediateDirectories: true,
+            attributes: nil
+        )
+        let temporaryURL = directory.appendingPathComponent(
+            ".\(url.lastPathComponent).\(UUID().uuidString).tmp"
+        )
+        try serializedEnvironment.write(
+            to: temporaryURL,
+            atomically: false,
+            encoding: .utf8
+        )
         _ = try String(contentsOf: temporaryURL, encoding: .utf8)
         if fileManager.fileExists(atPath: url.path) {
             _ = try fileManager.replaceItemAt(url, withItemAt: temporaryURL)
@@ -180,8 +224,15 @@ public struct ForegroundSessionSummary: Equatable {
     public static func parse(_ output: String) -> ForegroundSessionSummary {
         var values: [String: Int] = [:]
         output.split(whereSeparator: { $0.isNewline }).forEach { line in
-            let parts = line.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
-            guard parts.count == 2, let value = Int(parts[1].trimmingCharacters(in: .whitespaces)) else { return }
+            let parts = line.split(
+                separator: "=",
+                maxSplits: 1,
+                omittingEmptySubsequences: false
+            )
+            guard parts.count == 2,
+                  let value = Int(parts[1].trimmingCharacters(in: .whitespaces)) else {
+                return
+            }
             values[String(parts[0])] = value
         }
         return ForegroundSessionSummary(
