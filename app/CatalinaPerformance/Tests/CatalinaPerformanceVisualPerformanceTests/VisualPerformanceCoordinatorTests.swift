@@ -12,16 +12,8 @@ final class VisualPerformanceCoordinatorTests: XCTestCase {
         coordinator.prepareForPerformanceOn { snapshot in
             XCTAssertTrue(store.didWriteBeforeFirstMutation)
             XCTAssertEqual(snapshot.settings.count, 9)
-            XCTAssertEqual(
-                snapshot.settings.filter { $0.outcome == .notApplicable }.count,
-                2
-            )
-            XCTAssertEqual(
-                snapshot.settings.filter {
-                    $0.outcome == .applied || $0.outcome == .appliedDeferred
-                }.count,
-                7
-            )
+            XCTAssertEqual(snapshot.settings.filter { $0.outcome == .notApplicable }.count, 2)
+            XCTAssertEqual(snapshot.settings.filter { $0.outcome == .applied || $0.outcome == .appliedDeferred }.count, 7)
             XCTAssertEqual(snapshot.aggregateStatus, .applied)
             expectation.fulfill()
         }
@@ -36,14 +28,8 @@ final class VisualPerformanceCoordinatorTests: XCTestCase {
         let expectation = self.expectation(description: "prepare")
 
         coordinator.prepareForPerformanceOn { snapshot in
-            XCTAssertEqual(
-                snapshot.settings.first(where: { $0.id == .reduceMotion })?.outcome,
-                .applyFailed
-            )
-            XCTAssertTrue(snapshot.settings.contains(where: {
-                $0.id == .reduceTransparency &&
-                    ($0.outcome == .applied || $0.outcome == .appliedDeferred)
-            }))
+            XCTAssertEqual(snapshot.settings.first(where: { $0.id == .reduceMotion })?.outcome, .applyFailed)
+            XCTAssertTrue(snapshot.settings.contains(where: { $0.id == .reduceTransparency && ($0.outcome == .applied || $0.outcome == .appliedDeferred) }))
             XCTAssertEqual(snapshot.aggregateStatus, .appliedWithLimitations)
             expectation.fulfill()
         }
@@ -63,10 +49,7 @@ final class VisualPerformanceCoordinatorTests: XCTestCase {
         operatorFake.values[.minimizeEffect] = .present(.string("suck"))
         let restored = expectation(description: "restored")
         coordinator.restore(reason: .normalOff) { snapshot in
-            XCTAssertEqual(
-                snapshot.settings.first(where: { $0.id == .minimizeEffect })?.outcome,
-                .preservedManualChange
-            )
+            XCTAssertEqual(snapshot.settings.first(where: { $0.id == .minimizeEffect })?.outcome, .preservedManualChange)
             XCTAssertEqual(operatorFake.values[.reduceMotion], .absent)
             XCTAssertEqual(snapshot.aggregateStatus, .successful)
             XCTAssertNil(store.active)
@@ -88,10 +71,7 @@ final class VisualPerformanceCoordinatorTests: XCTestCase {
         operatorFake.failRestoreIDs = [.reduceTransparency]
         let restored = expectation(description: "restored")
         coordinator.restore(reason: .emergencyRestore) { snapshot in
-            XCTAssertEqual(
-                snapshot.settings.first(where: { $0.id == .reduceTransparency })?.outcome,
-                .restoreFailed
-            )
+            XCTAssertEqual(snapshot.settings.first(where: { $0.id == .reduceTransparency })?.outcome, .restoreFailed)
             XCTAssertEqual(snapshot.aggregateStatus, .partiallyRestored)
             XCTAssertNotNil(store.active)
             restored.fulfill()
@@ -116,10 +96,26 @@ final class VisualPerformanceCoordinatorTests: XCTestCase {
         wait(for: [recovered], timeout: 2)
     }
 
-    private func makeCoordinator(
-        operatorFake: FakeOperator,
-        store: FakeStore
-    ) -> VisualPerformanceCoordinator {
+    func testCompletionPersistenceFailureKeepsAggregateRecoveryVisible() {
+        let operatorFake = FakeOperator()
+        let store = FakeStore()
+        store.failComplete = true
+        let coordinator = makeCoordinator(operatorFake: operatorFake, store: store)
+        let applied = expectation(description: "applied")
+        coordinator.prepareForPerformanceOn { _ in applied.fulfill() }
+        wait(for: [applied], timeout: 2)
+
+        let restored = expectation(description: "restored")
+        coordinator.restore(reason: .normalOff) { snapshot in
+            XCTAssertEqual(snapshot.aggregateStatus, .recoveryRequired)
+            XCTAssertTrue(snapshot.hasUnresolvedRestoration)
+            XCTAssertNotNil(store.active)
+            restored.fulfill()
+        }
+        wait(for: [restored], timeout: 2)
+    }
+
+    private func makeCoordinator(operatorFake: FakeOperator, store: FakeStore) -> VisualPerformanceCoordinator {
         store.mutationCountProvider = { operatorFake.mutationCount }
         return VisualPerformanceCoordinator(
             preferenceOperator: operatorFake,
@@ -163,7 +159,7 @@ private final class FakeOperator: VisualPreferenceOperating {
         values[entry.id] = .absent
     }
 
-    func isDockAutoHideEnabled() throws -> Bool { return autoHideEnabled }
+    func isDockAutoHideEnabled() throws -> Bool { autoHideEnabled }
 
     enum FakeError: Error { case failed }
 }
@@ -173,21 +169,20 @@ private final class FakeStore: VisualPerformanceStateStoring {
     var completed: VisualPerformanceSessionRecord?
     var mutationCountProvider: (() -> Int)?
     var didWriteBeforeFirstMutation = false
+    var failComplete = false
 
-    func loadActive() throws -> VisualPerformanceSessionRecord? { return active }
-    func loadLastCompleted() throws -> VisualPerformanceSessionRecord? { return completed }
-
+    func loadActive() throws -> VisualPerformanceSessionRecord? { active }
+    func loadLastCompleted() throws -> VisualPerformanceSessionRecord? { completed }
     func writeActive(_ record: VisualPerformanceSessionRecord) throws {
-        if (mutationCountProvider?() ?? 0) == 0 {
-            didWriteBeforeFirstMutation = true
-        }
+        if (mutationCountProvider?() ?? 0) == 0 { didWriteBeforeFirstMutation = true }
         active = record
     }
-
     func complete(_ record: VisualPerformanceSessionRecord) throws {
+        if failComplete { throw FakeStoreError.failed }
         completed = record
         active = nil
     }
-
     func removeActive() throws { active = nil }
+
+    enum FakeStoreError: Error { case failed }
 }
