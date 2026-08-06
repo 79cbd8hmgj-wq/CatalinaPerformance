@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/visual-performance-complete
+  pull_request:
+    branches:
+      - agent/visual-performance-production
   workflow_dispatch:
 
 jobs:
