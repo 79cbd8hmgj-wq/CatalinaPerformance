@@ -18,11 +18,20 @@ logs_dir=$(cp_logs_dir)
 state_file="$runtime_dir/ui_preferences.tsv"
 log_file="$logs_dir/restore.log"
 
+print_state() {
+    state=$1
+    pending=$2
+    printf 'legacy_ui_state=%s\n' "$state"
+    printf 'legacy_ui_pending_count=%s\n' "$pending"
+}
+
 if [ ! -r "$state_file" ]; then
-    printf 'No UI responsiveness state exists. Nothing to restore.\n'
+    printf 'No legacy UI responsiveness state exists. Nothing to restore.\n'
+    print_state none 0
     exit 0
 fi
 
+pending_before=$(awk -F '\t' 'NR > 1 && $8 != "restored" { count++ } END { print count+0 }' "$state_file")
 if [ "$dry_run" -eq 1 ]; then
     awk -F '\t' '
         NR == 1 { next }
@@ -31,11 +40,17 @@ if [ "$dry_run" -eq 1 ]; then
             else print "Would restore " $1 " " $2 " as " $4 "=" $5
         }
     ' "$state_file"
+    if [ "$pending_before" -gt 0 ]; then
+        print_state pending "$pending_before"
+    else
+        print_state restored 0
+    fi
     exit 0
 fi
 
 if ! cp_prepare_storage; then
-    printf 'Unable to verify Foreground Session storage. UI restore was not attempted.\n' >&2
+    printf 'Unable to verify Foreground Session storage. Legacy UI restore was not attempted.\n' >&2
+    print_state failed "$pending_before"
     exit 1
 fi
 
@@ -52,9 +67,10 @@ while IFS="$tab" read -r domain key; do
 
     restored=0
     if [ "$previous_exists" = "0" ] || [ "$previous_type" = "absent" ]; then
-        if $CP_DEFAULTS delete "$domain" "$key" >/dev/null 2>&1; then restored=1; else
-            # `defaults delete` reports failure when already absent; verify absence.
-            if ! $CP_DEFAULTS read "$domain" "$key" >/dev/null 2>&1; then restored=1; fi
+        if $CP_DEFAULTS delete "$domain" "$key" >/dev/null 2>&1; then
+            restored=1
+        elif ! $CP_DEFAULTS read "$domain" "$key" >/dev/null 2>&1; then
+            restored=1
         fi
     else
         case $previous_type in
@@ -86,17 +102,20 @@ while IFS="$tab" read -r domain key; do
     ' "$state_file" > "$update_file" && mv "$update_file" "$state_file"
 done
 
+pending=$(awk -F '\t' 'NR > 1 && $8 != "restored" { count++ } END { print count+0 }' "$state_file")
 if [ -e "$failure_flag" ]; then
     rm -f "$failure_flag"
-    printf 'UI responsiveness restore is incomplete. Failed state was preserved for retry.\n' >&2
+    printf 'Legacy UI responsiveness restore is incomplete. Failed state was preserved for retry.\n' >&2
+    print_state failed "$pending"
     exit 1
 fi
 
-pending=$(awk -F '\t' 'NR > 1 && $8 != "restored" { count++ } END { print count+0 }' "$state_file")
 if [ "$pending" -gt 0 ]; then
-    printf 'UI responsiveness restore remains pending for %s preference(s).\n' "$pending" >&2
+    printf 'Legacy UI responsiveness restore remains pending for %s preference(s).\n' "$pending" >&2
+    print_state pending "$pending"
     exit 1
 fi
 
 restored=$(awk -F '\t' 'NR > 1 && $8 == "restored" { count++ } END { print count+0 }' "$state_file")
-printf 'Restored %s UI responsiveness preference(s) to their exact recorded state.\n' "$restored"
+printf 'Restored %s legacy UI responsiveness preference(s) to their exact recorded state.\n' "$restored"
+print_state restored 0
