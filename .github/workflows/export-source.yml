@@ -1,0 +1,22 @@
+name: Export Source
+
+on:
+  push:
+    branches:
+      - agent/visual-performance-complete
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create source archive
+        run: |
+          git archive --format=zip --output=CatalinaPerformance-source.zip HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CatalinaPerformance-source
+          path: CatalinaPerformance-source.zip
+          if-no-files-found: error
+          retention-days: 1
