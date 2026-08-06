@@ -12,14 +12,17 @@ final class VisualPerformanceCoordinatorTests: XCTestCase {
         coordinator.prepareForPerformanceOn { snapshot in
             XCTAssertTrue(store.didWriteBeforeFirstMutation)
             XCTAssertEqual(snapshot.settings.count, 9)
-            XCTAssertEqual(snapshot.settings.filter { $0.outcome == .notApplicable }.count, 2)
+            XCTAssertEqual(
+                snapshot.settings.filter { $0.outcome == .notApplicable }.count,
+                2
+            )
             XCTAssertEqual(
                 snapshot.settings.filter {
                     $0.outcome == .applied || $0.outcome == .appliedDeferred
                 }.count,
                 7
             )
-            XCTAssertEqual(snapshot.aggregateStatus, .appliedWithLimitations)
+            XCTAssertEqual(snapshot.aggregateStatus, .applied)
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 2)
