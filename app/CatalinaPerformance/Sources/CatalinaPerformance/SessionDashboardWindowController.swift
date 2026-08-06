@@ -7,19 +7,37 @@ import AppKit
 final class SessionDashboardWindowController: NSWindowController, NSWindowDelegate {
     private let coordinator: PerformanceSessionCoordinator
     private let presenter: SessionDashboardPresenter
+    private let visualAdapter: VisualPerformanceDashboardAdapter
     private var observerToken: UUID?
     private var currentViewModel: SessionDashboardViewModel?
+    private var visualRows: [SessionDashboardMetricRow] = []
+    private var renderGeneration = 0
     private let scrollView = NSScrollView()
-    private let documentView = FlippedDocumentView(frame: NSRect(x: 0, y: 0, width: 720, height: 640))
+    private let documentView = FlippedDocumentView(
+        frame: NSRect(x: 0, y: 0, width: 720, height: 640)
+    )
     private let contentStack = NSStackView()
-    private let refreshButton = NSButton(title: "Refresh Now", target: nil, action: nil)
-    private let closeButton = NSButton(title: "Close", target: nil, action: nil)
+    private let refreshButton = NSButton(
+        title: "Refresh Now",
+        target: nil,
+        action: nil
+    )
+    private let closeButton = NSButton(
+        title: "Close",
+        target: nil,
+        action: nil
+    )
 
     var onRefreshNow: (() -> Void)?
 
-    init(coordinator: PerformanceSessionCoordinator, presenter: SessionDashboardPresenter = SessionDashboardPresenter()) {
+    init(
+        coordinator: PerformanceSessionCoordinator,
+        presenter: SessionDashboardPresenter = SessionDashboardPresenter(),
+        visualAdapter: VisualPerformanceDashboardAdapter = VisualPerformanceDashboardAdapter()
+    ) {
         self.coordinator = coordinator
         self.presenter = presenter
+        self.visualAdapter = visualAdapter
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 760, height: 680),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
@@ -48,7 +66,19 @@ final class SessionDashboardWindowController: NSWindowController, NSWindowDelega
     func render(_ viewModel: SessionDashboardViewModel) {
         precondition(Thread.isMainThread)
         currentViewModel = viewModel
+        visualRows = []
+        renderGeneration += 1
+        let generation = renderGeneration
         rebuildContent(from: viewModel)
+        visualAdapter.loadRows(for: viewModel.screenKind) { [weak self] rows in
+            guard let self = self,
+                  generation == self.renderGeneration,
+                  self.currentViewModel == viewModel else {
+                return
+            }
+            self.visualRows = rows
+            self.rebuildContent(from: viewModel)
+        }
     }
 
     func windowWillClose(_ notification: Notification) {
@@ -100,14 +130,34 @@ final class SessionDashboardWindowController: NSWindowController, NSWindowDelega
             scrollView.trailingAnchor.constraint(equalTo: root.trailingAnchor),
             scrollView.topAnchor.constraint(equalTo: root.topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: root.bottomAnchor),
-            documentView.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor),
-            documentView.trailingAnchor.constraint(equalTo: scrollView.contentView.trailingAnchor),
-            documentView.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
-            documentView.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor),
-            contentStack.leadingAnchor.constraint(equalTo: documentView.leadingAnchor, constant: 22),
-            contentStack.trailingAnchor.constraint(equalTo: documentView.trailingAnchor, constant: -22),
-            contentStack.topAnchor.constraint(equalTo: documentView.topAnchor, constant: 20),
-            contentStack.bottomAnchor.constraint(equalTo: documentView.bottomAnchor, constant: -20)
+            documentView.leadingAnchor.constraint(
+                equalTo: scrollView.contentView.leadingAnchor
+            ),
+            documentView.trailingAnchor.constraint(
+                equalTo: scrollView.contentView.trailingAnchor
+            ),
+            documentView.topAnchor.constraint(
+                equalTo: scrollView.contentView.topAnchor
+            ),
+            documentView.widthAnchor.constraint(
+                equalTo: scrollView.contentView.widthAnchor
+            ),
+            contentStack.leadingAnchor.constraint(
+                equalTo: documentView.leadingAnchor,
+                constant: 22
+            ),
+            contentStack.trailingAnchor.constraint(
+                equalTo: documentView.trailingAnchor,
+                constant: -22
+            ),
+            contentStack.topAnchor.constraint(
+                equalTo: documentView.topAnchor,
+                constant: 20
+            ),
+            contentStack.bottomAnchor.constraint(
+                equalTo: documentView.bottomAnchor,
+                constant: -20
+            )
         ])
 
         refreshButton.target = self
@@ -131,52 +181,99 @@ final class SessionDashboardWindowController: NSWindowController, NSWindowDelega
             addFullWidthArrangedSubview(warningBanner(warning))
         }
 
-        let status = NSTextField(wrappingLabelWithString: "Status: \(viewModel.statusText)")
+        let status = NSTextField(
+            wrappingLabelWithString: "Status: \(viewModel.statusText)"
+        )
         status.font = NSFont.systemFont(ofSize: 13, weight: .medium)
         status.setAccessibilityLabel("Session status")
         status.setAccessibilityValueDescription(viewModel.statusText)
         contentStack.addArrangedSubview(status)
 
         var metadata: [String] = []
-        if let duration = viewModel.durationText { metadata.append("Duration: \(duration)") }
-        if let completed = viewModel.completionText { metadata.append("Completed: \(completed)") }
-        if let restore = viewModel.restoreResultText { metadata.append("Restore result: \(restore)") }
-        if let target = viewModel.priorityTargetText { metadata.append("Priority target: \(target)") }
-        if let samples = viewModel.sampleCountText { metadata.append("Samples collected: \(samples)") }
+        if let duration = viewModel.durationText {
+            metadata.append("Duration: \(duration)")
+        }
+        if let completed = viewModel.completionText {
+            metadata.append("Completed: \(completed)")
+        }
+        if let restore = viewModel.restoreResultText {
+            metadata.append("Restore result: \(restore)")
+        }
+        if let target = viewModel.priorityTargetText {
+            metadata.append("Priority target: \(target)")
+        }
+        if let samples = viewModel.sampleCountText {
+            metadata.append("Samples collected: \(samples)")
+        }
         if !metadata.isEmpty {
-            let meta = NSTextField(wrappingLabelWithString: metadata.joined(separator: "    "))
+            let meta = NSTextField(
+                wrappingLabelWithString: metadata.joined(separator: "    ")
+            )
             meta.textColor = .secondaryLabelColor
             meta.setAccessibilityLabel(metadata.joined(separator: ", "))
             contentStack.addArrangedSubview(meta)
         }
 
         if viewModel.screenKind == .empty || viewModel.screenKind == .warning {
-            let empty = NSTextField(wrappingLabelWithString: "Unavailable metrics are shown as Unavailable rather than zero. The Last Completed Session appears here after Performance Mode is turned off.")
+            let empty = NSTextField(
+                wrappingLabelWithString: "Unavailable metrics are shown as Unavailable rather than zero. The Last Completed Session appears here after Performance Mode is turned off."
+            )
             empty.textColor = .secondaryLabelColor
             contentStack.addArrangedSubview(empty)
         }
 
         if !viewModel.systemRows.isEmpty {
-            addFullWidthArrangedSubview(section(title: "System", metricRows: viewModel.systemRows))
+            addFullWidthArrangedSubview(
+                section(title: "System", metricRows: viewModel.systemRows)
+            )
         }
         if !viewModel.selectedAppRows.isEmpty {
-            addFullWidthArrangedSubview(section(title: "Selected App", metricRows: viewModel.selectedAppRows))
+            addFullWidthArrangedSubview(
+                section(title: "Selected App", metricRows: viewModel.selectedAppRows)
+            )
         }
         if !viewModel.completedRows.isEmpty {
-            addFullWidthArrangedSubview(completedSection(title: "Last Completed Session", rows: viewModel.completedRows))
+            addFullWidthArrangedSubview(
+                completedSection(
+                    title: "Last Completed Session",
+                    rows: viewModel.completedRows
+                )
+            )
         }
         if !viewModel.priorityDetailRows.isEmpty {
-            addFullWidthArrangedSubview(section(title: "Focused Firefox Targets", metricRows: viewModel.priorityDetailRows))
+            addFullWidthArrangedSubview(
+                section(
+                    title: "Focused Firefox Targets",
+                    metricRows: viewModel.priorityDetailRows
+                )
+            )
+        }
+        if !visualRows.isEmpty {
+            let heading = viewModel.screenKind == .completed ||
+                viewModel.screenKind == .interrupted
+                ? "Visual Performance Restoration"
+                : "Visual Performance"
+            addFullWidthArrangedSubview(
+                section(title: heading, metricRows: visualRows)
+            )
         }
         if !viewModel.subsystemRows.isEmpty {
-            let heading = viewModel.screenKind == .completed || viewModel.screenKind == .interrupted ? "Restoration" : "Active Changes"
-            addFullWidthArrangedSubview(section(title: heading, metricRows: viewModel.subsystemRows))
+            let heading = viewModel.screenKind == .completed ||
+                viewModel.screenKind == .interrupted
+                ? "Restoration"
+                : "Active Changes"
+            addFullWidthArrangedSubview(
+                section(title: heading, metricRows: viewModel.subsystemRows)
+            )
         }
 
-        let spacer = NSView(frame: NSRect(x: 0, y: 0, width: 1, height: 4))
+        let spacer = NSView(
+            frame: NSRect(x: 0, y: 0, width: 1, height: 4)
+        )
         contentStack.addArrangedSubview(spacer)
 
-        refreshButton.isEnabled = viewModel.screenKind != .finalizing && !viewModel.statusText.localizedCaseInsensitiveContains("preparing")
+        refreshButton.isEnabled = viewModel.screenKind != .finalizing &&
+            !viewModel.statusText.localizedCaseInsensitiveContains("preparing")
         let buttons = NSStackView(views: [refreshButton, closeButton])
         buttons.orientation = .horizontal
         buttons.spacing = 8
@@ -184,7 +281,12 @@ final class SessionDashboardWindowController: NSWindowController, NSWindowDelega
 
         contentStack.layoutSubtreeIfNeeded()
         let fitting = contentStack.fittingSize
-        documentView.setFrameSize(NSSize(width: max(scrollView.contentSize.width, fitting.width + 44), height: max(scrollView.contentSize.height, fitting.height + 40)))
+        documentView.setFrameSize(
+            NSSize(
+                width: max(scrollView.contentSize.width, fitting.width + 44),
+                height: max(scrollView.contentSize.height, fitting.height + 40)
+            )
+        )
     }
 
     private func addFullWidthArrangedSubview(_ view: NSView) {
@@ -207,16 +309,31 @@ final class SessionDashboardWindowController: NSWindowController, NSWindowDelega
         box.contentView?.addSubview(label)
         if let content = box.contentView {
             NSLayoutConstraint.activate([
-                label.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 10),
-                label.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -10),
-                label.topAnchor.constraint(equalTo: content.topAnchor, constant: 8),
-                label.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -8)
+                label.leadingAnchor.constraint(
+                    equalTo: content.leadingAnchor,
+                    constant: 10
+                ),
+                label.trailingAnchor.constraint(
+                    equalTo: content.trailingAnchor,
+                    constant: -10
+                ),
+                label.topAnchor.constraint(
+                    equalTo: content.topAnchor,
+                    constant: 8
+                ),
+                label.bottomAnchor.constraint(
+                    equalTo: content.bottomAnchor,
+                    constant: -8
+                )
             ])
         }
         return box
     }
 
-    private func section(title: String, metricRows: [SessionDashboardMetricRow]) -> NSView {
+    private func section(
+        title: String,
+        metricRows: [SessionDashboardMetricRow]
+    ) -> NSView {
         let stack = NSStackView()
         stack.orientation = .vertical
         stack.spacing = 7
@@ -239,7 +356,10 @@ final class SessionDashboardWindowController: NSWindowController, NSWindowDelega
         label.font = NSFont.systemFont(ofSize: 13)
         label.setContentHuggingPriority(.defaultLow, for: .horizontal)
         let value = NSTextField(labelWithString: row.current)
-        value.font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .medium)
+        value.font = NSFont.monospacedDigitSystemFont(
+            ofSize: 13,
+            weight: .medium
+        )
         value.alignment = .right
         value.setAccessibilityLabel(row.label)
         value.setAccessibilityValueDescription(row.current)
@@ -254,7 +374,9 @@ final class SessionDashboardWindowController: NSWindowController, NSWindowDelega
             indicator.controlSize = .small
             indicator.style = .bar
             indicator.setAccessibilityLabel(row.label)
-            indicator.setAccessibilityValueDescription(row.accessibilityDescription)
+            indicator.setAccessibilityValueDescription(
+                row.accessibilityDescription
+            )
             indicator.widthAnchor.constraint(equalToConstant: 130).isActive = true
             horizontalViews.append(indicator)
         }
@@ -282,7 +404,10 @@ final class SessionDashboardWindowController: NSWindowController, NSWindowDelega
         return top
     }
 
-    private func completedSection(title: String, rows: [SessionDashboardCompletedRow]) -> NSView {
+    private func completedSection(
+        title: String,
+        rows: [SessionDashboardCompletedRow]
+    ) -> NSView {
         let stack = NSStackView()
         stack.orientation = .vertical
         stack.spacing = 6
@@ -292,12 +417,26 @@ final class SessionDashboardWindowController: NSWindowController, NSWindowDelega
         heading.textColor = .secondaryLabelColor
         stack.addArrangedSubview(heading)
 
-        let header = completedRowViews(label: "Metric", baseline: "Baseline", average: "Average", peak: "Peak", final: "Final", bold: true)
+        let header = completedRowViews(
+            label: "Metric",
+            baseline: "Baseline",
+            average: "Average",
+            peak: "Peak",
+            final: "Final",
+            bold: true
+        )
         stack.addArrangedSubview(header)
         header.translatesAutoresizingMaskIntoConstraints = false
         header.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         rows.forEach { row in
-            let rowView = completedRowViews(label: row.label, baseline: row.baseline, average: row.average, peak: row.peak, final: row.final ?? "Unavailable", bold: false)
+            let rowView = completedRowViews(
+                label: row.label,
+                baseline: row.baseline,
+                average: row.average,
+                peak: row.peak,
+                final: row.final ?? "Unavailable",
+                bold: false
+            )
             stack.addArrangedSubview(rowView)
             rowView.translatesAutoresizingMaskIntoConstraints = false
             rowView.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
@@ -305,10 +444,23 @@ final class SessionDashboardWindowController: NSWindowController, NSWindowDelega
         return stack
     }
 
-    private func completedRowViews(label: String, baseline: String, average: String, peak: String, final: String, bold: Bool) -> NSView {
-        let values = [label, baseline, average, peak, final].map { text -> NSTextField in
+    private func completedRowViews(
+        label: String,
+        baseline: String,
+        average: String,
+        peak: String,
+        final: String,
+        bold: Bool
+    ) -> NSView {
+        let values = [label, baseline, average, peak, final].map {
+            text -> NSTextField in
             let field = NSTextField(labelWithString: text)
-            field.font = bold ? NSFont.boldSystemFont(ofSize: 11) : NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
+            field.font = bold
+                ? NSFont.boldSystemFont(ofSize: 11)
+                : NSFont.monospacedDigitSystemFont(
+                    ofSize: 11,
+                    weight: .regular
+                )
             field.lineBreakMode = .byTruncatingTail
             field.setAccessibilityLabel(text)
             return field
