@@ -205,19 +205,24 @@ public enum VisualPerformanceAggregateStatus: String, Codable {
         }) {
             return .recoveryRequired
         }
-        if records.contains(where: { $0.outcome == .applyFailed }) {
-            let hasApplied = records.contains(where: {
-                $0.outcome == .applied || $0.outcome == .appliedDeferred
-            })
-            return hasApplied ? .appliedWithLimitations : .failed
-        }
         if records.contains(where: { $0.outcome == .pending }) {
             return .preparing
         }
-        if records.contains(where: { $0.outcome == .appliedDeferred }) {
-            return .appliedWithLimitations
+
+        let hasApplied = records.contains(where: {
+            $0.outcome == .applied || $0.outcome == .appliedDeferred
+        })
+        let hasApplyFailure = records.contains(where: {
+            $0.outcome == .applyFailed
+        })
+        let hasUnsupported = records.contains(where: {
+            $0.outcome == .unsupported
+        })
+
+        if hasApplyFailure || hasUnsupported {
+            return hasApplied ? .appliedWithLimitations : .failed
         }
-        if records.contains(where: { $0.outcome == .applied }) {
+        if hasApplied {
             return .applied
         }
         return .appliedWithLimitations
