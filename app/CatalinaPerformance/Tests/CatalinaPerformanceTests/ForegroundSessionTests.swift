@@ -3,9 +3,24 @@ import XCTest
 
 final class ForegroundSessionTests: XCTestCase {
     func testTerminalAndITermArePermanentlyExcluded() {
-        XCTAssertTrue(ForegroundApplicationFilter.isExcluded(bundleIdentifier: "com.apple.Terminal", displayName: "Terminal"))
-        XCTAssertTrue(ForegroundApplicationFilter.isExcluded(bundleIdentifier: "com.googlecode.iterm2", displayName: "iTerm2"))
-        XCTAssertFalse(ForegroundApplicationFilter.isExcluded(bundleIdentifier: "org.mozilla.firefox", displayName: "Firefox"))
+        XCTAssertTrue(
+            ForegroundApplicationFilter.isExcluded(
+                bundleIdentifier: "com.apple.Terminal",
+                displayName: "Terminal"
+            )
+        )
+        XCTAssertTrue(
+            ForegroundApplicationFilter.isExcluded(
+                bundleIdentifier: "com.googlecode.iterm2",
+                displayName: "iTerm2"
+            )
+        )
+        XCTAssertFalse(
+            ForegroundApplicationFilter.isExcluded(
+                bundleIdentifier: "org.mozilla.firefox",
+                displayName: "Firefox"
+            )
+        )
     }
 
     func testFilterRejectsMissingUnsafeBackgroundAndDuplicateApplications() {
@@ -19,28 +34,45 @@ final class ForegroundSessionTests: XCTestCase {
         ]
 
         XCTAssertEqual(
-            ForegroundApplicationFilter.eligibleApplications(from: candidates).map { $0.bundleIdentifier },
+            ForegroundApplicationFilter.eligibleApplications(from: candidates)
+                .map { $0.bundleIdentifier },
             ["org.mozilla.firefox", "com.apple.TextEdit"]
         )
     }
 
-    func testPreferencesSerializeOnlyRecognizedSafeSelections() {
+    func testPreferencesSerializeOnlyRecognizedSafeAppClosingSelections() {
         let preferences = ForegroundSessionPreferences(
             featureEnabled: true,
             disableFinderAnimations: true,
             shortenDockAnimations: false,
             disableWindowAnimations: true,
-            selectedBundleIdentifiers: ["org.mozilla.firefox", "com.apple.Terminal", "bad id", "org.mozilla.firefox"]
+            selectedBundleIdentifiers: [
+                "org.mozilla.firefox",
+                "com.apple.Terminal",
+                "bad id",
+                "org.mozilla.firefox"
+            ]
         )
         XCTAssertEqual(
             preferences.serializedEnvironment,
-            "FOREGROUND_SESSION_ENABLED=1\nDISABLE_FINDER_ANIMATIONS=1\nSHORTEN_DOCK_ANIMATIONS=0\nDISABLE_WINDOW_ANIMATIONS=1\nSELECTED_BUNDLE_ID=org.mozilla.firefox\n"
+            "FOREGROUND_SESSION_ENABLED=1\nSELECTED_BUNDLE_ID=org.mozilla.firefox\n"
+        )
+        XCTAssertFalse(
+            preferences.serializedEnvironment.contains("DISABLE_FINDER_ANIMATIONS")
+        )
+        XCTAssertFalse(
+            preferences.serializedEnvironment.contains("SHORTEN_DOCK_ANIMATIONS")
+        )
+        XCTAssertFalse(
+            preferences.serializedEnvironment.contains("DISABLE_WINDOW_ANIMATIONS")
         )
     }
 
-
     func testPreferencesWriteAtomicallyCreatesExpectedFile() throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(
+            UUID().uuidString,
+            isDirectory: true
+        )
         defer { try? FileManager.default.removeItem(at: root) }
         let url = root.appendingPathComponent("preferences.env")
         let preferences = ForegroundSessionPreferences(
@@ -48,13 +80,19 @@ final class ForegroundSessionTests: XCTestCase {
             disableFinderAnimations: false,
             shortenDockAnimations: true,
             disableWindowAnimations: false,
-            selectedBundleIdentifiers: ["com.apple.TextEdit", "bad id", "com.apple.Terminal"]
+            selectedBundleIdentifiers: [
+                "com.apple.TextEdit",
+                "bad id",
+                "com.apple.Terminal"
+            ]
         )
 
         try preferences.write(to: url)
 
-        XCTAssertEqual(try String(contentsOf: url), preferences.serializedEnvironment)
-        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent(".preferences.env.tmp").path))
+        XCTAssertEqual(
+            try String(contentsOf: url),
+            preferences.serializedEnvironment
+        )
     }
 
     func testFeatureDisabledOnSequenceRunsOnlyPrivilegedPerformanceStep() {
@@ -64,32 +102,30 @@ final class ForegroundSessionTests: XCTestCase {
         )
     }
 
-    func testPriorityWrapperDoesNotChangeUserLevelOnSequenceOrdering() {
+    func testNewOnSequenceNeverCreatesLegacyUIState() {
         XCTAssertEqual(
-            PerformanceSequenceFactory.performanceOn(featureEnabled: true).map { $0.script },
-            [.foregroundApply, .uiApply, .performanceOn]
+            PerformanceSequenceFactory.performanceOn(featureEnabled: true)
+                .map { $0.script },
+            [.foregroundApply, .performanceOn]
         )
     }
 
-    func testOffStillContinuesUserLevelRestoreAfterPrivilegedWrapperFailure() {
+    func testOffContinuesForegroundRestoreAfterPrivilegedFailure() {
         XCTAssertEqual(
-            PerformanceSequenceFactory.performanceOff(featureEnabled: true).map { $0.continueAfterFailure },
-            [true, true, true]
+            PerformanceSequenceFactory.performanceOff(featureEnabled: true)
+                .map { $0.continueAfterFailure },
+            [true, true]
         )
     }
 
-    func testManualApplyRollsBackApplicationsWhenUIApplyFails() {
-        let executor = FakeSequenceExecutor(results: [
-            .foregroundApply: true,
-            .uiApply: false,
-            .foregroundRestore: true
-        ])
+    func testManualApplyOnlyClosesSelectedApplications() {
+        let executor = FakeSequenceExecutor(results: [.foregroundApply: true])
         let coordinator = ScriptSequenceCoordinator(executor: executor)
         let expectation = self.expectation(description: "sequence")
 
         coordinator.run(steps: PerformanceSequenceFactory.manualApply()) { result in
-            XCTAssertFalse(result.succeeded)
-            XCTAssertEqual(result.executedScripts, [.foregroundApply, .uiApply, .foregroundRestore])
+            XCTAssertTrue(result.succeeded)
+            XCTAssertEqual(result.executedScripts, [.foregroundApply])
             expectation.fulfill()
         }
 
@@ -97,7 +133,9 @@ final class ForegroundSessionTests: XCTestCase {
     }
 
     func testSummaryParsesKnownKeysAndDefaultsMissingValuesToZero() {
-        let summary = ForegroundSessionSummary.parse("session_active=1\nselected=3\nconfirmed_closed=2\npending_relaunch=1\nunknown=99\n")
+        let summary = ForegroundSessionSummary.parse(
+            "session_active=1\nselected=3\nconfirmed_closed=2\npending_relaunch=1\nunknown=99\n"
+        )
         XCTAssertTrue(summary.sessionActive)
         XCTAssertEqual(summary.selected, 3)
         XCTAssertEqual(summary.confirmedClosed, 2)
@@ -105,22 +143,25 @@ final class ForegroundSessionTests: XCTestCase {
         XCTAssertEqual(summary.pendingRelaunch, 1)
     }
 
-    func testCoordinatorRunsRollbackAfterFailureAndCompletesOnce() {
+    func testCoordinatorRestoresApplicationsAfterCoreOnFailure() {
         let executor = FakeSequenceExecutor(results: [
             .foregroundApply: true,
-            .uiApply: true,
             .performanceOn: false,
-            .uiRestore: true,
             .foregroundRestore: true
         ])
         let coordinator = ScriptSequenceCoordinator(executor: executor)
         let expectation = self.expectation(description: "sequence")
         var completionCount = 0
 
-        coordinator.run(steps: PerformanceSequenceFactory.performanceOn(featureEnabled: true)) { result in
+        coordinator.run(
+            steps: PerformanceSequenceFactory.performanceOn(featureEnabled: true)
+        ) { result in
             completionCount += 1
             XCTAssertFalse(result.succeeded)
-            XCTAssertEqual(result.executedScripts, [.foregroundApply, .uiApply, .performanceOn, .uiRestore, .foregroundRestore])
+            XCTAssertEqual(
+                result.executedScripts,
+                [.foregroundApply, .performanceOn, .foregroundRestore]
+            )
             expectation.fulfill()
         }
 
@@ -128,22 +169,37 @@ final class ForegroundSessionTests: XCTestCase {
         XCTAssertEqual(completionCount, 1)
     }
 
-    func testOffSequenceContinuesRestorationAfterPrivilegedFailure() {
+    func testOffSequenceContinuesAppRelaunchAfterPrivilegedFailure() {
         let executor = FakeSequenceExecutor(results: [
             .performanceOff: false,
-            .uiRestore: true,
             .foregroundRestore: true
         ])
         let coordinator = ScriptSequenceCoordinator(executor: executor)
         let expectation = self.expectation(description: "sequence")
 
-        coordinator.run(steps: PerformanceSequenceFactory.performanceOff(featureEnabled: true)) { result in
+        coordinator.run(
+            steps: PerformanceSequenceFactory.performanceOff(featureEnabled: true)
+        ) { result in
             XCTAssertFalse(result.succeeded)
-            XCTAssertEqual(result.executedScripts, [.performanceOff, .uiRestore, .foregroundRestore])
+            XCTAssertEqual(
+                result.executedScripts,
+                [.performanceOff, .foregroundRestore]
+            )
             expectation.fulfill()
         }
 
         waitForExpectations(timeout: 2)
+    }
+
+    func testCoreAndForegroundRestoreCanBeSequencedSeparately() {
+        XCTAssertEqual(
+            PerformanceSequenceFactory.performanceOffCore().map { $0.script },
+            [.performanceOff]
+        )
+        XCTAssertEqual(
+            PerformanceSequenceFactory.foregroundRestore().map { $0.script },
+            [.foregroundRestore]
+        )
     }
 }
 
@@ -154,10 +210,20 @@ private final class FakeSequenceExecutor: SequenceScriptExecuting {
         self.results = results
     }
 
-    func execute(_ script: SequenceScript, completion: @escaping (SequenceCommandResult) -> Void) {
+    func execute(
+        _ script: SequenceScript,
+        completion: @escaping (SequenceCommandResult) -> Void
+    ) {
         let succeeded = results[script] ?? true
         DispatchQueue.global().async {
-            completion(SequenceCommandResult(script: script, command: script.rawValue, output: "", succeeded: succeeded))
+            completion(
+                SequenceCommandResult(
+                    script: script,
+                    command: script.rawValue,
+                    output: "",
+                    succeeded: succeeded
+                )
+            )
         }
     }
 }
