@@ -39,14 +39,10 @@ public enum VisualScalarValue: Equatable, Codable {
 
     public var scalarType: VisualScalarType {
         switch self {
-        case .boolean:
-            return .boolean
-        case .integer:
-            return .integer
-        case .floatingPoint:
-            return .floatingPoint
-        case .string:
-            return .string
+        case .boolean: return .boolean
+        case .integer: return .integer
+        case .floatingPoint: return .floatingPoint
+        case .string: return .string
         }
     }
 
@@ -204,28 +200,32 @@ public enum VisualPerformanceAggregateStatus: String, Codable {
 
     public static func active(for records: [VisualSettingRecord]) -> VisualPerformanceAggregateStatus {
         guard !records.isEmpty else { return .notConfigured }
-
-        if records.contains(where: { $0.outcome == .recoveryRequired || $0.outcome == .restoreFailed }) {
+        if records.contains(where: {
+            $0.outcome == .recoveryRequired || $0.outcome == .restoreFailed
+        }) {
             return .recoveryRequired
         }
         if records.contains(where: { $0.outcome == .applyFailed }) {
-            let hasApplied = records.contains(where: { $0.outcome == .applied || $0.outcome == .appliedDeferred })
+            let hasApplied = records.contains(where: {
+                $0.outcome == .applied || $0.outcome == .appliedDeferred
+            })
             return hasApplied ? .appliedWithLimitations : .failed
         }
         if records.contains(where: { $0.outcome == .pending }) {
             return .preparing
         }
-        if records.contains(where: { $0.outcome == .applied || $0.outcome == .appliedDeferred }) {
+        if records.contains(where: { $0.outcome == .appliedDeferred }) {
+            return .appliedWithLimitations
+        }
+        if records.contains(where: { $0.outcome == .applied }) {
             return .applied
         }
-
         return .appliedWithLimitations
     }
 
     public static func completed(for records: [VisualSettingRecord]) -> VisualPerformanceAggregateStatus {
         guard !records.isEmpty else { return .notConfigured }
-
-        let hasIncompleteRestoration = records.contains { record in
+        let incomplete = records.contains { record in
             switch record.outcome {
             case .pending, .applied, .appliedDeferred, .restoreFailed, .recoveryRequired:
                 return true
@@ -233,11 +233,7 @@ public enum VisualPerformanceAggregateStatus: String, Codable {
                 return false
             }
         }
-        if hasIncompleteRestoration {
-            return .partiallyRestored
-        }
-
-        return .successful
+        return incomplete ? .partiallyRestored : .successful
     }
 }
 
@@ -301,5 +297,11 @@ public struct VisualPerformanceStatusSnapshot: Codable, Equatable {
         self.aggregateStatus = aggregateStatus
         self.settings = settings
         self.updatedAt = updatedAt
+    }
+
+    public var hasUnresolvedRestoration: Bool {
+        return settings.contains {
+            $0.outcome == .restoreFailed || $0.outcome == .recoveryRequired
+        }
     }
 }
