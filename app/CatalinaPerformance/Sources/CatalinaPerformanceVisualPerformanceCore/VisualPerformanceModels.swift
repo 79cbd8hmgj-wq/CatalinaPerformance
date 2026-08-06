@@ -272,6 +272,9 @@ public struct VisualPerformanceSessionRecord: Codable, Equatable {
     }
 
     public var hasOutstandingRestoration: Bool {
+        if aggregateStatus == .recoveryRequired || aggregateStatus == .partiallyRestored {
+            return true
+        }
         return settings.contains { record in
             switch record.outcome {
             case .pending, .applied, .appliedDeferred, .restoreFailed, .recoveryRequired:
@@ -305,6 +308,9 @@ public struct VisualPerformanceStatusSnapshot: Codable, Equatable {
     }
 
     public var hasUnresolvedRestoration: Bool {
+        if aggregateStatus == .recoveryRequired || aggregateStatus == .partiallyRestored {
+            return true
+        }
         return settings.contains {
             $0.outcome == .restoreFailed || $0.outcome == .recoveryRequired
         }
