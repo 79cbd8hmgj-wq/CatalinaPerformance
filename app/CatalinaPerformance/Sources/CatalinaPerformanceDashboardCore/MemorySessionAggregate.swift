@@ -16,6 +16,8 @@ public struct MemorySessionAggregate: Codable, Equatable {
     public var baselineCompressedBytes: UInt64?
     public var peakCompressedBytes: UInt64?
     public var baselineSwapUsedBytes: UInt64?
+    public var latestSwapUsedBytes: UInt64?
+    public var postRestoreSwapUsedBytes: UInt64?
     public var peakSwapUsedBytes: UInt64?
     public var peakCompressionGrowthBytesPerSecond: Double?
     public var peakSwapInBytesPerSecond: Double?
@@ -41,6 +43,8 @@ public struct MemorySessionAggregate: Codable, Equatable {
         baselineCompressedBytes: UInt64? = nil,
         peakCompressedBytes: UInt64? = nil,
         baselineSwapUsedBytes: UInt64? = nil,
+        latestSwapUsedBytes: UInt64? = nil,
+        postRestoreSwapUsedBytes: UInt64? = nil,
         peakSwapUsedBytes: UInt64? = nil,
         peakCompressionGrowthBytesPerSecond: Double? = nil,
         peakSwapInBytesPerSecond: Double? = nil,
@@ -64,6 +68,8 @@ public struct MemorySessionAggregate: Codable, Equatable {
         self.baselineCompressedBytes = baselineCompressedBytes
         self.peakCompressedBytes = peakCompressedBytes
         self.baselineSwapUsedBytes = baselineSwapUsedBytes
+        self.latestSwapUsedBytes = latestSwapUsedBytes
+        self.postRestoreSwapUsedBytes = postRestoreSwapUsedBytes
         self.peakSwapUsedBytes = peakSwapUsedBytes
         self.peakCompressionGrowthBytesPerSecond = peakCompressionGrowthBytesPerSecond
         self.peakSwapInBytesPerSecond = peakSwapInBytesPerSecond
@@ -90,6 +96,7 @@ public struct MemorySessionAggregate: Codable, Equatable {
         baselineCompressedBytes = status.telemetry?.counters?.compressedBytes
         peakCompressedBytes = status.telemetry?.counters?.compressedBytes
         baselineSwapUsedBytes = status.telemetry?.counters?.swapUsedBytes
+        latestSwapUsedBytes = status.telemetry?.counters?.swapUsedBytes
         peakSwapUsedBytes = status.telemetry?.counters?.swapUsedBytes
         lastCapturedAt = snapshot.capturedAt
         lastState = status.pressureState
@@ -126,6 +133,10 @@ public struct MemorySessionAggregate: Codable, Equatable {
         addElapsedTime(until: snapshot.capturedAt)
         latestState = status.pressureState
         maximumState = max(maximumState ?? status.pressureState, status.pressureState)
+        latestSwapUsedBytes = status.telemetry?.counters?.swapUsedBytes
+        if isPostRestore {
+            postRestoreSwapUsedBytes = status.telemetry?.counters?.swapUsedBytes
+        }
         mergeFamilyNames(status.managedFamilyNames)
         recordPeaks(status)
         updateIntervention(status: status, at: snapshot.capturedAt)
