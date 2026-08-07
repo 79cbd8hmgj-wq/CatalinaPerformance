@@ -93,6 +93,7 @@ public final class MemoryManagementCoordinator: MemoryManagementCoordinating {
         at date: Date
     ) -> MemoryManagementStatusSnapshot {
         lock.lock()
+        recoverExistingSessionIfNeededLocked()
         frontmostApplication = application
         let filtered = desiredFamiliesExcludingConflictsLocked()
         if filtered != desiredFamilies {
@@ -112,6 +113,7 @@ public final class MemoryManagementCoordinator: MemoryManagementCoordinating {
         at date: Date
     ) -> MemoryManagementStatusSnapshot {
         lock.lock()
+        recoverExistingSessionIfNeededLocked()
         appPriorityApplication = application
         let filtered = desiredFamiliesExcludingConflictsLocked()
         if filtered != desiredFamilies {
@@ -128,6 +130,7 @@ public final class MemoryManagementCoordinator: MemoryManagementCoordinating {
     public func evaluate(telemetry: MemoryTelemetrySnapshot) -> MemoryManagementStatusSnapshot {
         var shouldRecheckBackgroundServices = false
         lock.lock()
+        recoverExistingSessionIfNeededLocked()
 
         lastTelemetry = telemetry
         guard sessionIdentifier != nil, !stopRequested else {
@@ -244,6 +247,7 @@ public final class MemoryManagementCoordinator: MemoryManagementCoordinating {
 
     public func requestImmediateRestore(at date: Date) -> MemoryManagementStatusSnapshot {
         lock.lock()
+        recoverExistingSessionIfNeededLocked()
         stopRequested = true
         do {
             try saveDesiredStateLocked(families: [], shouldStopAndRestore: true)
@@ -259,9 +263,34 @@ public final class MemoryManagementCoordinator: MemoryManagementCoordinating {
 
     public func currentStatus(at date: Date) -> MemoryManagementStatusSnapshot {
         lock.lock()
+        recoverExistingSessionIfNeededLocked()
         let result = statusLocked(at: date)
         lock.unlock()
         return result
+    }
+
+    private func recoverExistingSessionIfNeededLocked() {
+        guard sessionIdentifier == nil else { return }
+        guard let recovered = try? desiredStateStore.load(),
+              let state = recovered,
+              state.requestingUID == requestingUID,
+              !state.sessionIdentifier.isEmpty,
+              state.sessionIdentifier.count <= 128,
+              state.families.count <= 3 else {
+            return
+        }
+
+        sessionIdentifier = state.sessionIdentifier
+        generation = state.generation
+        desiredFamilies = state.shouldStopAndRestore ? [] : state.families
+        stopRequested = state.shouldStopAndRestore
+        lastTelemetry = nil
+        lastPressureState = .healthy
+        classifier = MemoryPressureClassifier()
+        analyzer = MemoryProcessFamilyAnalyzer()
+        lastNote = state.shouldStopAndRestore
+            ? "Recovered a pending Memory Management restoration request."
+            : "Recovered an existing Memory Management session; stored process identities will be revalidated before any further change."
     }
 
     private func desiredFamiliesFromCandidates(
