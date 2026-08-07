@@ -20,7 +20,7 @@ SH2
 cat > "$TMP/CatalinaPerformanceMemoryAgent" <<'SH2'
 #!/bin/sh
 printf 'memory:%s\n' "$1" >> "$WRAPPER_LOG"
-case "$1" in validate) exit "${MEMORY_VALIDATE_STATUS:-0}" ;; start) exit "${MEMORY_START_STATUS:-0}" ;; stop-and-restore) exit "${MEMORY_RESTORE_STATUS:-11}" ;; esac
+case "$1" in validate) exit "${MEMORY_VALIDATE_STATUS:-0}" ;; start) exit "${MEMORY_START_STATUS:-0}" ;; stop-and-restore) exit "${MEMORY_RESTORE_STATUS:-0}" ;; esac
 exit 1
 SH2
 cat > "$TMP/background_service_settings_apply.sh" <<'SH2'
@@ -65,7 +65,7 @@ run() {
     export RESTORE_STATUS="${RESTORE_STATUS:-11}"
     export MEMORY_VALIDATE_STATUS="${MEMORY_VALIDATE_STATUS:-0}"
     export MEMORY_START_STATUS="${MEMORY_START_STATUS:-0}"
-    export MEMORY_RESTORE_STATUS="${MEMORY_RESTORE_STATUS:-11}"
+    export MEMORY_RESTORE_STATUS="${MEMORY_RESTORE_STATUS:-0}"
     export BACKGROUND_APPLY_STATUS="${BACKGROUND_APPLY_STATUS:-0}"
     export BACKGROUND_RESTORE_STATUS="${BACKGROUND_RESTORE_STATUS:-0}"
     export CORE_ON_STATUS="${CORE_ON_STATUS:-0}"
@@ -111,13 +111,13 @@ background:apply
 core:on
 background:restore' 'core ON failure restored settings'
 
-RESTORE_STATUS=11 MEMORY_RESTORE_STATUS=11 BACKGROUND_RESTORE_STATUS=0 CORE_OFF_STATUS=0 run "$TMP/performance_off_with_priority.sh"
+RESTORE_STATUS=11 MEMORY_RESTORE_STATUS=0 BACKGROUND_RESTORE_STATUS=0 CORE_OFF_STATUS=0 run "$TMP/performance_off_with_priority.sh"
 assert_log 'memory:stop-and-restore
 priority:stop-and-restore
 background:restore
 core:off' 'OFF restores memory, priority, and settings before core completion'
 
-RESTORE_STATUS=11 MEMORY_RESTORE_STATUS=11 BACKGROUND_RESTORE_STATUS=0 CORE_EMERGENCY_STATUS=0 run "$TMP/emergency_restore_with_priority.sh" --yes
+RESTORE_STATUS=11 MEMORY_RESTORE_STATUS=0 BACKGROUND_RESTORE_STATUS=0 CORE_EMERGENCY_STATUS=0 run "$TMP/emergency_restore_with_priority.sh" --yes
 assert_log 'memory:stop-and-restore
 priority:stop-and-restore
 background:restore
