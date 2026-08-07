@@ -7,6 +7,7 @@ MAIN="$ROOT/app/CatalinaPerformance/Sources/CatalinaPerformance/main.swift"
 PACKAGE="$ROOT/scripts/package_app.sh"
 MODELS="$ROOT/app/CatalinaPerformance/Sources/CatalinaPerformanceDashboardCore/SessionMetricModels.swift"
 PRESENTATION="$ROOT/app/CatalinaPerformance/Sources/CatalinaPerformanceDashboardCore/SessionDashboardPresentation.swift"
+CORE="$ROOT/app/CatalinaPerformance/Sources/CatalinaPerformanceDashboardCore"
 
 test -f "$WINDOW"
 grep -F 'final class SessionDashboardWindowController: NSWindowController, NSWindowDelegate' "$WINDOW" >/dev/null
@@ -19,6 +20,10 @@ grep -F 'Unavailable' "$WINDOW" >/dev/null
 grep -F 'func render(_ viewModel: SessionDashboardViewModel)' "$WINDOW" >/dev/null
 grep -F 'Focused Firefox Targets' "$WINDOW" >/dev/null
 grep -F 'viewModel.priorityDetailRows' "$WINDOW" >/dev/null
+grep -F 'section(title: "Graphics / WindowServer"' "$WINDOW" >/dev/null
+grep -F 'viewModel.graphicsRows' "$WINDOW" >/dev/null
+grep -F 'viewModel.graphicsAdvisoryText' "$WINDOW" >/dev/null
+grep -F 'Graphics pressure advisory' "$WINDOW" >/dev/null
 ! grep -F 'row.widthAnchor.constraint(equalTo: contentStack.widthAnchor).isActive = true' "$WINDOW" >/dev/null
 grep -F 'precondition(Thread.isMainThread)' "$WINDOW" >/dev/null
 grep -F 'private func addFullWidthArrangedSubview(_ view: NSView)' "$WINDOW" >/dev/null
@@ -62,6 +67,8 @@ test -f "$MODELS"
 grep -F 'value.map { Double($0) }' "$MODELS" >/dev/null
 test -f "$PRESENTATION"
 grep -F 'priorityDetailRows: [SessionDashboardMetricRow]' "$PRESENTATION" >/dev/null
+grep -F 'graphicsRows: [SessionDashboardMetricRow]' "$PRESENTATION" >/dev/null
+grep -F 'graphicsAdvisoryText: String?' "$PRESENTATION" >/dev/null
 grep -F 'Tracked Firefox Processes' "$PRESENTATION" >/dev/null
 grep -F 'Processes Actually Boosted' "$PRESENTATION" >/dev/null
 grep -F 'Waiting for stable active content process' "$PRESENTATION" >/dev/null
@@ -77,4 +84,10 @@ grep -F 'Siri / Speech Workers' "$PRESENTATION" >/dev/null
 grep -F 'iCloud Drive' "$PRESENTATION" >/dev/null
 grep -F 'Per-category evidence is missing.' "$PRESENTATION" >/dev/null
 grep -F 'performanceSessionCoordinator.replaceBackgroundServiceStatuses' "$MAIN" >/dev/null
+
+if grep -R -nE 'killall[[:space:]]+WindowServer|pkill.*WindowServer|renice.*WindowServer|defaults[[:space:]]+write.*WindowServer' "$CORE" "$WINDOW"; then
+    echo 'FAIL: WindowServer telemetry contains a prohibited mutation path' >&2
+    exit 1
+fi
+
 printf 'PASS: Session Dashboard UI source contract\n'
