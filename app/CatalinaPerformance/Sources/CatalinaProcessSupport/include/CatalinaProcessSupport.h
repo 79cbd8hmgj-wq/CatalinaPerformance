@@ -8,6 +8,21 @@
 #define CP_PROCESS_PATH_MAX 4096
 #define CP_PROCESS_ARGUMENTS_MAX 16384
 
+#define CP_VM_INFO_FREE_PAGES                (1ULL << 0)
+#define CP_VM_INFO_INACTIVE_PAGES            (1ULL << 1)
+#define CP_VM_INFO_ACTIVE_PAGES              (1ULL << 2)
+#define CP_VM_INFO_WIRED_PAGES               (1ULL << 3)
+#define CP_VM_INFO_SPECULATIVE_PAGES         (1ULL << 4)
+#define CP_VM_INFO_PURGEABLE_PAGES           (1ULL << 5)
+#define CP_VM_INFO_COMPRESSOR_PAGES          (1ULL << 6)
+#define CP_VM_INFO_COMPRESSOR_STORED_PAGES   (1ULL << 7)
+#define CP_VM_INFO_COMPRESSIONS              (1ULL << 8)
+#define CP_VM_INFO_DECOMPRESSIONS            (1ULL << 9)
+#define CP_VM_INFO_PAGE_INS                  (1ULL << 10)
+#define CP_VM_INFO_PAGE_OUTS                 (1ULL << 11)
+#define CP_VM_INFO_SWAP_INS                  (1ULL << 12)
+#define CP_VM_INFO_SWAP_OUTS                 (1ULL << 13)
+
 typedef struct {
     pid_t pid;
     pid_t parentPid;
@@ -20,7 +35,6 @@ typedef struct {
     char name[CP_PROCESS_NAME_MAX];
     char executablePath[CP_PROCESS_PATH_MAX];
 } CPProcessInfo;
-
 
 typedef struct {
     uint64_t userTicks;
@@ -40,6 +54,26 @@ typedef struct {
     uint64_t usedBytes;
     uint64_t freeBytes;
 } CPSwapInfo;
+
+typedef struct {
+    uint64_t physicalBytes;
+    uint64_t freePages;
+    uint64_t inactivePages;
+    uint64_t activePages;
+    uint64_t wiredPages;
+    uint64_t speculativePages;
+    uint64_t purgeablePages;
+    uint64_t compressorPages;
+    uint64_t pagesStoredInCompressor;
+    uint64_t compressions;
+    uint64_t decompressions;
+    uint64_t pageIns;
+    uint64_t pageOuts;
+    uint64_t swapIns;
+    uint64_t swapOuts;
+    uint64_t pageSize;
+    uint64_t availabilityMask;
+} CPVMMemoryInfo;
 
 typedef struct {
     pid_t pid;
@@ -62,6 +96,7 @@ int32_t cp_process_support_available(void);
 int32_t cp_read_host_cpu_ticks(CPHostCPUTicks *output);
 int32_t cp_read_host_memory(CPHostMemoryInfo *output);
 int32_t cp_read_swap(CPSwapInfo *output);
+int32_t cp_read_vm_memory_info(CPVMMemoryInfo *output);
 int32_t cp_read_process_resources(pid_t pid, CPProcessResourceInfo *output);
 int32_t cp_read_process_arguments(pid_t pid, char *buffer, int32_t capacity);
 
