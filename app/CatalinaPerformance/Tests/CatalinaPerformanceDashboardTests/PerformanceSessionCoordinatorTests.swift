@@ -12,9 +12,71 @@ final class PerformanceSessionCoordinatorTests: XCTestCase {
         fixture.coordinator.prepareForOn(selectedApplication: nil) { ready.fulfill() }
         XCTAssertNil(fixture.store.active)
         collector.finish(with: snapshot(cpu: 12, at: 0))
+        collector.finish(with: snapshot(cpu: 12, at: 2))
+        collector.finish(with: snapshot(cpu: 12, at: 4))
         wait(for: [ready], timeout: 2)
         XCTAssertEqual(fixture.store.active?.baseline.systemCPUPercent.value, 12)
+        XCTAssertEqual(fixture.store.active?.windowServer?.baselineSamples.count, 3)
         if case .preparing = fixture.coordinator.currentState().content {} else { XCTFail("Expected preparing") }
+    }
+
+    func testPrepareForOnCollectsExactlyThreeGraphicsSamplesBeforeCompletion() {
+        let collector = ImmediateFakeCollector(snapshots: [
+            snapshot(cpu: 1, at: 0, windowServerCPU: nil),
+            snapshot(cpu: 1, at: 2, windowServerCPU: 10),
+            snapshot(cpu: 1, at: 4, windowServerCPU: 20)
+        ])
+        let fixture = makeCoordinator(collector: collector)
+        fixture.scheduler.autoFireOneShots = false
+        let ready = expectation(description: "graphics baseline ready")
+        var progressMessages: [String] = []
+        let token = fixture.coordinator.addObserver { state in
+            if case .preparing(let progress) = state.content,
+               progress.graphicsSampleIndex > 0 {
+                progressMessages.append(progress.message)
+            }
+        }
+
+        fixture.coordinator.prepareForOn(selectedApplication: nil) { ready.fulfill() }
+        waitUntil { fixture.scheduler.oneShotCount == 1 }
+        XCTAssertEqual(collector.captureCount, 1)
+        fixture.scheduler.fireNextOneShot()
+        waitUntil { collector.captureCount == 2 && fixture.scheduler.oneShotCount == 1 }
+        fixture.scheduler.fireNextOneShot()
+        wait(for: [ready], timeout: 2)
+        fixture.coordinator.removeObserver(token)
+
+        XCTAssertEqual(collector.captureCount, 3)
+        XCTAssertEqual(fixture.store.active?.windowServer?.baselineSamples.count, 3)
+        XCTAssertEqual(fixture.store.active?.windowServer?.baseline?.averageCPU ?? -1, 15, accuracy: 0.001)
+        XCTAssertTrue(progressMessages.contains("Measuring graphics baseline… 1/3"))
+        XCTAssertTrue(progressMessages.contains("Measuring graphics baseline… 2/3"))
+        XCTAssertTrue(progressMessages.contains("Measuring graphics baseline… 3/3"))
+    }
+
+    func testUnavailableGraphicsBaselineStillAllowsPreparationCompletion() {
+        let collector = ImmediateFakeCollector(snapshots: [
+            SessionMetricSnapshot.unavailable(capturedAt: date(0), note: "graphics unavailable"),
+            SessionMetricSnapshot.unavailable(capturedAt: date(2), note: "graphics unavailable"),
+            SessionMetricSnapshot.unavailable(capturedAt: date(4), note: "graphics unavailable")
+        ])
+        let fixture = makeCoordinator(collector: collector)
+        fixture.scheduler.autoFireOneShots = false
+        let ready = expectation(description: "unavailable graphics still ready")
+        fixture.coordinator.prepareForOn(selectedApplication: nil) { ready.fulfill() }
+        waitUntil { fixture.scheduler.oneShotCount == 1 }
+        fixture.scheduler.fireNextOneShot()
+        waitUntil { fixture.scheduler.oneShotCount == 1 && collector.captureCount == 2 }
+        fixture.scheduler.fireNextOneShot()
+        wait(for: [ready], timeout: 2)
+
+        XCTAssertEqual(collector.captureCount, 3)
+        XCTAssertEqual(fixture.store.active?.windowServer?.baselineSamples.count, 3)
+        XCTAssertEqual(fixture.store.active?.windowServer?.baseline?.validSampleCount, 0)
+        XCTAssertEqual(
+            fixture.coordinator.currentState().warningMessage,
+            "Graphics baseline is unavailable; Performance Mode can continue."
+        )
     }
 
     func testOnSuccessSchedulesTwoSecondsAndFailureDiscardsWithoutCompletedReport() {
@@ -118,12 +180,47 @@ final class PerformanceSessionCoordinatorTests: XCTestCase {
         XCTAssertTrue(condition())
     }
 
-    private func snapshot(cpu: Double, at seconds: TimeInterval) -> SessionMetricSnapshot {
+    private func snapshot(
+        cpu: Double,
+        at seconds: TimeInterval,
+        windowServerCPU: Double? = nil
+    ) -> SessionMetricSnapshot {
         let d = date(seconds)
         let uD = MetricReading<Double>.unavailable(at: d, note: nil)
         let uB = MetricReading<UInt64>.unavailable(at: d, note: nil)
         let uI = MetricReading<Int>.unavailable(at: d, note: nil)
-        return SessionMetricSnapshot(capturedAt: d, systemCPUPercent: .available(cpu, at: d), memoryPressure: .available(.normal, at: d), physicalMemoryUsedBytes: uB, swapUsedBytes: uB, diskFreeBytes: uB, schedulerLimitPercent: uD, speedLimitPercent: uD, selectedAppCPUPercent: uD, selectedAppResidentBytes: uB, selectedAppVerifiedProcessCount: uI, selectedAppPriorityConfirmedCount: uI)
+        let windowServerReading: WindowServerCPUReading?
+        if let windowServerCPU = windowServerCPU {
+            windowServerReading = .available(
+                processKey: WindowServerProcessKey(
+                    pid: 88,
+                    effectiveUID: 88,
+                    executablePath: "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+                    startSeconds: 1,
+                    startMicroseconds: 0
+                ),
+                cumulativeCPUTimeNanoseconds: UInt64(windowServerCPU * 1_000_000),
+                cpuPercent: windowServerCPU,
+                at: d
+            )
+        } else {
+            windowServerReading = nil
+        }
+        return SessionMetricSnapshot(
+            capturedAt: d,
+            systemCPUPercent: .available(cpu, at: d),
+            memoryPressure: .available(.normal, at: d),
+            physicalMemoryUsedBytes: uB,
+            swapUsedBytes: uB,
+            diskFreeBytes: uB,
+            schedulerLimitPercent: uD,
+            speedLimitPercent: uD,
+            selectedAppCPUPercent: uD,
+            selectedAppResidentBytes: uB,
+            selectedAppVerifiedProcessCount: uI,
+            selectedAppPriorityConfirmedCount: uI,
+            windowServerCPU: windowServerReading
+        )
     }
 
     private func activeRecord(identifier: String, latestAt: TimeInterval) -> PerformanceSessionRecord {
@@ -133,18 +230,20 @@ final class PerformanceSessionCoordinatorTests: XCTestCase {
 }
 
 private final class BlockingFakeCollector: SessionMetricsCollecting {
-    private var completion: ((SessionMetricSnapshot) -> Void)?
+    private var completions: [((SessionMetricSnapshot) -> Void)] = []
     private let lock = NSLock()
     func capture(at date: Date, refreshThermal: Bool) -> SessionMetricSnapshot {
         let semaphore = DispatchSemaphore(value: 0)
         var output: SessionMetricSnapshot?
-        lock.lock(); completion = { value in output = value; semaphore.signal() }; lock.unlock()
+        lock.lock(); completions.append { value in output = value; semaphore.signal() }; lock.unlock()
         semaphore.wait()
         return output!
     }
     func finish(with snapshot: SessionMetricSnapshot) {
         while true {
-            lock.lock(); let callback = completion; lock.unlock()
+            lock.lock()
+            let callback = completions.isEmpty ? nil : completions.removeFirst()
+            lock.unlock()
             if let callback = callback { callback(snapshot); return }
             usleep(1_000)
         }
@@ -153,8 +252,10 @@ private final class BlockingFakeCollector: SessionMetricsCollecting {
 
 private final class ImmediateFakeCollector: SessionMetricsCollecting {
     private var snapshots: [SessionMetricSnapshot]
+    private(set) var captureCount = 0
     init(snapshots: [SessionMetricSnapshot]) { self.snapshots = snapshots }
     func capture(at date: Date, refreshThermal: Bool) -> SessionMetricSnapshot {
+        captureCount += 1
         if snapshots.isEmpty { return SessionMetricSnapshot.unavailable(capturedAt: date, note: "empty") }
         return snapshots.removeFirst()
     }
@@ -163,9 +264,36 @@ private final class ImmediateFakeCollector: SessionMetricsCollecting {
 private final class ManualScheduler: PerformanceSessionScheduling {
     var interval: TimeInterval?
     var action: (() -> Void)?
-    func scheduleRepeating(every interval: TimeInterval, _ action: @escaping () -> Void) { self.interval = interval; self.action = action }
-    func cancel() { interval = nil; action = nil }
+    var autoFireOneShots = true
+    private var oneShots: [() -> Void] = []
+    var oneShotCount: Int { oneShots.count }
+
+    func scheduleOnce(after interval: TimeInterval, _ action: @escaping () -> Void) {
+        if autoFireOneShots {
+            action()
+        } else {
+            oneShots.append(action)
+        }
+    }
+
+    func scheduleRepeating(every interval: TimeInterval, _ action: @escaping () -> Void) {
+        self.interval = interval
+        self.action = action
+    }
+
+    func cancel() {
+        interval = nil
+        action = nil
+        oneShots.removeAll()
+    }
+
     func fire() { action?() }
+
+    func fireNextOneShot() {
+        guard !oneShots.isEmpty else { return }
+        let action = oneShots.removeFirst()
+        action()
+    }
 }
 
 private final class MemoryStore: PerformanceSessionStoring {
