@@ -103,6 +103,7 @@ public struct SessionMetricSnapshot: Codable, Equatable {
     public let selectedAppVerifiedProcessCount: MetricReading<Int>
     public let selectedAppPriorityConfirmedCount: MetricReading<Int>
     public let focusedFirefoxPriority: FocusedFirefoxMetricDetails?
+    public let windowServerCPU: WindowServerCPUReading?
 
     public init(
         capturedAt: Date,
@@ -117,7 +118,8 @@ public struct SessionMetricSnapshot: Codable, Equatable {
         selectedAppResidentBytes: MetricReading<UInt64>,
         selectedAppVerifiedProcessCount: MetricReading<Int>,
         selectedAppPriorityConfirmedCount: MetricReading<Int>,
-        focusedFirefoxPriority: FocusedFirefoxMetricDetails? = nil
+        focusedFirefoxPriority: FocusedFirefoxMetricDetails? = nil,
+        windowServerCPU: WindowServerCPUReading? = nil
     ) {
         self.capturedAt = capturedAt
         self.systemCPUPercent = systemCPUPercent
@@ -132,6 +134,7 @@ public struct SessionMetricSnapshot: Codable, Equatable {
         self.selectedAppVerifiedProcessCount = selectedAppVerifiedProcessCount
         self.selectedAppPriorityConfirmedCount = selectedAppPriorityConfirmedCount
         self.focusedFirefoxPriority = focusedFirefoxPriority
+        self.windowServerCPU = windowServerCPU
     }
 
     public static func unavailable(capturedAt: Date, note: String) -> SessionMetricSnapshot {
@@ -148,7 +151,8 @@ public struct SessionMetricSnapshot: Codable, Equatable {
             selectedAppResidentBytes: .unavailable(at: capturedAt, note: note),
             selectedAppVerifiedProcessCount: .unavailable(at: capturedAt, note: note),
             selectedAppPriorityConfirmedCount: .unavailable(at: capturedAt, note: note),
-            focusedFirefoxPriority: nil
+            focusedFirefoxPriority: nil,
+            windowServerCPU: nil
         )
     }
 }
@@ -548,6 +552,7 @@ public struct PerformanceSessionRecord: Codable, Equatable {
     public var monitoringGaps: [MonitoringGap]
     public var metricErrors: [MetricErrorSummary]
     public var completionReason: PerformanceSessionCompletionReason?
+    public var windowServer: WindowServerSessionAggregate?
 
     public init(
         schemaVersion: Int = 1,
@@ -567,7 +572,8 @@ public struct PerformanceSessionRecord: Codable, Equatable {
         backgroundServiceStatuses: [BackgroundServiceDashboardCategoryStatus]? = nil,
         monitoringGaps: [MonitoringGap],
         metricErrors: [MetricErrorSummary],
-        completionReason: PerformanceSessionCompletionReason?
+        completionReason: PerformanceSessionCompletionReason?,
+        windowServer: WindowServerSessionAggregate? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.collectorVersion = collectorVersion
@@ -587,6 +593,7 @@ public struct PerformanceSessionRecord: Codable, Equatable {
         self.monitoringGaps = monitoringGaps
         self.metricErrors = metricErrors
         self.completionReason = completionReason
+        self.windowServer = windowServer
     }
 }
 
@@ -608,6 +615,7 @@ public struct CompletedPerformanceSessionReport: Codable, Equatable {
     public let monitoringGaps: [MonitoringGap]
     public let metricErrors: [MetricErrorSummary]
     public let completionReason: PerformanceSessionCompletionReason
+    public let windowServer: WindowServerSessionAggregate?
 
     public init(
         schemaVersion: Int = 1,
@@ -626,7 +634,8 @@ public struct CompletedPerformanceSessionReport: Codable, Equatable {
         backgroundServiceStatuses: [BackgroundServiceDashboardCategoryStatus]? = nil,
         monitoringGaps: [MonitoringGap],
         metricErrors: [MetricErrorSummary],
-        completionReason: PerformanceSessionCompletionReason
+        completionReason: PerformanceSessionCompletionReason,
+        windowServer: WindowServerSessionAggregate? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.collectorVersion = collectorVersion
@@ -645,5 +654,6 @@ public struct CompletedPerformanceSessionReport: Codable, Equatable {
         self.monitoringGaps = monitoringGaps
         self.metricErrors = metricErrors
         self.completionReason = completionReason
+        self.windowServer = windowServer
     }
 }
