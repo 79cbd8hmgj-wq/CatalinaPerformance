@@ -1,5 +1,6 @@
 import Foundation
 import CatalinaPerformancePriorityCore
+import CatalinaPerformanceMemoryCore
 #if os(Linux)
 import Glibc
 #else
@@ -80,6 +81,8 @@ public final class SessionMetricsCollector: SessionMetricsCollecting {
     private let currentUserProvider: DashboardCurrentUserProviding
     private let processInspector: AppPriorityProcessInspecting
     private let windowServerCollector: WindowServerMetricsCollecting?
+    private let memoryTelemetryCollector: MemoryTelemetryCollecting?
+    private let memoryManagementCoordinator: MemoryManagementCoordinating?
 
     private var previousHostTicks: HostCPUTicks?
     private var previousProcessCPU: [SelectedProcessKey: UInt64] = [:]
@@ -94,7 +97,9 @@ public final class SessionMetricsCollector: SessionMetricsCollecting {
         statusProvider: AppPriorityStatusProviding,
         currentUserProvider: DashboardCurrentUserProviding,
         processInspector: AppPriorityProcessInspecting,
-        windowServerCollector: WindowServerMetricsCollecting? = nil
+        windowServerCollector: WindowServerMetricsCollecting? = nil,
+        memoryTelemetryCollector: MemoryTelemetryCollecting? = nil,
+        memoryManagementCoordinator: MemoryManagementCoordinating? = nil
     ) {
         self.nativeMetrics = nativeMetrics
         self.thermalProvider = thermalProvider
@@ -104,6 +109,8 @@ public final class SessionMetricsCollector: SessionMetricsCollecting {
         self.currentUserProvider = currentUserProvider
         self.processInspector = processInspector
         self.windowServerCollector = windowServerCollector
+        self.memoryTelemetryCollector = memoryTelemetryCollector
+        self.memoryManagementCoordinator = memoryManagementCoordinator
     }
 
     public func capture(at date: Date, refreshThermal: Bool) -> SessionMetricSnapshot {
@@ -114,6 +121,7 @@ public final class SessionMetricsCollector: SessionMetricsCollecting {
         let thermal = collectThermal(at: date, refresh: refreshThermal)
         let selected = collectSelectedApplication(at: date)
         let windowServer = windowServerCollector?.capture(at: date)
+        let memoryManagement = collectMemoryManagement(at: date)
 
         return SessionMetricSnapshot(
             capturedAt: date,
@@ -129,8 +137,21 @@ public final class SessionMetricsCollector: SessionMetricsCollecting {
             selectedAppVerifiedProcessCount: selected.processCount,
             selectedAppPriorityConfirmedCount: selected.confirmedCount,
             focusedFirefoxPriority: selected.focusedFirefox,
-            windowServerCPU: windowServer
+            windowServerCPU: windowServer,
+            memoryManagement: memoryManagement
         )
+    }
+
+    private func collectMemoryManagement(at date: Date) -> MemoryManagementStatusSnapshot? {
+        guard let telemetryCollector = memoryTelemetryCollector,
+              let coordinator = memoryManagementCoordinator else {
+            return nil
+        }
+        let selection = selectionProvider.currentSelection()
+        let priorityApplication = selection.enabled ? selection.application : nil
+        _ = coordinator.updateAppPriorityApplication(priorityApplication, at: date)
+        let telemetry = telemetryCollector.capture(at: date)
+        return coordinator.evaluate(telemetry: telemetry)
     }
 
     private func collectHostCPU(at date: Date) -> MetricReading<Double> {
