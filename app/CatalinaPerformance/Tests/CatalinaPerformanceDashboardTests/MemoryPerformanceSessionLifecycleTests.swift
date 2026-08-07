@@ -16,7 +16,9 @@ final class MemoryPerformanceSessionLifecycleTests: XCTestCase {
         fixture.coordinator.prepareForOn(selectedApplication: nil) { ready.fulfill() }
         wait(for: [ready], timeout: 2)
 
-        guard case .prepare(let identifier) = memory.events.first else {
+        guard let firstEvent = memory.events.first,
+              firstEvent.kind == .prepare,
+              let identifier = firstEvent.identifier else {
             XCTFail("Expected memory session preparation before capture")
             return
         }
