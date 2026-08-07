@@ -151,6 +151,7 @@ public final class MemoryAgentService {
             sessionIdentifier: desired.sessionIdentifier,
             managedFamilyCount: 0,
             managedProcessCount: 0,
+            managedFamilyNames: [],
             lastAppliedGeneration: nil,
             message: "Starting Memory Management monitor."
         ))
@@ -206,6 +207,7 @@ public final class MemoryAgentService {
             sessionIdentifier: sessionIdentifier,
             managedFamilyCount: 0,
             managedProcessCount: 0,
+            managedFamilyNames: [],
             lastAppliedGeneration: nil,
             message: "Memory Management monitor is waiting for confirmed pressure."
         ))
@@ -227,10 +229,11 @@ public final class MemoryAgentService {
                 let lastGeneration = store.runtimeStateIfPresent()?.lastAppliedGeneration ?? 0
                 if desired.generation > lastGeneration {
                     let outcome = try controller.reconcile(desired: desired)
+                    let confirmed = confirmedSummary(store: store)
                     let state: MemoryAgentStatus.State
                     if outcome.outstandingRestorationCount > 0 && desired.shouldStopAndRestore {
                         state = .restorePending
-                    } else if outcome.managedFamilyCount > 0 {
+                    } else if confirmed.managedFamilyCount > 0 {
                         state = .active
                     } else {
                         state = .monitoring
@@ -240,6 +243,7 @@ public final class MemoryAgentService {
                         sessionIdentifier: sessionIdentifier,
                         generation: desired.generation,
                         outcome: outcome,
+                        store: store,
                         message: outcome.failures.isEmpty
                             ? "Memory Management desired state reconciled."
                             : "Memory Management reconciled with recoverable failures."
@@ -270,6 +274,7 @@ public final class MemoryAgentService {
             sessionIdentifier: sessionIdentifier,
             generation: store.runtimeStateIfPresent()?.lastAppliedGeneration,
             outcome: outcome,
+            store: store,
             message: outcome.outstandingRestorationCount == 0
                 ? "Memory Management restored all valid process priorities."
                 : "Memory Management restoration remains pending for one or more processes."
@@ -325,6 +330,7 @@ public final class MemoryAgentService {
             sessionIdentifier: store.runtimeStateIfPresent()?.sessionIdentifier,
             generation: store.runtimeStateIfPresent()?.lastAppliedGeneration,
             outcome: outcome,
+            store: store,
             message: outcome.outstandingRestorationCount == 0
                 ? "Memory Management restoration completed."
                 : "Memory Management restoration remains pending."
@@ -355,10 +361,16 @@ public final class MemoryAgentService {
             sessionIdentifier: sessionIdentifier,
             generation: store.runtimeStateIfPresent()?.lastAppliedGeneration,
             outcome: outcome,
+            store: store,
             message: message
         ))
         store.removeRuntimeFilesAfterSuccessfulRestore()
         return outcome.outstandingRestorationCount == 0 ? .success : .restorePending
+    }
+
+    private func confirmedSummary(store: MemoryAgentStateStore) -> MemoryAgentConfirmedManagementSummary {
+        return store.runtimeStateIfPresent()?.confirmedManagementSummary ??
+            MemoryAgentConfirmedManagementSummary(managedFamilyNames: [], managedProcessCount: 0)
     }
 
     private func status(
@@ -366,13 +378,16 @@ public final class MemoryAgentService {
         sessionIdentifier: String?,
         generation: UInt64?,
         outcome: MemoryInterventionOutcome,
+        store: MemoryAgentStateStore,
         message: String
     ) -> MemoryAgentStatus {
+        let confirmed = confirmedSummary(store: store)
         return MemoryAgentStatus(
             state: state,
             sessionIdentifier: sessionIdentifier,
-            managedFamilyCount: outcome.managedFamilyCount,
-            managedProcessCount: outcome.managedProcessCount,
+            managedFamilyCount: confirmed.managedFamilyCount,
+            managedProcessCount: confirmed.managedProcessCount,
+            managedFamilyNames: confirmed.managedFamilyNames,
             lastAppliedGeneration: generation,
             message: message
         )
