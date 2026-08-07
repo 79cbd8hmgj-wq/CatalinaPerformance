@@ -334,6 +334,7 @@ public final class MemoryManagementCoordinator: MemoryManagementCoordinating {
             : .unsupported
         return MemoryManagementStatusSnapshot(
             capturedAt: date,
+            sessionIdentifier: sessionIdentifier,
             pressureState: lastPressureState,
             managedFamilyCount: desiredFamilies.count,
             managedFamilyNames: names,
