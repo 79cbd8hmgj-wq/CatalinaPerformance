@@ -1,5 +1,6 @@
 import Foundation
 import CatalinaPerformancePriorityCore
+import CatalinaPerformanceMemoryCore
 
 public extension SessionMetricsCollector {
     convenience init(
@@ -9,7 +10,8 @@ public extension SessionMetricsCollector {
         selectionProvider: AppPrioritySelectionProviding,
         statusProvider: AppPriorityStatusProviding,
         currentUserProvider: DashboardCurrentUserProviding,
-        processInspector: DarwinAppPriorityProcessInspector
+        processInspector: DarwinAppPriorityProcessInspector,
+        memoryManagementCoordinator: MemoryManagementCoordinating? = nil
     ) {
         let windowServerCollector = WindowServerMetricsCollector(
             processInspector: DarwinWindowServerProcessInspector()
@@ -22,7 +24,9 @@ public extension SessionMetricsCollector {
             statusProvider: statusProvider,
             currentUserProvider: currentUserProvider,
             processInspector: processInspector,
-            windowServerCollector: windowServerCollector
+            windowServerCollector: windowServerCollector,
+            memoryTelemetryCollector: DarwinMemoryTelemetryCollector(),
+            memoryManagementCoordinator: memoryManagementCoordinator
         )
     }
 }
