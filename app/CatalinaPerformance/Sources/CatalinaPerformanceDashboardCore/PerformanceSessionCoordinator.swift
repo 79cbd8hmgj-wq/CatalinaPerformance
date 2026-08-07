@@ -2,6 +2,7 @@ import Foundation
 import CatalinaPerformancePriorityCore
 
 public protocol PerformanceSessionScheduling: AnyObject {
+    func scheduleOnce(after interval: TimeInterval, _ action: @escaping () -> Void)
     func scheduleRepeating(every interval: TimeInterval, _ action: @escaping () -> Void)
     func cancel()
 }
@@ -9,10 +10,25 @@ public protocol PerformanceSessionScheduling: AnyObject {
 public final class DispatchPerformanceSessionScheduler: PerformanceSessionScheduling {
     private let queue: DispatchQueue
     private var timer: DispatchSourceTimer?
+    private var oneShots: [UUID: DispatchWorkItem] = [:]
     private let lock = NSLock()
 
     public init(queue: DispatchQueue = DispatchQueue(label: "local.CatalinaPerformance.session-scheduler", qos: .utility)) {
         self.queue = queue
+    }
+
+    public func scheduleOnce(after interval: TimeInterval, _ action: @escaping () -> Void) {
+        let identifier = UUID()
+        let workItem = DispatchWorkItem { [weak self] in
+            action()
+            self?.lock.lock()
+            self?.oneShots.removeValue(forKey: identifier)
+            self?.lock.unlock()
+        }
+        lock.lock()
+        oneShots[identifier] = workItem
+        lock.unlock()
+        queue.asyncAfter(deadline: .now() + interval, execute: workItem)
     }
 
     public func scheduleRepeating(every interval: TimeInterval, _ action: @escaping () -> Void) {
@@ -30,7 +46,10 @@ public final class DispatchPerformanceSessionScheduler: PerformanceSessionSchedu
         lock.lock()
         timer?.cancel()
         timer = nil
+        let pending = Array(oneShots.values)
+        oneShots.removeAll()
         lock.unlock()
+        pending.forEach { $0.cancel() }
     }
 }
 
@@ -47,9 +66,21 @@ public struct SystemPerformanceSessionClock: PerformanceSessionClock {
     public func currentDate() -> Date { Date() }
 }
 
+public struct PerformancePreparationProgress: Equatable {
+    public let graphicsSampleIndex: Int
+    public let graphicsSampleCount: Int
+    public let message: String
+
+    public init(graphicsSampleIndex: Int, graphicsSampleCount: Int, message: String) {
+        self.graphicsSampleIndex = graphicsSampleIndex
+        self.graphicsSampleCount = graphicsSampleCount
+        self.message = message
+    }
+}
+
 public enum PerformanceSessionCoordinatorContent: Equatable {
     case empty
-    case preparing
+    case preparing(PerformancePreparationProgress)
     case active(PerformanceSessionRecord)
     case finalizing(PerformanceSessionRecord)
     case completed(CompletedPerformanceSessionReport)
@@ -70,6 +101,8 @@ public final class PerformanceSessionCoordinator {
     public static let samplingInterval: TimeInterval = 2.0
     public static let thermalInterval: TimeInterval = 10.0
     public static let preRestoreCaptureTimeout: TimeInterval = 1.0
+    public static let graphicsBaselineSampleCount = 3
+    public static let graphicsBaselineInterval: TimeInterval = 2.0
 
     private let collector: SessionMetricsCollecting
     private let recorder: PerformanceSessionRecording
@@ -88,6 +121,12 @@ public final class PerformanceSessionCoordinator {
     private var lastThermalRefreshAt: Date?
     private var pendingFinalizationReason: PerformanceSessionCompletionReason?
     private var finalizationGeneration = 0
+    private var preparationGeneration = 0
+    private var preparationProgressValue = PerformancePreparationProgress(
+        graphicsSampleIndex: 0,
+        graphicsSampleCount: PerformanceSessionCoordinator.graphicsBaselineSampleCount,
+        message: "Preparing graphics baseline…"
+    )
     private var preRestoreCompletionUsed = false
 
     public init(
@@ -118,14 +157,22 @@ public final class PerformanceSessionCoordinator {
         stateQueue.async {
             self.scheduler.cancel()
             self.finalizationGeneration += 1
+            self.preparationGeneration += 1
+            let generation = self.preparationGeneration
             self.pendingFinalizationReason = nil
-            self.publish(content: .preparing, warning: nil)
+            self.preparationProgressValue = PerformancePreparationProgress(
+                graphicsSampleIndex: 0,
+                graphicsSampleCount: Self.graphicsBaselineSampleCount,
+                message: "Preparing graphics baseline…"
+            )
+            self.publish(content: .preparing(self.preparationProgressValue), warning: nil)
             let startedAt = self.clock.currentDate()
             self.isSampleInFlight = true
             self.collectionQueue.async {
                 let baseline = self.collector.capture(at: startedAt, refreshThermal: true)
                 self.stateQueue.async {
                     self.isSampleInFlight = false
+                    guard generation == self.preparationGeneration else { return }
                     self.lastThermalRefreshAt = startedAt
                     self.recorder.begin(
                         identifier: UUID().uuidString,
@@ -133,13 +180,13 @@ public final class PerformanceSessionCoordinator {
                         baseline: baseline,
                         selectedApplication: selectedApplication
                     )
-                    var warning: String?
-                    if let active = self.recorder.activeRecord() {
-                        do { try self.store.saveActive(active) }
-                        catch { warning = "Dashboard baseline could not be saved: \(error)" }
-                    }
-                    self.publish(content: .preparing, warning: warning)
-                    self.callbackQueue.async(execute: completion)
+                    self.recorder.beginGraphicsBaseline()
+                    self.finishGraphicsPreparationSample(
+                        snapshot: baseline,
+                        sampleIndex: 1,
+                        generation: generation,
+                        completion: completion
+                    )
                 }
             }
         }
@@ -149,6 +196,7 @@ public final class PerformanceSessionCoordinator {
         stateQueue.async {
             if !succeeded {
                 self.scheduler.cancel()
+                self.preparationGeneration += 1
                 self.recorder.discard()
                 try? self.store.removeActive()
                 self.publishLoadedCompletedOrEmpty(warning: nil)
@@ -170,6 +218,7 @@ public final class PerformanceSessionCoordinator {
     public func prepareForFinalization(reason: PerformanceSessionCompletionReason, proceed: @escaping () -> Void) {
         stateQueue.async {
             self.scheduler.cancel()
+            self.preparationGeneration += 1
             self.pendingFinalizationReason = reason
             self.finalizationGeneration += 1
             let generation = self.finalizationGeneration
@@ -254,7 +303,7 @@ public final class PerformanceSessionCoordinator {
             guard let record = self.recorder.activeRecord() else { return }
             switch record.phase {
             case .preparing:
-                self.publish(content: .preparing, warning: warning)
+                self.publish(content: .preparing(self.preparationProgressValue), warning: warning)
             case .active:
                 self.publish(content: .active(record), warning: warning)
             case .finalizing:
@@ -350,6 +399,85 @@ public final class PerformanceSessionCoordinator {
 
     public func removeObserver(_ token: UUID) {
         stateQueue.async { self.observers.removeValue(forKey: token) }
+    }
+
+    private func finishGraphicsPreparationSample(
+        snapshot: SessionMetricSnapshot,
+        sampleIndex: Int,
+        generation: Int,
+        completion: @escaping () -> Void
+    ) {
+        guard generation == preparationGeneration else { return }
+        let graphicsReading = snapshot.windowServerCPU ?? WindowServerCPUReading.unavailable(
+            processKey: nil,
+            at: snapshot.capturedAt,
+            note: "WindowServer telemetry was unavailable during graphics baseline."
+        )
+        recorder.recordGraphicsBaseline(sample: graphicsReading)
+        preparationProgressValue = PerformancePreparationProgress(
+            graphicsSampleIndex: sampleIndex,
+            graphicsSampleCount: Self.graphicsBaselineSampleCount,
+            message: "Measuring graphics baseline… \(sampleIndex)/\(Self.graphicsBaselineSampleCount)"
+        )
+        var warning = persistActiveRecord()
+        publish(content: .preparing(preparationProgressValue), warning: warning)
+
+        guard sampleIndex < Self.graphicsBaselineSampleCount else {
+            recorder.finalizeGraphicsBaseline()
+            if recorder.activeRecord()?.windowServer?.baseline?.validSampleCount == 0 {
+                warning = warning ?? "Graphics baseline is unavailable; Performance Mode can continue."
+            }
+            let persistWarning = persistActiveRecord()
+            if warning == nil { warning = persistWarning }
+            publish(content: .preparing(preparationProgressValue), warning: warning)
+            callbackQueue.async(execute: completion)
+            return
+        }
+
+        scheduler.scheduleOnce(after: Self.graphicsBaselineInterval) { [weak self] in
+            self?.stateQueue.async {
+                self?.startGraphicsPreparationSample(
+                    sampleIndex: sampleIndex + 1,
+                    generation: generation,
+                    completion: completion
+                )
+            }
+        }
+    }
+
+    private func startGraphicsPreparationSample(
+        sampleIndex: Int,
+        generation: Int,
+        completion: @escaping () -> Void
+    ) {
+        guard generation == preparationGeneration else { return }
+        guard !isSampleInFlight else {
+            scheduler.scheduleOnce(after: Self.graphicsBaselineInterval) { [weak self] in
+                self?.stateQueue.async {
+                    self?.startGraphicsPreparationSample(
+                        sampleIndex: sampleIndex,
+                        generation: generation,
+                        completion: completion
+                    )
+                }
+            }
+            return
+        }
+        isSampleInFlight = true
+        let now = clock.currentDate()
+        collectionQueue.async {
+            let snapshot = self.collector.capture(at: now, refreshThermal: false)
+            self.stateQueue.async {
+                self.isSampleInFlight = false
+                guard generation == self.preparationGeneration else { return }
+                self.finishGraphicsPreparationSample(
+                    snapshot: snapshot,
+                    sampleIndex: sampleIndex,
+                    generation: generation,
+                    completion: completion
+                )
+            }
+        }
     }
 
     private func finishPreRestoreCapture(generation: Int, snapshot: SessionMetricSnapshot?, proceed: @escaping () -> Void) {

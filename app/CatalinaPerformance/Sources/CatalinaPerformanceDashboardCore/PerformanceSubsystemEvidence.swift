@@ -61,6 +61,8 @@ public final class PerformanceSubsystemEvidenceReader: PerformanceSubsystemEvide
             subsystem: .timeMachine,
             actions: actions,
             exactAction: "Paused Time Machine automatic backups with tmutil disable.",
+            notConfiguredPrefix: "Skipped Time Machine pause:",
+            notConfiguredNote: "Time Machine was not changed by Performance Mode.",
             markerExists: markerExists,
             at: date
         )
@@ -94,6 +96,8 @@ public final class PerformanceSubsystemEvidenceReader: PerformanceSubsystemEvide
             subsystem: .timeMachine,
             restoreText: restoreText,
             successText: "Re-enabled Time Machine automatic backups with tmutil enable.",
+            notConfiguredText: "Skipped Time Machine restore: Performance Mode did not record disabling automatic backups.",
+            notConfiguredNote: "Time Machine did not require restoration.",
             anyCommandSucceeded: anyCommandSucceeded,
             anyCommandFailed: anyCommandFailed,
             at: date
@@ -115,10 +119,17 @@ public final class PerformanceSubsystemEvidenceReader: PerformanceSubsystemEvide
         actions: String?,
         exactAction: String? = nil,
         prefix: String? = nil,
+        notConfiguredPrefix: String? = nil,
+        notConfiguredNote: String? = nil,
         markerExists: Bool,
         at date: Date
     ) -> PerformanceSubsystemStatus {
         let lines = actions?.split(whereSeparator: { $0.isNewline }).map(String.init) ?? []
+        if let notConfiguredPrefix = notConfiguredPrefix,
+           lines.contains(where: { $0.hasPrefix(notConfiguredPrefix) }) {
+            return status(subsystem, .notConfigured, date, notConfiguredNote)
+        }
+
         let found: Bool
         if let exactAction = exactAction {
             found = lines.contains(exactAction)
@@ -180,6 +191,8 @@ public final class PerformanceSubsystemEvidenceReader: PerformanceSubsystemEvide
         subsystem: PerformanceSubsystem,
         restoreText: String?,
         successText: String,
+        notConfiguredText: String? = nil,
+        notConfiguredNote: String? = nil,
         anyCommandSucceeded: Bool,
         anyCommandFailed: Bool,
         at date: Date
@@ -187,6 +200,9 @@ public final class PerformanceSubsystemEvidenceReader: PerformanceSubsystemEvide
         let lines = restoreText?.split(whereSeparator: { $0.isNewline }).map(String.init) ?? []
         if lines.contains(where: { $0.hasPrefix("FAILED:") && $0.localizedCaseInsensitiveContains(keyword(for: subsystem)) }) {
             return status(subsystem, .failed, date, "Recorded restore failure.")
+        }
+        if let notConfiguredText = notConfiguredText, lines.contains(notConfiguredText) {
+            return status(subsystem, .notConfigured, date, notConfiguredNote)
         }
         if anyCommandSucceeded && lines.contains(successText) {
             return status(subsystem, .restored, date, nil)

@@ -235,6 +235,19 @@ final class SessionDashboardWindowController: NSWindowController, NSWindowDelega
                 section(title: "System", metricRows: viewModel.systemRows)
             )
         }
+        if !viewModel.graphicsRows.isEmpty {
+            addFullWidthArrangedSubview(
+                section(title: "Graphics / WindowServer", metricRows: viewModel.graphicsRows)
+            )
+            if let advisory = viewModel.graphicsAdvisoryText, !advisory.isEmpty {
+                let advisoryLabel = NSTextField(wrappingLabelWithString: advisory)
+                advisoryLabel.textColor = .secondaryLabelColor
+                advisoryLabel.font = NSFont.systemFont(ofSize: 11)
+                advisoryLabel.setAccessibilityLabel("Graphics pressure advisory")
+                advisoryLabel.setAccessibilityValueDescription(advisory)
+                addFullWidthArrangedSubview(advisoryLabel)
+            }
+        }
         if !viewModel.selectedAppRows.isEmpty {
             addFullWidthArrangedSubview(
                 section(title: "Selected App", metricRows: viewModel.selectedAppRows)
@@ -283,8 +296,12 @@ final class SessionDashboardWindowController: NSWindowController, NSWindowDelega
         )
         contentStack.addArrangedSubview(spacer)
 
+        let isMeasuringGraphicsBaseline = viewModel.statusText.localizedCaseInsensitiveContains(
+            "Measuring graphics baseline"
+        )
         refreshButton.isEnabled = viewModel.screenKind != .finalizing &&
-            !viewModel.statusText.localizedCaseInsensitiveContains("preparing")
+            !viewModel.statusText.localizedCaseInsensitiveContains("preparing") &&
+            !isMeasuringGraphicsBaseline
         let buttons = NSStackView(views: [refreshButton, closeButton])
         buttons.orientation = .horizontal
         buttons.spacing = 8
