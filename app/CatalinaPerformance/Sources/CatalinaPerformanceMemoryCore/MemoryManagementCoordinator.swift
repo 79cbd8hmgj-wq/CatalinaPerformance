@@ -57,13 +57,15 @@ public final class MemoryManagementCoordinator: MemoryManagementCoordinating {
         }
 
         let existing = try desiredStateStore.load()
+        let startingGeneration: UInt64
         if let existingValue = existing, existingValue.sessionIdentifier == identifier {
-            generation = existingValue.generation
+            startingGeneration = existingValue.generation
         } else {
-            generation = 0
+            startingGeneration = 0
         }
 
         sessionIdentifier = identifier
+        generation = startingGeneration
         desiredFamilies = []
         stopRequested = false
         lastTelemetry = nil
@@ -72,7 +74,16 @@ public final class MemoryManagementCoordinator: MemoryManagementCoordinating {
         classifier = MemoryPressureClassifier()
         analyzer = MemoryProcessFamilyAnalyzer()
 
-        try saveDesiredStateLocked(families: [], shouldStopAndRestore: false)
+        do {
+            try saveDesiredStateLocked(families: [], shouldStopAndRestore: false)
+        } catch {
+            sessionIdentifier = nil
+            generation = 0
+            desiredFamilies = []
+            stopRequested = false
+            lastNote = "Memory Pressure Management could not be armed: \(error)"
+            throw error
+        }
         return statusLocked(at: date)
     }
 
@@ -146,7 +157,7 @@ public final class MemoryManagementCoordinator: MemoryManagementCoordinating {
                     noteOnFailure: "Unavailable telemetry restore request could not be persisted."
                 )
             }
-            if lastNote == nil || desiredFamilies.isEmpty {
+            if desiredFamilies.isEmpty {
                 lastNote = telemetry.note ?? "Memory VM telemetry is unavailable; automatic intervention is disabled."
             }
             let result = statusLocked(at: telemetry.capturedAt)
@@ -206,7 +217,7 @@ public final class MemoryManagementCoordinator: MemoryManagementCoordinating {
                 )
             }
             if desiredFamilies.isEmpty {
-                if lastNote == nil || !lastNote!.contains("could not be persisted") {
+                if lastNote == nil || lastNote?.contains("could not be persisted") == false {
                     lastNote = "Sustained memory pressure is confirmed, but no verified noncritical background workload currently qualifies."
                 }
             } else {
