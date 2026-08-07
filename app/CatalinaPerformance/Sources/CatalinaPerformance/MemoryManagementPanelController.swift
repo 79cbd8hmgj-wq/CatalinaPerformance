@@ -1,4 +1,5 @@
 import Foundation
+import CatalinaPerformanceDashboardCore
 import CatalinaPerformanceMemoryCore
 
 #if canImport(AppKit)
@@ -11,18 +12,40 @@ final class MemoryManagementPanelController {
     private let ioPolicyLabel = NSTextField(wrappingLabelWithString: "I/O deprioritization: Unsupported on this Catalina target")
     private let managedLabel = NSTextField(wrappingLabelWithString: "Maximum managed workloads: 3")
     private let noteLabel = NSTextField(wrappingLabelWithString: "")
+    private var statusTimer: Timer?
+
+    deinit {
+        statusTimer?.invalidate()
+    }
 
     func makeControls() -> [NSView] {
+        let title = NSTextField(labelWithString: "Memory Pressure Management")
+        title.font = NSFont.boldSystemFont(ofSize: 16)
+        let divider = NSBox()
+        divider.boxType = .separator
+        let header = NSStackView(views: [title, divider])
+        header.orientation = .vertical
+        header.alignment = .leading
+        header.spacing = 6
+
         let explanation = secondaryLabel(
-            "Automatically active with Performance Mode. CatalinaPerformance watches sustained VM contention and may temporarily deprioritize at most three verified background application families. It never kills apps, disables swap, runs purge, or changes kernel VM settings."
+            "Automatically active with Performance Mode. CatalinaPerformance watches sustained VM contention and may temporarily deprioritize at most three verified background application families. Foreground apps, App Priority targets, CatalinaPerformance, AirDrop/networking, Bluetooth, audio, security infrastructure, root-owned processes, and unverifiable identities remain excluded."
         )
-        [stateLabel, interventionLabel, policyLabel, ioPolicyLabel, managedLabel, noteLabel].forEach {
-            $0.maximumNumberOfLines = 0
+        for label in [stateLabel, interventionLabel, policyLabel, ioPolicyLabel, managedLabel, noteLabel] {
+            label.maximumNumberOfLines = 0
         }
         noteLabel.textColor = .secondaryLabelColor
         noteLabel.font = NSFont.systemFont(ofSize: 11)
         noteLabel.isHidden = true
-        return [explanation, stateLabel, interventionLabel, policyLabel, ioPolicyLabel, managedLabel, noteLabel]
+        divider.widthAnchor.constraint(greaterThanOrEqualToConstant: 320).isActive = true
+
+        refreshFromPersistedSession()
+        statusTimer?.invalidate()
+        statusTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+            self?.refreshFromPersistedSession()
+        }
+
+        return [header, explanation, stateLabel, interventionLabel, policyLabel, ioPolicyLabel, managedLabel, noteLabel]
     }
 
     func update(status: MemoryManagementStatusSnapshot?, performanceModeIsOn: Bool) {
@@ -57,6 +80,31 @@ final class MemoryManagementPanelController {
         managedLabel.stringValue = "Managed workloads: \(status.managedFamilyCount) / 3"
         noteLabel.stringValue = status.note ?? ""
         noteLabel.isHidden = noteLabel.stringValue.isEmpty
+    }
+
+    private func refreshFromPersistedSession() {
+        precondition(Thread.isMainThread)
+        let applicationSupport = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library", isDirectory: true)
+            .appendingPathComponent("Application Support", isDirectory: true)
+            .appendingPathComponent("CatalinaPerformance", isDirectory: true)
+        let performanceModeIsOn = FileManager.default.fileExists(
+            atPath: applicationSupport
+                .appendingPathComponent("system_state", isDirectory: true)
+                .appendingPathComponent("performance_mode_on")
+                .path
+        )
+        let store = PerformanceSessionStore(
+            directoryURL: applicationSupport.appendingPathComponent("session_dashboard", isDirectory: true)
+        )
+        let status: MemoryManagementStatusSnapshot?
+        switch store.loadActive() {
+        case .loaded(let record):
+            status = record.latest.memoryManagement
+        case .missing, .recoveredInvalid:
+            status = nil
+        }
+        update(status: status, performanceModeIsOn: performanceModeIsOn)
     }
 
     private func secondaryLabel(_ text: String) -> NSTextField {
