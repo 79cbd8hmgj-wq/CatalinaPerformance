@@ -42,7 +42,6 @@ For each system tweak:
 - No code path modifies SIP.
 - No code path automatically deletes caches.
 
-
 ## Foreground Performance Session Automated Checks
 
 - `/bin/sh -n scripts/*.sh scripts/lib/*.sh scripts/tests/*.sh`
@@ -68,7 +67,6 @@ For each system tweak:
 - Verify Finder/Dock are not killed, signaled, or forcibly restarted.
 - Verify no foreground-session or UI-responsiveness script requests administrator authorization.
 - Verify Performance ON/OFF and Emergency Restore authorization behavior is unchanged.
-
 
 ## Background Service Suppression Automated Checks
 
@@ -158,3 +156,21 @@ For each system tweak:
 - Confirm the completed dashboard retains baseline, active, pre-restore, post-restore, maximum-pressure, and time-in-state data when available.
 - Confirm the **Graphics / WindowServer** advisory remains diagnostic and causal-neutral; do not infer that Visual Performance caused a before/after change.
 - Confirm no resolution, scaling, refresh-rate, display-profile, wallpaper, desktop-icon, Quartz-debug, private graphics-driver, WindowServer, Finder, Dock, or SystemUIServer mutation is introduced.
+
+## Memory Pressure / Swap Management Capability Checks
+
+- `/bin/sh scripts/tests/test_memory_vm_probe_source.sh`
+- `cd app/CatalinaPerformance && swift test --filter MemoryTelemetryModelsTests`
+- Confirm `CPVMMemoryInfo.availabilityMask` distinguishes unsupported counters from supported counters whose current value is zero.
+- Confirm counter rollback/reset produces an unavailable interval rather than `0` activity.
+- Confirm VM sampling remains on the existing two-second Performance Session cadence; no second VM timer is introduced.
+- Confirm the capability probe is read-only: no `sudo`, `purge`, `sysctl -w`, defaults mutation, process termination, service unloading, or swap-file mutation.
+
+## Memory Pressure / Swap Management Catalina Evidence Gate
+
+- On macOS Catalina 10.15.7, run: `/bin/sh scripts/memory_vm_probe.sh --output "$HOME/Desktop/catalina-10.15.7-memory-vm-probe.txt"`.
+- Record `sw_vers`, `uname -a`, `hw.memsize`, `hw.pagesize`, `vm.swapusage`, `memory_pressure`, selected read-only `vm.*` values, and three `vm_stat` samples two seconds apart.
+- Verify counter names and units against the native `host_statistics64` fields used by CatalinaPerformance.
+- Verify compression, page-in/page-out, and swap-in/swap-out counters are monotonic during ordinary sampling or explicitly document resets/rollbacks.
+- Exercise a controlled memory-heavy workload and capture a second probe so rate thresholds can be based on observed Catalina behavior rather than guessed values.
+- Do not enable production rate thresholds or automatic memory intervention until this evidence is reviewed and committed.
