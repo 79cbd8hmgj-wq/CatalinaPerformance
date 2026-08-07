@@ -129,3 +129,32 @@ For each system tweak:
 - A session with App Priority disabled reports **Not configured**, even when an older restored status file exists.
 - At least five OFF and five focused-ON Firefox trials are run in alternating order with the same profile, query, starting tabs, completion criterion, elapsed-time record, and subjective note. One run is not accepted as performance evidence.
 - Documentation and results do not claim improved browsing from correct targeting or CPU percentage; App Priority cannot improve network latency.
+
+## WindowServer / GPU Pressure Automated Checks
+
+- `/bin/sh scripts/tests/test_windowserver_pressure_source.sh`
+- `/bin/sh scripts/tests/test_session_dashboard_ui_source.sh`
+- `cd app/CatalinaPerformance && swift test`
+- `swift build --product CatalinaPerformance`
+- `swift build --product CatalinaPerformancePriorityAgent`
+- WindowServer discovery requires one exact `WindowServer` process with a verified executable path ending in `/WindowServer`.
+- CPU usage is calculated from cumulative process CPU-time deltas over elapsed wall-clock time; `ps %cpu` is not used.
+- PID/start-identity replacement, ambiguous discovery, invalid intervals, decreasing counters, and resource-read failure produce **Unavailable** and require a fresh baseline.
+- CPU values above `100%` are retained rather than clamped.
+- The pre-ON baseline retains exactly three raw readings and computes baseline average/peak only from valid calculated CPU percentages.
+- Pressure tests cover exact 15%/30% boundaries, +8/+12 percentage-point relative thresholds, three-value rolling averages, and two consecutive High candidates.
+- Missing or unavailable readings never enter numeric averages as `0%`.
+- Old schema-1 active and completed dashboard JSON without WindowServer fields continues to decode normally.
+- Completed WindowServer reports remain below the existing 1 MiB dashboard-report limit.
+- Source scans reject WindowServer kill, signal, priority, service-unload, defaults-write, and authorization paths.
+
+## WindowServer / GPU Pressure Catalina Checks
+
+- Follow `docs/WINDOWSERVER_GPU_PRESSURE_RUNTIME_CHECKLIST.md` on macOS Catalina 10.15.7.
+- Confirm visible preparation progresses through `Measuring graphics baseline… 1/3`, `2/3`, and `3/3` before Performance Mode activation continues.
+- Confirm WindowServer telemetry failure does not block ON, OFF, Emergency Restore, or app shutdown.
+- Confirm active WindowServer readings update on the existing two-second Session Dashboard cadence without a second repeating timer.
+- Confirm one transient Mission Control/window-animation spike does not immediately become sustained **High** pressure.
+- Confirm the completed dashboard retains baseline, active, pre-restore, post-restore, maximum-pressure, and time-in-state data when available.
+- Confirm the **Graphics / WindowServer** advisory remains diagnostic and causal-neutral; do not infer that Visual Performance caused a before/after change.
+- Confirm no resolution, scaling, refresh-rate, display-profile, wallpaper, desktop-icon, Quartz-debug, private graphics-driver, WindowServer, Finder, Dock, or SystemUIServer mutation is introduced.
