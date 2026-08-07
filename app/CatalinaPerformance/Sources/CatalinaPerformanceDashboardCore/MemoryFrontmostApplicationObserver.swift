@@ -13,11 +13,17 @@ public final class MemoryFrontmostApplicationObserver: MemoryFrontmostApplicatio
 
     public init(coordinator: MemoryManagementCoordinating) {
         self.coordinator = coordinator
-        publishFrontmostApplication(NSWorkspace.shared.frontmostApplication)
+        if Thread.isMainThread {
+            publishFrontmostApplication(NSWorkspace.shared.frontmostApplication)
+        } else {
+            DispatchQueue.main.sync {
+                self.publishFrontmostApplication(NSWorkspace.shared.frontmostApplication)
+            }
+        }
         observer = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didActivateApplicationNotification,
             object: nil,
-            queue: nil
+            queue: OperationQueue.main
         ) { [weak self] notification in
             let application = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
             self?.publishFrontmostApplication(application)
@@ -31,6 +37,7 @@ public final class MemoryFrontmostApplicationObserver: MemoryFrontmostApplicatio
     }
 
     private func publishFrontmostApplication(_ runningApplication: NSRunningApplication?) {
+        precondition(Thread.isMainThread)
         guard let coordinator = coordinator else { return }
         let application = runningApplication.flatMap(Self.priorityApplication)
         _ = coordinator.updateFrontmostApplication(application, at: Date())
