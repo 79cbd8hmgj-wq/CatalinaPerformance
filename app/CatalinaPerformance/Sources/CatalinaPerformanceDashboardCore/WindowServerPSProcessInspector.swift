@@ -245,7 +245,7 @@ public final class DarwinWindowServerProcessInspector: WindowServerProcessInspec
 
         let pidValues = pgrep.output
             .split(whereSeparator: { $0.isWhitespace })
-            .compactMap { Int32($0) }
+            .compactMap { Int32(String($0)) }
             .filter { $0 > 0 }
         guard pidValues.count == 1, let pid = pidValues.first else {
             throw WindowServerProcessInspectorError.ambiguousProcess
