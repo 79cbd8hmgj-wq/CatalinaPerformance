@@ -13,7 +13,7 @@ set -u
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd -P)
 REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." 2>/dev/null && pwd -P)
-STATE_DIR="$REPO_ROOT/.catalina_performance_state"
+STATE_DIR=${CATALINA_PERFORMANCE_STATE_DIR:-"$REPO_ROOT/.catalina_performance_state"}
 LOG_FILE="$STATE_DIR/performance_on.log"
 MARKER_FILE="$STATE_DIR/performance_mode_on"
 PMSET_CUSTOM_FILE="$STATE_DIR/pmset_custom_before.txt"
@@ -120,8 +120,13 @@ validate_preferences_file() {
         /^[[:space:]]*($|#)/ { next }
         $1 == "PAUSE_SPOTLIGHT_WHILE_ON" || \
         $1 == "PAUSE_TIME_MACHINE_WHILE_ON" || \
+        $1 == "PAUSE_ICLOUD_DRIVE_WHILE_ON" || \
         $1 == "PREVENT_SYSTEM_SLEEP_WHILE_ON" || \
-        $1 == "PREVENT_DISPLAY_SLEEP_WHILE_ON" { next }
+        $1 == "PREVENT_DISPLAY_SLEEP_WHILE_ON" || \
+        $1 == "SHOW_SWAP_USAGE_WARNING" || \
+        $1 == "SHOW_LOW_DISK_SPACE_WARNING" || \
+        $1 == "SHOW_MEMORY_PRESSURE_SUMMARY" || \
+        $1 == "SHOW_TOP_MEMORY_PROCESSES" { next }
         { bad=1 }
         END { exit bad ? 1 : 0 }
     ' "$PREFERENCES_FILE" 2>/dev/null || log "Warning: Advanced preferences file $PREFERENCES_FILE contains malformed or unknown entries; only known keys will be read."

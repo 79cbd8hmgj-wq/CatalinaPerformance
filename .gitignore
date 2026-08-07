@@ -4,3 +4,12 @@
 # Swift Package Manager build output.
 .build/
 app/CatalinaPerformance/.build/
+
+# Local isolated implementation worktrees.
+.worktrees/
+
+# Local packaged application output.
+build/
+
+# Superpowers execution scratch files.
+.superpowers/

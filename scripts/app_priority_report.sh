@@ -36,7 +36,7 @@ if ! command -v ps >/dev/null 2>&1; then
 fi
 
 current_user=$(id -un 2>/dev/null || printf '%s' "${USER:-unknown}")
-printf 'App Priority report (read-only monitoring; no sudo; no renice; no process state changed)\n'
+printf 'App Priority report (this report is read-only; no sudo; no process state changed)\n'
 printf 'Showing up to %s processes for user: %s\n\n' "$MAX_ROWS" "$current_user"
 printf '%s\n' 'PID OWNER NICE CPU% MEM% COMMAND'
 
@@ -50,4 +50,4 @@ if [ "$ps_status" -ne 0 ]; then
     exit "$ps_status"
 fi
 
-printf '\nReport complete. App Priority mutation is not implemented yet and remains disabled for safety.\n'
+printf '\nReport complete. Priority changes occur only through the validated Performance Mode session agent when App Priority is enabled.\n'
