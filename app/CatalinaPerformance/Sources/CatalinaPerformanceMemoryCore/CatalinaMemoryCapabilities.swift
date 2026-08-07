@@ -26,10 +26,11 @@ public struct CatalinaMemoryCapabilities: Equatable {
 
     /// Reviewed against macOS Catalina 10.15.7 build 19H15 on the target Intel Mac.
     ///
-    /// The probe confirmed 4 KiB pages, compressor occupancy/counters, pageouts,
+    /// The VM probe confirmed 4 KiB pages, compressor occupancy/counters, pageouts,
     /// swapins, and swapouts. `vm.memory_pressure` exists but only the normal value
     /// was observed, so its nonzero semantics remain intentionally untrusted.
-    /// `taskpolicy` remains disabled until its separate apply/restore calibration.
+    /// The independent runtime calibration confirmed `/usr/bin/taskpolicy` is
+    /// unavailable on this target, so task-policy I/O treatment is unsupported in 1.0.
     public static let current = CatalinaMemoryCapabilities(
         compressedBytes: true,
         compressionCounters: true,
