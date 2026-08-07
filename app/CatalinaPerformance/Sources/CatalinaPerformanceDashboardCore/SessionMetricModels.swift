@@ -1,5 +1,6 @@
 import Foundation
 import CatalinaPerformancePriorityCore
+import CatalinaPerformanceMemoryCore
 
 public enum MetricAvailability: String, Codable {
     case available
@@ -104,6 +105,7 @@ public struct SessionMetricSnapshot: Codable, Equatable {
     public let selectedAppPriorityConfirmedCount: MetricReading<Int>
     public let focusedFirefoxPriority: FocusedFirefoxMetricDetails?
     public let windowServerCPU: WindowServerCPUReading?
+    public let memoryManagement: MemoryManagementStatusSnapshot?
 
     public init(
         capturedAt: Date,
@@ -119,7 +121,8 @@ public struct SessionMetricSnapshot: Codable, Equatable {
         selectedAppVerifiedProcessCount: MetricReading<Int>,
         selectedAppPriorityConfirmedCount: MetricReading<Int>,
         focusedFirefoxPriority: FocusedFirefoxMetricDetails? = nil,
-        windowServerCPU: WindowServerCPUReading? = nil
+        windowServerCPU: WindowServerCPUReading? = nil,
+        memoryManagement: MemoryManagementStatusSnapshot? = nil
     ) {
         self.capturedAt = capturedAt
         self.systemCPUPercent = systemCPUPercent
@@ -135,6 +138,7 @@ public struct SessionMetricSnapshot: Codable, Equatable {
         self.selectedAppPriorityConfirmedCount = selectedAppPriorityConfirmedCount
         self.focusedFirefoxPriority = focusedFirefoxPriority
         self.windowServerCPU = windowServerCPU
+        self.memoryManagement = memoryManagement
     }
 
     public static func unavailable(capturedAt: Date, note: String) -> SessionMetricSnapshot {
@@ -152,7 +156,8 @@ public struct SessionMetricSnapshot: Codable, Equatable {
             selectedAppVerifiedProcessCount: .unavailable(at: capturedAt, note: note),
             selectedAppPriorityConfirmedCount: .unavailable(at: capturedAt, note: note),
             focusedFirefoxPriority: nil,
-            windowServerCPU: nil
+            windowServerCPU: nil,
+            memoryManagement: nil
         )
     }
 }
