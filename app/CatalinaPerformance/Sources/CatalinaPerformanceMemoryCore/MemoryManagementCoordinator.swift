@@ -83,9 +83,12 @@ public final class MemoryManagementCoordinator: MemoryManagementCoordinating {
     ) -> MemoryManagementStatusSnapshot {
         lock.lock()
         frontmostApplication = application
-        let removed = pruneConflictingDesiredFamiliesLocked()
-        if removed {
-            persistCurrentFamiliesLocked(noteOnFailure: "Foreground protection could not be persisted.")
+        let filtered = desiredFamiliesExcludingConflictsLocked()
+        if filtered != desiredFamilies {
+            _ = persistFamiliesLocked(
+                filtered,
+                noteOnFailure: "Foreground protection could not be persisted."
+            )
         }
         let result = statusLocked(at: date)
         lock.unlock()
@@ -99,9 +102,12 @@ public final class MemoryManagementCoordinator: MemoryManagementCoordinating {
     ) -> MemoryManagementStatusSnapshot {
         lock.lock()
         appPriorityApplication = application
-        let removed = pruneConflictingDesiredFamiliesLocked()
-        if removed {
-            persistCurrentFamiliesLocked(noteOnFailure: "App Priority conflict removal could not be persisted.")
+        let filtered = desiredFamiliesExcludingConflictsLocked()
+        if filtered != desiredFamilies {
+            _ = persistFamiliesLocked(
+                filtered,
+                noteOnFailure: "App Priority conflict removal could not be persisted."
+            )
         }
         let result = statusLocked(at: date)
         lock.unlock()
@@ -123,18 +129,26 @@ public final class MemoryManagementCoordinator: MemoryManagementCoordinating {
         }
 
         let wasActiveBeforeEvaluation = !desiredFamilies.isEmpty
-        if pruneConflictingDesiredFamiliesLocked() {
-            persistCurrentFamiliesLocked(noteOnFailure: "Protected foreground/App Priority removal could not be persisted.")
+        let conflictFiltered = desiredFamiliesExcludingConflictsLocked()
+        if conflictFiltered != desiredFamilies {
+            _ = persistFamiliesLocked(
+                conflictFiltered,
+                noteOnFailure: "Protected foreground/App Priority removal could not be persisted."
+            )
         }
 
         guard telemetry.counters != nil else {
             classifier = MemoryPressureClassifier()
             lastPressureState = .healthy
             if !desiredFamilies.isEmpty {
-                desiredFamilies = []
-                persistCurrentFamiliesLocked(noteOnFailure: "Unavailable telemetry restore request could not be persisted.")
+                _ = persistFamiliesLocked(
+                    [],
+                    noteOnFailure: "Unavailable telemetry restore request could not be persisted."
+                )
             }
-            lastNote = telemetry.note ?? "Memory VM telemetry is unavailable; automatic intervention is disabled."
+            if lastNote == nil || desiredFamilies.isEmpty {
+                lastNote = telemetry.note ?? "Memory VM telemetry is unavailable; automatic intervention is disabled."
+            }
             let result = statusLocked(at: telemetry.capturedAt)
             lock.unlock()
             return result
@@ -153,10 +167,14 @@ public final class MemoryManagementCoordinator: MemoryManagementCoordinating {
                 resourceInspector: resourceInspector
             )
         } catch {
-            lastNote = "Process-family verification failed; active memory scheduling was removed: \(error)"
             if !desiredFamilies.isEmpty {
-                desiredFamilies = []
-                persistCurrentFamiliesLocked(noteOnFailure: "Process verification failure restore request could not be persisted.")
+                _ = persistFamiliesLocked(
+                    [],
+                    noteOnFailure: "Process verification failure restore request could not be persisted."
+                )
+            }
+            if desiredFamilies.isEmpty {
+                lastNote = "Process-family verification failed; automatic memory scheduling is idle: \(error)"
             }
             let result = statusLocked(at: telemetry.capturedAt)
             lock.unlock()
@@ -171,18 +189,26 @@ public final class MemoryManagementCoordinator: MemoryManagementCoordinating {
 
         if evaluation.shouldRestore {
             if !desiredFamilies.isEmpty {
-                desiredFamilies = []
-                persistCurrentFamiliesLocked(noteOnFailure: "Healthy recovery restore request could not be persisted.")
+                _ = persistFamiliesLocked(
+                    [],
+                    noteOnFailure: "Healthy recovery restore request could not be persisted."
+                )
             }
-            lastNote = "Memory pressure remained healthy long enough to restore managed workloads."
+            if desiredFamilies.isEmpty {
+                lastNote = "Memory pressure remained healthy long enough to restore managed workloads."
+            }
         } else if evaluation.shouldIntervene {
             let newFamilies = desiredFamiliesFromCandidates(candidates)
             if newFamilies != desiredFamilies {
-                desiredFamilies = newFamilies
-                persistCurrentFamiliesLocked(noteOnFailure: "Memory intervention desired state could not be persisted.")
+                _ = persistFamiliesLocked(
+                    newFamilies,
+                    noteOnFailure: "Memory intervention desired state could not be persisted."
+                )
             }
             if desiredFamilies.isEmpty {
-                lastNote = "Sustained memory pressure is confirmed, but no verified noncritical background workload currently qualifies."
+                if lastNote == nil || !lastNote!.contains("could not be persisted") {
+                    lastNote = "Sustained memory pressure is confirmed, but no verified noncritical background workload currently qualifies."
+                }
             } else {
                 lastNote = "Sustained memory pressure confirmed; verified background workloads are temporarily scheduled at nice +5."
             }
@@ -208,9 +234,9 @@ public final class MemoryManagementCoordinator: MemoryManagementCoordinating {
     public func requestImmediateRestore(at date: Date) -> MemoryManagementStatusSnapshot {
         lock.lock()
         stopRequested = true
-        desiredFamilies = []
         do {
             try saveDesiredStateLocked(families: [], shouldStopAndRestore: true)
+            desiredFamilies = []
             lastNote = "Immediate Memory Management restoration was requested."
         } catch {
             lastNote = "Immediate Memory Management restoration request could not be persisted: \(error)"
@@ -247,22 +273,27 @@ public final class MemoryManagementCoordinator: MemoryManagementCoordinating {
         }
     }
 
-    private func pruneConflictingDesiredFamiliesLocked() -> Bool {
-        guard !desiredFamilies.isEmpty else { return false }
+    private func desiredFamiliesExcludingConflictsLocked() -> [MemoryDesiredFamily] {
+        guard !desiredFamilies.isEmpty else { return [] }
         let frontmostIdentifier = frontmostApplication.map { canonicalBundleIdentifier($0.bundlePath) }
         let priorityIdentifier = appPriorityApplication.map { canonicalBundleIdentifier($0.bundlePath) }
-        let originalCount = desiredFamilies.count
-        desiredFamilies.removeAll { family in
-            family.identifier == frontmostIdentifier || family.identifier == priorityIdentifier
+        return desiredFamilies.filter { family in
+            family.identifier != frontmostIdentifier && family.identifier != priorityIdentifier
         }
-        return desiredFamilies.count != originalCount
     }
 
-    private func persistCurrentFamiliesLocked(noteOnFailure: String) {
+    @discardableResult
+    private func persistFamiliesLocked(
+        _ families: [MemoryDesiredFamily],
+        noteOnFailure: String
+    ) -> Bool {
         do {
-            try saveDesiredStateLocked(families: desiredFamilies, shouldStopAndRestore: false)
+            try saveDesiredStateLocked(families: families, shouldStopAndRestore: false)
+            desiredFamilies = families
+            return true
         } catch {
             lastNote = "\(noteOnFailure) \(error)"
+            return false
         }
     }
 
