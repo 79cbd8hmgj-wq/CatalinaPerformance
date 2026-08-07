@@ -1,4 +1,5 @@
 import Foundation
+import CatalinaPerformancePriorityCore
 
 public protocol MemoryAgentStatusProviding {
     func currentMemoryAgentStatus() -> MemoryAgentStatus?
