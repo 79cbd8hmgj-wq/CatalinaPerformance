@@ -51,6 +51,8 @@ public struct SessionDashboardViewModel: Equatable {
     public let priorityTargetText: String?
     public let sampleCountText: String?
     public let systemRows: [SessionDashboardMetricRow]
+    public let graphicsRows: [SessionDashboardMetricRow]
+    public let graphicsAdvisoryText: String?
     public let selectedAppRows: [SessionDashboardMetricRow]
     public let priorityDetailRows: [SessionDashboardMetricRow]
     public let completedRows: [SessionDashboardCompletedRow]
@@ -67,6 +69,8 @@ public struct SessionDashboardViewModel: Equatable {
         priorityTargetText: String?,
         sampleCountText: String?,
         systemRows: [SessionDashboardMetricRow],
+        graphicsRows: [SessionDashboardMetricRow] = [],
+        graphicsAdvisoryText: String? = nil,
         selectedAppRows: [SessionDashboardMetricRow],
         priorityDetailRows: [SessionDashboardMetricRow],
         completedRows: [SessionDashboardCompletedRow],
@@ -82,6 +86,8 @@ public struct SessionDashboardViewModel: Equatable {
         self.priorityTargetText = priorityTargetText
         self.sampleCountText = sampleCountText
         self.systemRows = systemRows
+        self.graphicsRows = graphicsRows
+        self.graphicsAdvisoryText = graphicsAdvisoryText
         self.selectedAppRows = selectedAppRows
         self.priorityDetailRows = priorityDetailRows
         self.completedRows = completedRows
@@ -118,23 +124,28 @@ public final class SessionDashboardPresenter {
                 priorityTargetText: nil,
                 sampleCountText: nil,
                 systemRows: [],
+                graphicsRows: [],
+                graphicsAdvisoryText: nil,
                 selectedAppRows: [],
                 priorityDetailRows: [],
                 completedRows: [],
                 subsystemRows: [],
                 warningText: state.warningMessage
             )
-        case .preparing:
+        case .preparing(let progress):
             return SessionDashboardViewModel(
                 screenKind: .active,
                 title: "Session Dashboard",
-                statusText: "Preparing baseline before Performance Mode starts…",
+                statusText: progress.message,
                 durationText: nil,
                 completionText: nil,
                 restoreResultText: nil,
                 priorityTargetText: nil,
                 sampleCountText: nil,
-                systemRows: [], selectedAppRows: [], priorityDetailRows: [], completedRows: [], subsystemRows: [],
+                systemRows: [],
+                graphicsRows: [],
+                graphicsAdvisoryText: nil,
+                selectedAppRows: [], priorityDetailRows: [], completedRows: [], subsystemRows: [],
                 warningText: state.warningMessage
             )
         case .active(let record):
@@ -180,6 +191,8 @@ public final class SessionDashboardPresenter {
             priorityTargetText: target,
             sampleCountText: "\(record.sampleCount)",
             systemRows: system,
+            graphicsRows: graphicsRows(record.windowServer),
+            graphicsAdvisoryText: graphicsAdvisory(record.windowServer),
             selectedAppRows: selected,
             priorityDetailRows: priorityDetails,
             completedRows: [],
@@ -213,12 +226,124 @@ public final class SessionDashboardPresenter {
             priorityTargetText: report.selectedApplication?.displayName ?? "Not configured",
             sampleCountText: "\(report.sampleCount)",
             systemRows: [],
+            graphicsRows: graphicsRows(report.windowServer),
+            graphicsAdvisoryText: graphicsAdvisory(report.windowServer),
             selectedAppRows: [],
             priorityDetailRows: priorityDetails,
             completedRows: rows,
             subsystemRows: subsystemRows(report.subsystemStatuses) + backgroundServiceRows(report.backgroundServiceStatuses),
             warningText: warning
         )
+    }
+
+    private func graphicsRows(_ aggregate: WindowServerSessionAggregate?) -> [SessionDashboardMetricRow] {
+        guard let aggregate = aggregate else {
+            return [detailRow(
+                label: "Pressure",
+                value: "Unavailable",
+                secondary: "WindowServer session telemetry is unavailable."
+            )]
+        }
+
+        let isCompleted = aggregate.finalPreRestoreCPU != nil || aggregate.postRestoreCPU != nil
+        if isCompleted {
+            return [
+                detailRow(label: "Maximum Pressure", value: pressureText(aggregate.maximumSustainedPressure), secondary: nil),
+                detailRow(label: "Baseline Average", value: percentageText(aggregate.baseline?.averageCPU), secondary: nil),
+                detailRow(label: "Baseline Peak", value: percentageText(aggregate.baseline?.peakCPU), secondary: nil),
+                detailRow(label: "Session Average", value: percentageText(aggregate.activeAverageCPU), secondary: nil),
+                detailRow(label: "Session Peak", value: percentageText(aggregate.activePeakCPU), secondary: nil),
+                detailRow(label: "Final Pre-Restore", value: percentageText(aggregate.finalPreRestoreCPU), secondary: nil),
+                detailRow(label: "Post-Restore", value: percentageText(aggregate.postRestoreCPU), secondary: nil),
+                detailRow(label: "Time Normal", value: secondsText(aggregate.normalSeconds), secondary: nil),
+                detailRow(label: "Time Elevated", value: secondsText(aggregate.elevatedSeconds), secondary: nil),
+                detailRow(label: "Time High", value: secondsText(aggregate.highSeconds), secondary: nil),
+                detailRow(
+                    label: "Visual Performance Applied",
+                    value: booleanStatusText(aggregate.visualPerformanceActive, trueText: "Applied", falseText: "Not applied"),
+                    secondary: nil
+                ),
+                detailRow(
+                    label: "Visual Performance Restored",
+                    value: booleanStatusText(aggregate.visualPerformanceRestorationSucceeded, trueText: "Restored", falseText: "Not fully restored"),
+                    secondary: nil
+                )
+            ]
+        }
+
+        return [
+            detailRow(label: "Pressure", value: pressureText(aggregate.currentPressure), secondary: nil),
+            detailRow(label: "Current CPU", value: percentageText(aggregate.latestActiveCPU), secondary: nil),
+            detailRow(label: "Rolling Average", value: percentageText(aggregate.rollingAverageCPU), secondary: nil),
+            detailRow(label: "Session Average", value: percentageText(aggregate.activeAverageCPU), secondary: nil),
+            detailRow(label: "Session Peak", value: percentageText(aggregate.activePeakCPU), secondary: nil),
+            detailRow(label: "Pre-ON Baseline", value: percentageText(aggregate.baseline?.averageCPU), secondary: baselineSecondaryText(aggregate.baseline)),
+            detailRow(label: "Change from Baseline", value: percentagePointText(aggregate.changeFromBaselinePercentagePoints), secondary: nil),
+            detailRow(
+                label: "Visual Performance",
+                value: booleanStatusText(aggregate.visualPerformanceActive, trueText: "Applied", falseText: "Not applied"),
+                secondary: nil
+            )
+        ]
+    }
+
+    private func graphicsAdvisory(_ aggregate: WindowServerSessionAggregate?) -> String? {
+        guard let aggregate = aggregate else { return nil }
+        if aggregate.baseline?.isElevated == true {
+            return "Graphics pressure was elevated before Performance Mode started."
+        }
+        let pressure = aggregate.maximumSustainedPressure == .unavailable
+            ? aggregate.currentPressure
+            : aggregate.maximumSustainedPressure
+        switch pressure {
+        case .normal:
+            return "WindowServer load remained within the expected range."
+        case .elevated:
+            return "WindowServer load was elevated during this session. No additional graphics changes were made automatically."
+        case .high:
+            return "Sustained WindowServer pressure was detected. Consider reducing the number of visible windows, displays, high-resolution content, or other graphics-heavy workloads."
+        case .unavailable:
+            return nil
+        }
+    }
+
+    private func pressureText(_ level: WindowServerPressureLevel) -> String {
+        switch level {
+        case .normal: return "Normal"
+        case .elevated: return "Elevated"
+        case .high: return "High"
+        case .unavailable: return "Unavailable"
+        }
+    }
+
+    private func percentageText(_ value: Double?) -> String {
+        guard let value = value, value.isFinite else { return "Unavailable" }
+        return percentOneDecimal(value)
+    }
+
+    private func percentagePointText(_ value: Double?) -> String {
+        guard let value = value, value.isFinite else { return "Unavailable" }
+        return String(format: "%+.1f percentage points", value)
+    }
+
+    private func baselineSecondaryText(_ baseline: WindowServerBaselineSummary?) -> String? {
+        guard let baseline = baseline else { return nil }
+        if baseline.validSampleCount < PerformanceSessionCoordinator.graphicsBaselineSampleCount {
+            return "\(baseline.validSampleCount) of \(PerformanceSessionCoordinator.graphicsBaselineSampleCount) baseline samples were valid."
+        }
+        return nil
+    }
+
+    private func booleanStatusText(_ value: Bool?, trueText: String, falseText: String) -> String {
+        guard let value = value else { return "Unknown" }
+        return value ? trueText : falseText
+    }
+
+    private func secondsText(_ seconds: TimeInterval) -> String {
+        guard seconds.isFinite, seconds >= 0 else { return "Unavailable" }
+        let whole = Int(seconds.rounded())
+        if whole < 60 { return "\(whole)s" }
+        return "\(whole / 60)m \(whole % 60)s"
     }
 
     private func metricRow<Value: Codable & Equatable>(
