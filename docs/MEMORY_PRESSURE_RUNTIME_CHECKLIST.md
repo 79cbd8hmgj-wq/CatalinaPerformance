@@ -11,130 +11,200 @@ From the repository root:
 ```bash
 /bin/sh scripts/tests/test_memory_vm_probe_source.sh
 /bin/sh scripts/tests/test_memory_taskpolicy_calibration_source.sh
+/bin/sh scripts/tests/test_memory_management_production_wiring_source.sh
 /bin/sh scripts/tests/test_memory_management_wrappers.sh
 /bin/sh scripts/tests/test_memory_management_ui_source.sh
 /bin/sh scripts/tests/test_session_dashboard_ui_source.sh
-/bin/sh scripts/tests/test_catalina_process_support_source.sh
-/bin/sh scripts/tests/test_app_priority_wrappers.sh
-/bin/sh scripts/tests/test_app_priority_ui_source.sh
 /bin/sh scripts/tests/test_foreground_session.sh all
 /bin/sh scripts/tests/test_advanced_layout_source.sh
+/bin/sh scripts/tests/test_app_priority_wrappers.sh
+/bin/sh scripts/tests/test_app_priority_ui_source.sh
+/bin/sh scripts/tests/test_catalina_process_support_source.sh
+/bin/sh scripts/tests/test_background_service_probe.sh
+/bin/sh scripts/tests/test_background_service_settings.sh
+/bin/sh scripts/tests/test_background_service_wrappers.sh
+/bin/sh scripts/tests/test_background_service_ui_source.sh
+/bin/sh scripts/tests/test_windowserver_pressure_source.sh
 
 cd app/CatalinaPerformance
+rm -rf .build
 swift test
 swift build --product CatalinaPerformance
 swift build --product CatalinaPerformancePriorityAgent
 swift build --product CatalinaPerformanceMemoryAgent
 cd ../..
+git diff --check
 ```
 
 Acceptance:
 - no test failure;
 - no linker duplicate for `cp_read_vm_memory_info`;
-- Memory Management wrapper/UI source contracts pass;
+- Memory Management wrapper/UI/production-wiring source contracts pass;
 - both session-scoped agents build on Catalina/Xcode 12.4-era Swift;
+- existing App Priority, Foreground Session, Background Service, and WindowServer contracts remain green;
 - warnings may be recorded separately but may not hide a build/test failure.
 
-## 2. Idle/normal session
+## 2. Package validation
 
-1. Close unnecessary applications and wait for the machine to settle.
-2. Open CatalinaPerformance and the Session Dashboard.
-3. Turn Performance Mode ON using the normal UI.
-4. Leave the machine under ordinary light use for at least 60 seconds.
+```bash
+pkill -x CatalinaPerformance 2>/dev/null || true
+pkill -x CatalinaPerformanceMemoryAgent 2>/dev/null || true
+rm -rf build
+/bin/sh scripts/package_app.sh
+```
 
-Record:
-- Memory / Swap state;
-- available and compressed memory;
-- swap used and swap growth;
-- swap-in/out rates;
-- page-out activity;
-- Memory Management status;
-- managed workload count.
+Verify packaged resources:
+
+```bash
+test -x build/CatalinaPerformance.app/Contents/Resources/bin/CatalinaPerformanceMemoryAgent
+test -x build/CatalinaPerformance.app/Contents/Resources/bin/CatalinaPerformancePriorityAgent
+test -x build/CatalinaPerformance.app/Contents/Resources/scripts/performance_on_with_priority.sh
+test -x build/CatalinaPerformance.app/Contents/Resources/scripts/performance_off_with_priority.sh
+test -x build/CatalinaPerformance.app/Contents/Resources/scripts/emergency_restore_with_priority.sh
+test -x build/CatalinaPerformance.app/Contents/Resources/scripts/lib/memory_management_wrapper_common.sh
+```
+
+Launch:
+
+```bash
+open ./build/CatalinaPerformance.app
+```
+
+## 3. Advanced and Dashboard UI sanity
+
+Open **Advanced** and confirm a separate **Memory Pressure Management** section exists.
+
+Acceptance:
+- automatically active with Performance Mode;
+- CPU policy is fixed at `nice +5`;
+- I/O policy reports **Unsupported on this Catalina target**;
+- maximum managed workloads is 3;
+- no nice slider, family-cap slider, swap target, compressor target, or VM threshold controls;
+- the separate **Memory / Storage** button remains a read-only diagnostic.
+
+Open **Session Dashboard** and confirm Memory Management appears in a dedicated **Memory / Swap** section rather than being mixed into generic System rows.
+
+## 4. Idle/normal session
+
+Turn Performance Mode ON using the normal UI and leave the machine under ordinary workload for at least two minutes.
+
+Inspect:
+
+```bash
+UID_NOW=$(id -u)
+STATUS="/var/run/CatalinaPerformance/$UID_NOW/memory_management/status.json"
+DESIRED="$HOME/Library/Application Support/CatalinaPerformance/memory_management/desired-state.json"
+
+printf '\n=== MEMORY AGENT STATUS ===\n'
+cat "$STATUS" 2>/dev/null || echo 'status unavailable'
+printf '\n=== DESIRED STATE ===\n'
+cat "$DESIRED" 2>/dev/null || echo 'desired state unavailable'
+printf '\n=== MEMORY AGENT PROCESS ===\n'
+ps -axo pid,uid,ni,comm | grep '[C]atalinaPerformanceMemoryAgent' || true
+```
 
 Acceptance:
 - a single counter spike never causes intervention;
 - stable historical swap usage alone does not trigger intervention;
+- Healthy/Elevated without confirmed High/Critical leaves desired families empty;
 - no more than three families are ever reported managed;
-- I/O policy reports **Unsupported** on this target;
+- I/O policy reports Unsupported;
 - `taskpolicy` is never invoked;
-- ordinary high RAM use without corroborating VM pressure does not cause automatic mutation.
+- ordinary high RAM use without corroborating VM pressure does not cause automatic mutation;
+- Memory Agent is session-scoped and no LaunchDaemon/login item is installed.
 
-## 3. Controlled pressure transition
+## 5. Controlled pressure transition
 
-Use normal applications or a bounded disposable allocation workload. Do not allocate until the system becomes unresponsive and do not use destructive memory-exhaustion tools.
+Use normal applications to create a bounded, reversible memory-heavy workload. Prefer opening additional browser tabs/windows and another already-installed memory-heavy user application. Do not use an unbounded allocator or deliberately make the machine unresponsive.
 
 Observe the existing two-second Session Dashboard cadence while increasing memory demand gradually.
 
 Acceptance:
-- pressure moves through the classifier only from real sampled evidence;
-- High requires three consecutive High candidates;
-- Critical requires two consecutive Critical candidates;
-- family admission requires three background observations;
-- each admitted family exceeds `max(256 MiB, 5% physical RAM)`;
-- only verified same-user noncritical application families qualify;
-- intervention uses nice `+5` only and never raises a process above its original priority;
-- no automatic app termination occurs.
+1. Healthy may become Elevated.
+2. Elevated alone does not authorize mutation.
+3. High requires three consecutive High candidates before intervention.
+4. Critical requires two consecutive Critical candidates.
+5. Family admission requires three background observations.
+6. Each admitted family exceeds `max(256 MiB, 5% physical RAM)`.
+7. At most three verified same-user noncritical application families enter desired state.
+8. Managed eligible processes use nice `+5` unless already at an equal-or-more-deprioritized nice value.
+9. `taskpolicy` remains unused/Unsupported.
+10. No automatic app termination occurs.
 
-## 4. Foreground protection
+Record:
 
-While one background family is actively managed:
+```bash
+printf '\n=== DESIRED STATE ===\n'
+cat "$DESIRED" 2>/dev/null || true
+printf '\n=== AGENT STATUS ===\n'
+cat "$STATUS" 2>/dev/null || true
+printf '\n=== USER PROCESSES / NICE ===\n'
+ps -U "$USER" -o pid,ppid,uid,ni,rss,comm | sort -k5 -nr | head -30
+```
 
-1. Bring that application to the foreground.
-2. Observe its Memory Management status and process nice values.
+Do not treat intervention itself as proof of performance improvement.
+
+## 6. Foreground protection
+
+While a background family is actively managed, bring that application to the foreground normally.
 
 Acceptance:
 - the foreground family is removed from desired state immediately;
-- the Memory Agent restores its exact recorded original nice values before a replacement family can be applied;
-- a reused PID or identity mismatch is never mutated or restored by guesswork.
+- the Memory Agent restores its exact recorded original nice values before that family can be considered managed again;
+- a reused PID or mismatched start/path identity is never mutated or restored by guesswork;
+- a replacement family does not churn in and out on one sample.
 
-## 5. App Priority conflict protection
+## 7. App Priority conflict protection
 
-While Memory Management is active:
-
-1. Configure/select an eligible application as the App Priority target when configuration is permitted for the next session.
-2. Start a new session and create controlled pressure.
+Configure an App Priority target for a new session and repeat the pressure check.
 
 Acceptance:
-- the App Priority family never appears in Memory Management desired families;
-- if a conflict is introduced by state transition, Memory Management restores/removes its policy before App Priority owns the family;
-- App Priority behavior remains unchanged from its existing policy tests.
+- the App Priority family never remains in Memory Management desired state;
+- if it had been managed first, Memory Management requests restoration/removal before App Priority owns it;
+- existing App Priority Firefox/family behavior remains unchanged.
 
-## 6. Healthy recovery
+## 8. Healthy recovery
 
-After intervention is active, release the bounded pressure workload and allow memory conditions to recover.
+After intervention is active, release the bounded pressure workload without turning Performance Mode off.
 
 Acceptance:
-- one healthy sample does not restore;
+- one Healthy sample does not restore;
 - five consecutive Healthy samples are required;
-- after the recovery window, all still-valid managed processes return to their exact recorded nice values;
-- exited processes are recorded as exited and are not treated as restore failures;
-- unresolved restoration remains visible and retryable.
+- after the fifth Healthy sample, desired families become empty;
+- all still-valid changed processes return to their exact recorded original nice values;
+- exited processes are recorded as exited rather than treated as restore failures;
+- unresolved restoration stays visible and retryable;
+- Dashboard records the episode/restoration without claiming that a swap endpoint alone proves improvement.
 
-## 7. Normal OFF
+## 9. Normal OFF
 
-With Memory Management active, turn Performance Mode OFF normally.
-
-Acceptance:
-- Memory Agent `stop-and-restore` runs even if App Priority is disabled;
-- Memory restoration is attempted before core OFF completes;
-- valid outstanding process priorities restore exactly;
-- Background Service Suppression, App Priority, Visual Performance, foreground-app restoration, and core OFF continue through their existing independent recovery paths;
-- no managed policy remains after successful OFF.
-
-## 8. Emergency Restore
-
-Repeat controlled pressure, then invoke Emergency Restore.
+With Memory Management active if practical, turn Performance Mode OFF normally.
 
 Acceptance:
-- Memory Agent restoration is attempted even if another subsystem reports a restore error;
-- valid outstanding memory-priority records are restored exactly;
-- unresolved records remain preserved for retry rather than being deleted or guessed;
-- AirDrop, Wi-Fi/DNS, Bluetooth, audio, Keychain/password services, Finder, Dock, WindowServer, SystemUIServer, and login/session infrastructure remain untouched.
+- OFF bypasses Healthy hysteresis;
+- Memory Agent `stop-and-restore` is attempted before core OFF;
+- Memory restore is attempted even when App Priority is disabled;
+- App Priority, Background Service, Visual Performance, foreground-app, and core restoration continue through their independent paths if one memory restore reports failure;
+- no valid managed process remains at CatalinaPerformance's applied nice value after successful restoration;
+- unresolved restoration remains persisted for retry rather than being discarded.
 
-## 9. Process exit and PID reuse safety
+## 10. Emergency Restore
+
+Repeat controlled pressure, then invoke **Emergency Restore**.
+
+Acceptance mirrors normal OFF, and Emergency Restore continues the other restoration subsystems even if one Memory/App Priority/background step fails.
+
+Confirm the feature introduced no new use of:
+- `purge`;
+- swap-file deletion or swap disabling;
+- `sysctl -w` VM changes;
+- `taskpolicy`;
+- arbitrary process killing;
+- LaunchDaemon installation.
+
+## 11. Process exit and PID-reuse safety
 
 During a controlled managed state:
-
 1. Quit one managed background app normally.
 2. Launch other applications so new PIDs are created.
 
@@ -143,24 +213,39 @@ Acceptance:
 - identity requires matching PID, UID, executable path, start seconds, and start microseconds;
 - a mismatch is fail-closed.
 
-## 10. App relaunch / stale-session recovery
+## 12. Agent crash and stale-state recovery
 
-1. Start Performance Mode and create a managed state.
-2. Quit CatalinaPerformance unexpectedly without intentionally terminating the Memory Agent.
-3. Reopen CatalinaPerformance.
-4. Use normal OFF or Emergency Restore as appropriate.
+Only after normal ON/OFF passes:
+1. Start Performance Mode and reach an active Memory Management session.
+2. If a real intervention is active, record desired state/status and relevant nice values.
+3. Terminate only `CatalinaPerformanceMemoryAgent`.
+4. Use Emergency Restore rather than manually editing state files.
 
 Acceptance:
-- persisted desired/runtime state is recognized;
-- no new mutation begins from corrupt/unverifiable state;
-- outstanding valid records can still be restored;
-- stale state is preserved when exact restoration cannot be proven.
+- root-owned runtime restoration state is retained when needed;
+- recovery does not trust a reused PID;
+- Emergency Restore can retry exact restoration;
+- unresolved records remain visible when exact restoration cannot be proven.
 
-## 11. Dashboard / Advanced UI acceptance
+Also test quitting/reopening CatalinaPerformance during an active Performance Mode session. Persisted desired/runtime state must not authorize new mutation from corrupt or unverifiable identity data.
 
-Confirm the Session Dashboard has a dedicated **Memory / Swap** area and Advanced contains **Memory Pressure Management** status.
+## 13. Protected-infrastructure regression
 
-Active dashboard should report, when available:
+During and after pressure testing confirm normal operation of:
+- Finder and Dock;
+- Wi-Fi/DNS/network access;
+- AirDrop availability;
+- Bluetooth;
+- audio playback;
+- Keychain/password/autofill functionality;
+- WindowServer/SystemUIServer/login session;
+- CatalinaPerformance itself.
+
+No root-owned or protected infrastructure process may appear in Memory Management desired state.
+
+## 14. Dashboard evidence
+
+Active dashboard should report when available:
 - State
 - Physical Used
 - Available
@@ -185,16 +270,9 @@ Completed-session evidence should retain:
 - longest intervention duration;
 - restoration result.
 
-Advanced acceptance:
-- text states that management is automatically active with Performance Mode;
-- CPU policy is fixed at nice `+5`;
-- maximum managed workloads is fixed at 3;
-- I/O policy is Unsupported on this Catalina target;
-- there are no controls for nice level, family cap, swap target, compressor target, or VM thresholds.
+## 15. Evidence interpretation
 
-## 12. Evidence interpretation
-
-Do not claim success merely because swap decreased or because the intervention activated. Compare repeated equivalent workloads where possible and record:
+Do not claim success merely because swap decreased or because intervention activated. Compare repeated equivalent workloads where possible and record:
 - swap growth rate;
 - swap-out rate;
 - compression growth;
