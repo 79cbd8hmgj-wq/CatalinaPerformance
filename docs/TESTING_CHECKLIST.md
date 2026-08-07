@@ -160,8 +160,10 @@ For each system tweak:
 ## Memory Pressure / Swap Management Capability Checks
 
 - `/bin/sh scripts/tests/test_memory_vm_probe_source.sh`
+- `/bin/sh scripts/tests/test_catalina_process_support_source.sh`
 - `cd app/CatalinaPerformance && swift test --filter MemoryTelemetryModelsTests`
 - Confirm `CPVMMemoryInfo.availabilityMask` distinguishes unsupported counters from supported counters whose current value is zero.
+- Confirm `cp_read_vm_memory_info` is implemented by exactly one C translation unit; duplicate definitions must fail the process-support source contract before linking.
 - Confirm counter rollback/reset produces an unavailable interval rather than `0` activity.
 - Confirm VM sampling remains on the existing two-second Performance Session cadence; no second VM timer is introduced.
 - Confirm the capability probe is read-only: no `sudo`, `purge`, `sysctl -w`, defaults mutation, process termination, service unloading, or swap-file mutation.
@@ -172,5 +174,6 @@ For each system tweak:
 - Record `sw_vers`, `uname -a`, `hw.memsize`, `hw.pagesize`, `vm.swapusage`, `memory_pressure`, selected read-only `vm.*` values, and three `vm_stat` samples two seconds apart.
 - Verify counter names and units against the native `host_statistics64` fields used by CatalinaPerformance.
 - Verify compression, page-in/page-out, and swap-in/swap-out counters are monotonic during ordinary sampling or explicitly document resets/rollbacks.
-- Exercise a controlled memory-heavy workload and capture a second probe so rate thresholds can be based on observed Catalina behavior rather than guessed values.
-- Do not enable production rate thresholds or automatic memory intervention until this evidence is reviewed and committed.
+- The target Catalina 10.15.7 installation reports `/usr/bin/taskpolicy` unavailable; keep `CatalinaMemoryCapabilities.current.taskPolicy == false` and report I/O policy as **Unsupported**.
+- Do not substitute a private API, newer-macOS command, permanent helper, or undocumented I/O-priority mechanism for missing `taskpolicy` in 1.0.
+- Exercise a controlled memory-heavy workload during final runtime validation before tightening any currently unapproved swap-growth/churn rate thresholds.
