@@ -115,6 +115,7 @@ public struct MemoryManagementStatusSnapshot: Codable, Equatable {
     public let managedFamilyNames: [String]
     public let interventionActive: Bool
     public let ioPolicyStatus: MemoryIOPolicyStatus
+    public let telemetry: MemoryTelemetrySnapshot?
     public let note: String?
 
     public init(
@@ -124,6 +125,7 @@ public struct MemoryManagementStatusSnapshot: Codable, Equatable {
         managedFamilyNames: [String],
         interventionActive: Bool,
         ioPolicyStatus: MemoryIOPolicyStatus,
+        telemetry: MemoryTelemetrySnapshot? = nil,
         note: String?
     ) {
         self.capturedAt = capturedAt
@@ -132,6 +134,7 @@ public struct MemoryManagementStatusSnapshot: Codable, Equatable {
         self.managedFamilyNames = managedFamilyNames
         self.interventionActive = interventionActive
         self.ioPolicyStatus = ioPolicyStatus
+        self.telemetry = telemetry
         self.note = note
     }
 }
