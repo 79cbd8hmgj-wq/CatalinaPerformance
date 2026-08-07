@@ -42,7 +42,7 @@ final class WindowServerSessionDashboardPresentationTests: XCTestCase {
         ))
         let labels = viewModel.graphicsRows.map { $0.label }
 
-        XCTAssertEqual(Array(labels.prefix(7)), [
+        XCTAssertEqual(labels, [
             "Pressure",
             "Current CPU",
             "Rolling Average",
@@ -55,7 +55,6 @@ final class WindowServerSessionDashboardPresentationTests: XCTestCase {
         XCTAssertEqual(value("Rolling Average", in: viewModel), "18.7%")
         XCTAssertEqual(value("Session Average", in: viewModel), "17.9%")
         XCTAssertEqual(value("Change from Baseline", in: viewModel), "+7.9 percentage points")
-        XCTAssertEqual(value("Visual Performance", in: viewModel), "Applied")
     }
 
     func testUnavailableGraphicsValuesNeverRenderAsZero() {
@@ -138,8 +137,7 @@ final class WindowServerSessionDashboardPresentationTests: XCTestCase {
         XCTAssertEqual(value("Time Normal", in: viewModel), "12s")
         XCTAssertEqual(value("Time Elevated", in: viewModel), "8s")
         XCTAssertEqual(value("Time High", in: viewModel), "4s")
-        XCTAssertEqual(value("Visual Performance Applied", in: viewModel), "Applied")
-        XCTAssertEqual(value("Visual Performance Restored", in: viewModel), "Restored")
+        XCTAssertFalse(viewModel.graphicsRows.contains(where: { $0.label.hasPrefix("Visual Performance") }))
     }
 
     private func presenter() -> SessionDashboardPresenter {
