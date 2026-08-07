@@ -3,6 +3,9 @@ import CatalinaPerformancePriorityCore
 
 public protocol PerformanceSessionRecording: AnyObject {
     func begin(identifier: String, startedAt: Date, baseline: SessionMetricSnapshot, selectedApplication: AppPriorityApplication?)
+    func beginGraphicsBaseline()
+    func recordGraphicsBaseline(sample: WindowServerCPUReading)
+    func finalizeGraphicsBaseline()
     func markActive(at date: Date)
     func record(sample: SessionMetricSnapshot)
     func markFinalizing(preRestore: SessionMetricSnapshot?, at date: Date)
@@ -46,8 +49,39 @@ public final class PerformanceSessionRecorder: PerformanceSessionRecording {
                 backgroundServiceStatuses: nil,
                 monitoringGaps: [],
                 metricErrors: [],
-                completionReason: nil
+                completionReason: nil,
+                windowServer: nil
             )
+        }
+    }
+
+    public func beginGraphicsBaseline() {
+        queue.sync {
+            guard var record = recordValue else { return }
+            var graphics = record.windowServer ?? WindowServerSessionAggregate()
+            graphics.beginBaseline()
+            record.windowServer = graphics
+            recordValue = record
+        }
+    }
+
+    public func recordGraphicsBaseline(sample: WindowServerCPUReading) {
+        queue.sync {
+            guard var record = recordValue else { return }
+            var graphics = record.windowServer ?? WindowServerSessionAggregate()
+            graphics.recordBaseline(sample)
+            record.windowServer = graphics
+            recordValue = record
+        }
+    }
+
+    public func finalizeGraphicsBaseline() {
+        queue.sync {
+            guard var record = recordValue else { return }
+            var graphics = record.windowServer ?? WindowServerSessionAggregate()
+            graphics.finalizeBaseline()
+            record.windowServer = graphics
+            recordValue = record
         }
     }
 
@@ -65,6 +99,11 @@ public final class PerformanceSessionRecorder: PerformanceSessionRecording {
             guard var record = recordValue, record.phase == .active || record.phase == .preparing else { return }
             record.latest = sample
             record.aggregates.recordSample(sample)
+            if let windowServer = sample.windowServerCPU {
+                var graphics = record.windowServer ?? WindowServerSessionAggregate()
+                graphics.recordActive(windowServer, at: sample.capturedAt)
+                record.windowServer = graphics
+            }
             record.sampleCount += 1
             recordValue = record
         }
@@ -78,6 +117,11 @@ public final class PerformanceSessionRecorder: PerformanceSessionRecording {
                 record.finalPreRestore = snapshot
                 record.latest = snapshot
                 record.aggregates.recordFinalPreRestore(snapshot)
+                if let windowServer = snapshot.windowServerCPU {
+                    var graphics = record.windowServer ?? WindowServerSessionAggregate()
+                    graphics.recordFinalPreRestore(windowServer)
+                    record.windowServer = graphics
+                }
             }
             recordValue = record
         }
@@ -103,6 +147,11 @@ public final class PerformanceSessionRecorder: PerformanceSessionRecording {
             if let snapshot = postRestore {
                 record.postRestore = snapshot
                 record.aggregates.recordPostRestore(snapshot)
+                if let windowServer = snapshot.windowServerCPU {
+                    var graphics = record.windowServer ?? WindowServerSessionAggregate()
+                    graphics.recordPostRestore(windowServer)
+                    record.windowServer = graphics
+                }
             }
             record.phase = .completed
             record.completedAt = completedAt
@@ -128,6 +177,11 @@ public final class PerformanceSessionRecorder: PerformanceSessionRecording {
                 record.latest = latest
                 record.finalPreRestore = latest
                 record.aggregates.recordFinalPreRestore(latest)
+                if let windowServer = latest.windowServerCPU {
+                    var graphics = record.windowServer ?? WindowServerSessionAggregate()
+                    graphics.recordFinalPreRestore(windowServer)
+                    record.windowServer = graphics
+                }
             }
             record.phase = .interrupted
             record.completedAt = completedAt
@@ -254,7 +308,8 @@ public final class PerformanceSessionRecorder: PerformanceSessionRecording {
             backgroundServiceStatuses: record.backgroundServiceStatuses,
             monitoringGaps: record.monitoringGaps,
             metricErrors: record.metricErrors,
-            completionReason: reason
+            completionReason: reason,
+            windowServer: record.windowServer
         )
     }
 }
