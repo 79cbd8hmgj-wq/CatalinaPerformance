@@ -25,11 +25,22 @@ public extension SessionMetricsCollector {
                 .appendingPathComponent("Application Support", isDirectory: true)
                 .appendingPathComponent("CatalinaPerformance", isDirectory: true)
                 .appendingPathComponent("memory_management", isDirectory: true)
-            resolvedMemoryCoordinator = MemoryManagementCoordinator(
+            let baseCoordinator = MemoryManagementCoordinator(
                 desiredStateStore: MemoryDesiredStateStore(directoryURL: desiredStateDirectory),
                 processInspector: processInspector,
                 resourceInspector: processInspector,
                 requestingUID: currentUserProvider.uid
+            )
+            let agentStatusURL = URL(
+                fileURLWithPath: "/var/run/CatalinaPerformance",
+                isDirectory: true
+            )
+                .appendingPathComponent(String(currentUserProvider.uid), isDirectory: true)
+                .appendingPathComponent("memory_management", isDirectory: true)
+                .appendingPathComponent("status.json")
+            resolvedMemoryCoordinator = AgentConfirmedMemoryManagementCoordinator(
+                base: baseCoordinator,
+                agentStatusProvider: FileMemoryAgentStatusProvider(statusURL: agentStatusURL)
             )
         }
         let frontmostObserver = MemoryFrontmostApplicationObserver(
