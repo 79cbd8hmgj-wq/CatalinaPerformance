@@ -88,6 +88,7 @@ fi
 
 require_file "$PACKAGE_DIR/Package.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformance/main.swift"
+require_file "$PACKAGE_DIR/Sources/CatalinaPerformance/MemoryManagementPanelController.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformance/ForegroundSessionPanelController.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformance/AppPriorityPanelController.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceCore/ForegroundSession.swift"
