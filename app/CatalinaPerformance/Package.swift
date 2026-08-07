@@ -6,7 +6,8 @@ let package = Package(
     platforms: [.macOS(.v10_15)],
     products: [
         .executable(name: "CatalinaPerformance", targets: ["CatalinaPerformance"]),
-        .executable(name: "CatalinaPerformancePriorityAgent", targets: ["CatalinaPerformancePriorityAgent"])
+        .executable(name: "CatalinaPerformancePriorityAgent", targets: ["CatalinaPerformancePriorityAgent"]),
+        .executable(name: "CatalinaPerformanceMemoryAgent", targets: ["CatalinaPerformanceMemoryAgent"])
     ],
     targets: [
         .target(
@@ -54,6 +55,10 @@ let package = Package(
         .target(
             name: "CatalinaPerformancePriorityAgent",
             dependencies: ["CatalinaPerformancePriorityCore"]
+        ),
+        .target(
+            name: "CatalinaPerformanceMemoryAgent",
+            dependencies: ["CatalinaPerformanceMemoryCore"]
         ),
         .testTarget(
             name: "CatalinaPerformanceTests",
