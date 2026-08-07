@@ -155,7 +155,8 @@ public final class PerformanceSessionCoordinator {
         self.callbackQueue = callbackQueue
         self.stateQueue = stateQueue
         self.collectionQueue = collectionQueue
-        self.memoryManagementCoordinator = memoryManagementCoordinator
+        self.memoryManagementCoordinator = memoryManagementCoordinator ??
+            (collector as? MemoryManagementCoordinatorProviding)?.memoryManagementCoordinatorForSession
     }
 
     public func prepareForOn(selectedApplication: AppPriorityApplication?, completion: @escaping () -> Void) {
