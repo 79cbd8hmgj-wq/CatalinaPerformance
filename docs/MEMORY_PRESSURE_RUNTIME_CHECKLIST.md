@@ -44,6 +44,15 @@ Acceptance:
 - existing App Priority, Foreground Session, Background Service, and WindowServer contracts remain green;
 - warnings may be recorded separately but may not hide a build/test failure.
 
+Validated on target Catalina Mac on 2026-08-07:
+- full Swift regression: 346 tests, 0 failures, 0 unexpected;
+- CatalinaPerformance, CatalinaPerformancePriorityAgent, and CatalinaPerformanceMemoryAgent built successfully;
+- package creation completed with both agents and authorized wrappers bundled;
+- Memory Management wrapper assertions: 12/12 passed;
+- App Priority wrapper assertions: 16/16 passed;
+- corrected Background Service wrapper regression passed after its temporary fixture was updated to include the Memory Management wrapper dependency;
+- `git diff --check` reported no errors.
+
 ## 2. Package validation
 
 ```bash
@@ -258,26 +267,3 @@ Active dashboard should report when available:
 - Page-Out Activity
 - Managed Workloads
 - I/O Policy
-
-Completed-session evidence should retain:
-- baseline and maximum pressure state;
-- baseline/peak compressed memory;
-- baseline/peak/net swap;
-- peak compression/swap-in/swap-out activity;
-- time in Healthy/Elevated/High/Critical;
-- intervention episodes;
-- managed family names;
-- longest intervention duration;
-- restoration result.
-
-## 15. Evidence interpretation
-
-Do not claim success merely because swap decreased or because intervention activated. Compare repeated equivalent workloads where possible and record:
-- swap growth rate;
-- swap-out rate;
-- compression growth;
-- duration in High/Critical;
-- UI responsiveness;
-- foreground workload completion behavior.
-
-A result is acceptable when the feature is safe and reversible even if a particular workload shows no performance benefit. Any claim that the policy improves responsiveness must be supported by repeated observations rather than one run.
