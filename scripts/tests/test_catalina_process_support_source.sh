@@ -2,8 +2,9 @@
 set -eu
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
-SOURCE="$ROOT/app/CatalinaPerformance/Sources/CatalinaProcessSupport/CatalinaProcessSupport.c"
-HEADER="$ROOT/app/CatalinaPerformance/Sources/CatalinaProcessSupport/include/CatalinaProcessSupport.h"
+SOURCE_DIR="$ROOT/app/CatalinaPerformance/Sources/CatalinaProcessSupport"
+SOURCE="$SOURCE_DIR/CatalinaProcessSupport.c"
+HEADER="$SOURCE_DIR/include/CatalinaProcessSupport.h"
 
 test -f "$SOURCE"
 test -f "$HEADER"
@@ -26,5 +27,11 @@ grep -F 'capacity > CP_PROCESS_ARGUMENTS_MAX' "$SOURCE" >/dev/null
 grep -F 'memchr' "$SOURCE" >/dev/null
 grep -F 'return -E2BIG;' "$SOURCE" >/dev/null
 ! grep -E '/bin/ps|popen[[:space:]]*\(|system[[:space:]]*\(' "$SOURCE" >/dev/null
+
+VM_DEFINITION_FILE_COUNT=$(grep -l -E '^[[:space:]]*int32_t[[:space:]]+cp_read_vm_memory_info[[:space:]]*\(' "$SOURCE_DIR"/*.c | wc -l | tr -d ' ')
+if [ "$VM_DEFINITION_FILE_COUNT" -ne 1 ]; then
+    printf 'Expected cp_read_vm_memory_info in exactly one C translation unit; found %s.\n' "$VM_DEFINITION_FILE_COUNT" >&2
+    exit 1
+fi
 
 printf 'PASS: Catalina process-support source contract\n'
