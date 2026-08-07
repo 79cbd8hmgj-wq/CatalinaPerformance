@@ -12,8 +12,7 @@ public extension SessionMetricsCollector {
         processInspector: DarwinAppPriorityProcessInspector
     ) {
         let windowServerCollector = WindowServerMetricsCollector(
-            processInspector: processInspector,
-            nativeMetrics: nativeMetrics
+            processInspector: DarwinWindowServerProcessInspector()
         )
         self.init(
             nativeMetrics: nativeMetrics,
