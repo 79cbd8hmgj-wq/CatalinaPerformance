@@ -110,6 +110,7 @@ public enum MemoryIOPolicyStatus: String, Codable, Equatable {
 
 public struct MemoryManagementStatusSnapshot: Codable, Equatable {
     public let capturedAt: Date
+    public let sessionIdentifier: String?
     public let pressureState: MemoryPressureState
     public let managedFamilyCount: Int
     public let managedFamilyNames: [String]
@@ -120,6 +121,7 @@ public struct MemoryManagementStatusSnapshot: Codable, Equatable {
 
     public init(
         capturedAt: Date,
+        sessionIdentifier: String? = nil,
         pressureState: MemoryPressureState,
         managedFamilyCount: Int,
         managedFamilyNames: [String],
@@ -129,6 +131,7 @@ public struct MemoryManagementStatusSnapshot: Codable, Equatable {
         note: String?
     ) {
         self.capturedAt = capturedAt
+        self.sessionIdentifier = sessionIdentifier
         self.pressureState = pressureState
         self.managedFamilyCount = managedFamilyCount
         self.managedFamilyNames = managedFamilyNames
