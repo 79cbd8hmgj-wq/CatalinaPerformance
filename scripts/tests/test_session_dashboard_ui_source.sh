@@ -7,6 +7,8 @@ MAIN="$ROOT/app/CatalinaPerformance/Sources/CatalinaPerformance/main.swift"
 PACKAGE="$ROOT/scripts/package_app.sh"
 MODELS="$ROOT/app/CatalinaPerformance/Sources/CatalinaPerformanceDashboardCore/SessionMetricModels.swift"
 PRESENTATION="$ROOT/app/CatalinaPerformance/Sources/CatalinaPerformanceDashboardCore/SessionDashboardPresentation.swift"
+MEMORY_PRESENTATION="$ROOT/app/CatalinaPerformance/Sources/CatalinaPerformanceDashboardCore/MemorySessionDashboardPresentation.swift"
+MEMORY_AGGREGATE="$ROOT/app/CatalinaPerformance/Sources/CatalinaPerformanceDashboardCore/MemorySessionAggregate.swift"
 CORE="$ROOT/app/CatalinaPerformance/Sources/CatalinaPerformanceDashboardCore"
 
 test -f "$WINDOW"
@@ -20,6 +22,10 @@ grep -F 'Unavailable' "$WINDOW" >/dev/null
 grep -F 'func render(_ viewModel: SessionDashboardViewModel)' "$WINDOW" >/dev/null
 grep -F 'Focused Firefox Targets' "$WINDOW" >/dev/null
 grep -F 'viewModel.priorityDetailRows' "$WINDOW" >/dev/null
+grep -F 'section(title: "Memory / Swap"' "$WINDOW" >/dev/null
+grep -F 'viewModel.memoryRows' "$WINDOW" >/dev/null
+grep -F 'viewModel.systemRowsWithoutMemory' "$WINDOW" >/dev/null
+grep -F 'makeMemoryAwareViewModel' "$WINDOW" >/dev/null
 grep -F 'section(title: "Graphics / WindowServer"' "$WINDOW" >/dev/null
 grep -F 'viewModel.graphicsRows' "$WINDOW" >/dev/null
 grep -F 'viewModel.graphicsAdvisoryText' "$WINDOW" >/dev/null
@@ -65,6 +71,7 @@ grep -F 'Sources/CatalinaPerformanceDashboardCore/PerformanceSessionStore.swift'
 test -f "$MODELS"
 ! grep -F 'value.map(Double.init)' "$MODELS" >/dev/null
 grep -F 'value.map { Double($0) }' "$MODELS" >/dev/null
+grep -F 'public var memory: MemorySessionAggregate?' "$MODELS" >/dev/null
 test -f "$PRESENTATION"
 grep -F 'priorityDetailRows: [SessionDashboardMetricRow]' "$PRESENTATION" >/dev/null
 grep -F 'graphicsRows: [SessionDashboardMetricRow]' "$PRESENTATION" >/dev/null
@@ -72,6 +79,20 @@ grep -F 'graphicsAdvisoryText: String?' "$PRESENTATION" >/dev/null
 grep -F 'Tracked Firefox Processes' "$PRESENTATION" >/dev/null
 grep -F 'Processes Actually Boosted' "$PRESENTATION" >/dev/null
 grep -F 'Waiting for stable active content process' "$PRESENTATION" >/dev/null
+
+test -f "$MEMORY_PRESENTATION"
+test -f "$MEMORY_AGGREGATE"
+grep -F 'func makeMemoryAwareViewModel' "$MEMORY_PRESENTATION" >/dev/null
+grep -F '"Compression Growth"' "$MEMORY_PRESENTATION" >/dev/null
+grep -F '"Swap Growth"' "$MEMORY_PRESENTATION" >/dev/null
+grep -F '"Page-Out Activity"' "$MEMORY_PRESENTATION" >/dev/null
+grep -F '"Managed Workloads"' "$MEMORY_PRESENTATION" >/dev/null
+grep -F '"I/O Policy"' "$MEMORY_PRESENTATION" >/dev/null
+grep -F 'A lower or higher endpoint alone is not proof of improved performance.' "$MEMORY_PRESENTATION" >/dev/null
+grep -F 'public struct MemorySessionAggregate' "$MEMORY_AGGREGATE" >/dev/null
+grep -F 'interventionEpisodes' "$MEMORY_AGGREGATE" >/dev/null
+grep -F 'longestInterventionDuration' "$MEMORY_AGGREGATE" >/dev/null
+
 grep -F 'BackgroundServiceDashboardCategoryStatus' "$MODELS" >/dev/null
 grep -F 'case backgroundServiceSuppression' "$MODELS" >/dev/null
 grep -F 'replaceBackgroundServiceStatuses' "$ROOT/app/CatalinaPerformance/Sources/CatalinaPerformanceDashboardCore/PerformanceSessionCoordinator.swift" >/dev/null
