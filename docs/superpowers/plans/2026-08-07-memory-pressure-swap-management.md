@@ -4,27 +4,28 @@
 
 **Goal:** Add a Catalina-specific memory-pressure manager that detects sustained VM contention, ranks verified noncritical background application families, temporarily applies nice `+5` and only calibrated reversible I/O/background policy to at most three families, and restores their exact original state automatically.
 
-**Architecture:** Add a new `CatalinaPerformanceMemoryCore` target for telemetry, classification, family analysis, persistence, and intervention policy. Extend `CatalinaProcessSupport` with read-only VM counters, feed them through the existing 2-second Performance Session collector, and require exact process identity plus persisted recovery state before mutation. Reuse existing App Priority process identity/mutation boundaries and AppKit lifecycle; do not add another high-frequency VM timer, permanent daemon, VM/kernel tuning, application killing, swap disabling, or `purge` behavior.
+**Architecture:** Add a new `CatalinaPerformanceMemoryCore` target for telemetry, classification, family analysis, desired-state generation, persistence models, and presentation-safe status. Extend `CatalinaProcessSupport` with read-only VM counters and feed them through the existing 2-second Performance Session collector. Because restoring a process from nice `+5` to its original value may require privilege on Darwin, add a session-scoped `CatalinaPerformanceMemoryAgent` that is started and stopped inside the existing administrator-authorized Performance Mode wrapper flow; it persists exact root-owned mutation state before changing anything and consumes only validated user-owned desired-state records. No permanent LaunchDaemon/helper is installed.
 
-**Tech Stack:** Swift 5.2, macOS Catalina 10.15.7, AppKit, Foundation, SwiftPM, C Darwin APIs (`host_statistics64`, `sysctl`, `libproc`), existing shell test harness.
+**Tech Stack:** Swift 5.2, macOS Catalina 10.15.7, AppKit, Foundation, SwiftPM, C Darwin APIs (`host_statistics64`, `sysctl`, `libproc`), existing administrator wrapper scripts, existing shell test harness.
 
 ## Global Constraints
 
 - macOS minimum remains Catalina 10.15; compile with Xcode 12.4-era Swift.
-- Reuse the existing 2-second Performance Session cadence.
+- Reuse the existing 2-second Performance Session cadence for VM sampling; the privileged agent must not collect independent VM telemetry.
 - High requires 3 consecutive High candidates; Critical requires 2 consecutive Critical candidates; recovery requires 5 consecutive Healthy samples.
 - A family must remain background for 3 consecutive samples before eligibility.
 - Minimum family size is `max(256 MB, 5% of physical RAM)`.
 - Manage at most 3 families.
-- CPU target is nice `+5`; never increase a process's priority relative to its current state.
+- CPU target is nice `+5`; never increase a process's priority relative to its pre-intervention state.
 - `taskpolicy` remains Unsupported until Catalina calibration proves capture, apply, verify, exact restore, and verify-restored behavior on a disposable process.
 - Never mutate foreground apps, the App Priority target, CatalinaPerformance, WindowServer, Finder, Dock, SystemUIServer, loginwindow, launchd, kernel_task, root-owned processes, AirDrop/network/Bluetooth/audio/security infrastructure, or unverifiable identities.
 - Unavailable telemetry is never zero.
-- Persist exact recovery state before mutation.
+- The privileged agent must persist exact restoration state before mutation.
 - PID reuse or identity mismatch means do not touch.
 - No app termination, swap disabling, swap-file deletion, `purge`, VM/kernel tuning, arbitrary daemon unloading, SMC/MSR writes, kexts, or SIP changes.
 - Preserve AirDrop and Background Service Suppression `.resumedByUser` decisions.
-- Performance Mode OFF and Emergency Restore bypass hysteresis and restore immediately.
+- Performance Mode OFF and Emergency Restore bypass hysteresis and request immediate exact restoration.
+- No permanent privileged helper, LaunchDaemon, login item, or new authorization mechanism; reuse the existing administrator-authorized wrapper lifecycle.
 
 ---
 
@@ -37,14 +38,20 @@
 - `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/CatalinaMemoryCapabilities.swift`
 - `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryPressureClassifier.swift`
 - `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryProcessFamilyAnalyzer.swift`
-- `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryManagementStateStore.swift`
+- `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryManagementStateModels.swift`
+- `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryDesiredStateStore.swift`
+- `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryAgentStateStore.swift`
 - `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryInterventionController.swift`
 - `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryTaskPolicyAdapter.swift`
+- `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryAgentService.swift`
 - `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryManagementCoordinator.swift`
+- `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryAgent/main.swift`
+- `scripts/lib/memory_management_wrapper_common.sh`
 - `scripts/memory_vm_probe.sh`
 - `scripts/memory_taskpolicy_calibration.sh`
 - `scripts/tests/test_memory_vm_probe_source.sh`
 - `scripts/tests/test_memory_taskpolicy_calibration_source.sh`
+- `scripts/tests/test_memory_management_wrappers.sh`
 - `scripts/tests/test_memory_management_ui_source.sh`
 
 ### New tests
@@ -53,8 +60,10 @@
 - `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/CatalinaMemoryCapabilitiesTests.swift`
 - `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryPressureClassifierTests.swift`
 - `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryProcessFamilyAnalyzerTests.swift`
-- `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryManagementStateStoreTests.swift`
+- `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryDesiredStateStoreTests.swift`
+- `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryAgentStateStoreTests.swift`
 - `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryInterventionControllerTests.swift`
+- `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryAgentServiceTests.swift`
 - `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryManagementCoordinatorTests.swift`
 - `app/CatalinaPerformance/Tests/CatalinaPerformanceDashboardTests/MemorySessionMetricIntegrationTests.swift`
 - `app/CatalinaPerformance/Tests/CatalinaPerformanceDashboardTests/MemorySessionDashboardPresentationTests.swift`
@@ -73,6 +82,9 @@
 - `app/CatalinaPerformance/Sources/CatalinaPerformanceDashboardCore/SessionDashboardPresentation.swift`
 - `app/CatalinaPerformance/Sources/CatalinaPerformance/SessionDashboardWindowController.swift`
 - `app/CatalinaPerformance/Sources/CatalinaPerformance/main.swift`
+- `scripts/performance_on_with_priority.sh`
+- `scripts/performance_off_with_priority.sh`
+- `scripts/emergency_restore_with_priority.sh`
 - `scripts/package_app.sh`
 - `scripts/tests/test_session_dashboard_ui_source.sh`
 - `docs/TESTING_CHECKLIST.md`
@@ -87,9 +99,9 @@
 - Test: `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryTelemetryModelsTests.swift`
 
 **Interfaces:**
-- Produces: `MemoryPressureState`, `MemoryVMCounters`, `MemoryTelemetryRates`, `MemoryTelemetrySnapshot`, `MemoryManagedProcessRecord`, `MemoryManagedFamilyRecord`, `MemoryManagementStatusSnapshot`.
+- Produces `MemoryPressureState`, `MemoryVMCounters`, `MemoryTelemetryRates`, `MemoryTelemetrySnapshot`, `MemoryManagementStatusSnapshot`.
 
-- [ ] **Step 1: Write failing model tests**
+- [ ] **Step 1: Write failing tests**
 
 ```swift
 func testMemoryPressureStateOrdersBySeverity() {
@@ -119,7 +131,7 @@ swift test --filter MemoryTelemetryModelsTests
 
 Expected: FAIL because the target/types do not exist.
 
-- [ ] **Step 3: Add target and models**
+- [ ] **Step 3: Add target and explicit public models**
 
 Add to `Package.swift`:
 
@@ -134,75 +146,16 @@ Add to `Package.swift`:
 ),
 ```
 
-Add `CatalinaPerformanceMemoryCore` to the main executable and dashboard-core dependencies.
+Add `CatalinaPerformanceMemoryCore` to main-app and dashboard-core dependencies.
 
-Define:
+Define `MemoryVMCounters` with explicit `UInt64?` fields for unsupported counters and an explicit public initializer. Never use sentinel zero to mean unsupported.
 
-```swift
-public enum MemoryPressureState: Int, Codable, Comparable {
-    case healthy = 0
-    case elevated = 1
-    case high = 2
-    case critical = 3
-
-    public static func < (lhs: MemoryPressureState, rhs: MemoryPressureState) -> Bool {
-        lhs.rawValue < rhs.rawValue
-    }
-}
-
-public struct MemoryVMCounters: Codable, Equatable {
-    public let physicalBytes: UInt64
-    public let availableBytes: UInt64
-    public let compressedBytes: UInt64?
-    public let swapUsedBytes: UInt64
-    public let compressions: UInt64?
-    public let decompressions: UInt64?
-    public let pageIns: UInt64?
-    public let pageOuts: UInt64?
-    public let swapIns: UInt64?
-    public let swapOuts: UInt64?
-
-    public init(
-        physicalBytes: UInt64,
-        availableBytes: UInt64,
-        compressedBytes: UInt64?,
-        swapUsedBytes: UInt64,
-        compressions: UInt64?,
-        decompressions: UInt64?,
-        pageIns: UInt64?,
-        pageOuts: UInt64?,
-        swapIns: UInt64?,
-        swapOuts: UInt64?
-    ) {
-        self.physicalBytes = physicalBytes
-        self.availableBytes = availableBytes
-        self.compressedBytes = compressedBytes
-        self.swapUsedBytes = swapUsedBytes
-        self.compressions = compressions
-        self.decompressions = decompressions
-        self.pageIns = pageIns
-        self.pageOuts = pageOuts
-        self.swapIns = swapIns
-        self.swapOuts = swapOuts
-    }
-}
-```
-
-Give every public model an explicit public initializer.
-
-- [ ] **Step 4: Run tests**
+- [ ] **Step 4: Run tests and commit**
 
 ```bash
 swift test --filter MemoryTelemetryModelsTests
-```
-
-Expected: PASS.
-
-- [ ] **Step 5: Commit**
-
-```bash
 git add app/CatalinaPerformance/Package.swift \
-  app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore \
+  app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryTelemetryModels.swift \
   app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryTelemetryModelsTests.swift
 git commit -m "feat: add memory management core models"
 ```
@@ -218,50 +171,31 @@ git commit -m "feat: add memory management core models"
 - Test: `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryTelemetryModelsTests.swift`
 
 **Interfaces:**
-- Produces: `MemoryTelemetryCollecting.capture(at:) -> MemoryTelemetrySnapshot`.
+- Produces `MemoryTelemetryCollecting.capture(at:) -> MemoryTelemetrySnapshot`.
 - Native boundary: `cp_read_vm_memory_info(CPVMMemoryInfo *)`.
 
-- [ ] **Step 1: Write failing monotonic-counter tests**
+- [ ] **Step 1: Write monotonic-counter tests**
+
+Use this concrete rate case:
 
 ```swift
-func testRateCalculatorUsesPageSizedCounterDelta() {
-    let previous = MemoryVMCounters(
-        physicalBytes: 8_589_934_592,
-        availableBytes: 2_147_483_648,
-        compressedBytes: 1_073_741_824,
-        swapUsedBytes: 268_435_456,
-        compressions: 1_000,
-        decompressions: 200,
-        pageIns: 500,
-        pageOuts: 100,
-        swapIns: 20,
-        swapOuts: 100
-    )
-    let current = MemoryVMCounters(
-        physicalBytes: 8_589_934_592,
-        availableBytes: 2_000_000_000,
-        compressedBytes: 1_100_000_000,
-        swapUsedBytes: 270_000_000,
-        compressions: 1_100,
-        decompressions: 210,
-        pageIns: 520,
-        pageOuts: 110,
-        swapIns: 25,
-        swapOuts: 140
-    )
-    let rates = MemoryRateCalculator.rates(
-        previous: previous,
-        current: current,
+XCTAssertEqual(
+    MemoryRateCalculator.deltaRate(
+        previous: 100,
+        current: 140,
         elapsed: 2.0,
-        pageSize: 4096
+        unitBytes: 4096
+    ),
+    81_920
+)
+XCTAssertNil(
+    MemoryRateCalculator.deltaRate(
+        previous: 100,
+        current: 90,
+        elapsed: 2.0,
+        unitBytes: 4096
     )
-    XCTAssertEqual(rates.swapOutBytesPerSecond, 81_920)
-    XCTAssertEqual(rates.compressionBytesPerSecond, 204_800)
-}
-
-func testCounterRollbackProducesUnavailableRate() {
-    XCTAssertNil(MemoryRateCalculator.deltaRate(previous: 100, current: 90, elapsed: 2.0, unitBytes: 4096))
-}
+)
 ```
 
 - [ ] **Step 2: Add the read-only C boundary**
@@ -290,9 +224,9 @@ typedef struct {
 int32_t cp_read_vm_memory_info(CPVMMemoryInfo *output);
 ```
 
-Use `availabilityMask` bits to distinguish unsupported counters from real zero values. Non-Apple implementation returns `-ENOTSUP`.
+`availabilityMask` distinguishes a supported counter whose value is zero from an unsupported counter. Non-Apple returns `-ENOTSUP`.
 
-- [ ] **Step 3: Implement collector and rate calculator**
+- [ ] **Step 3: Implement collector**
 
 ```swift
 public protocol MemoryTelemetryCollecting {
@@ -302,31 +236,18 @@ public protocol MemoryTelemetryCollecting {
 public final class DarwinMemoryTelemetryCollector: MemoryTelemetryCollecting {
     private var previousDate: Date?
     private var previousCounters: MemoryVMCounters?
-
     public init() {}
-
-    public func capture(at date: Date) -> MemoryTelemetrySnapshot {
-        let native = readNativeCounters(at: date)
-        let rates = deriveRates(current: native, at: date)
-        previousDate = date
-        previousCounters = native
-        return MemoryTelemetrySnapshot(capturedAt: date, counters: native, rates: rates)
-    }
+    public func capture(at date: Date) -> MemoryTelemetrySnapshot
 }
 ```
 
-Use `{ Double($0) }` for `UInt64` conversion; never `value.map(Double.init)`.
+The implementation reads native counters once, calculates deltas from the previous successful reading, and updates previous state only after validating the current sample. Use `{ Double($0) }` for `UInt64` conversion; never `value.map(Double.init)`.
 
-- [ ] **Step 4: Run focused tests**
+- [ ] **Step 4: Run and commit**
 
 ```bash
 swift test --filter MemoryTelemetryModelsTests
 swift test --filter ProcessSupportSmokeTests
-```
-
-- [ ] **Step 5: Commit**
-
-```bash
 git add app/CatalinaPerformance/Sources/CatalinaProcessSupport \
   app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryTelemetryCollector.swift \
   app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryTelemetryModelsTests.swift
@@ -342,9 +263,9 @@ git commit -m "feat: collect Catalina VM telemetry"
 - Create: `scripts/tests/test_memory_vm_probe_source.sh`
 - Modify: `docs/TESTING_CHECKLIST.md`
 
-**Interfaces:** Produces evidence only; no production rate constants are approved here.
+**Interfaces:** Produces evidence only; no rate constant is approved here.
 
-- [ ] **Step 1: Write the source contract first**
+- [ ] **Step 1: Write source contract before the probe**
 
 ```sh
 grep -F '/usr/bin/vm_stat' scripts/memory_vm_probe.sh
@@ -353,17 +274,17 @@ grep -F 'vm.swapusage' scripts/memory_vm_probe.sh
 ! grep -Eq '(^|[[:space:]])(purge|killall|launchctl[[:space:]]+(bootout|unload)|sysctl[[:space:]]+-w|rm[[:space:]].*swap)' scripts/memory_vm_probe.sh
 ```
 
-- [ ] **Step 2: Verify failure before the probe exists**
+- [ ] **Step 2: Confirm source test fails before implementation**
 
 ```bash
 /bin/sh scripts/tests/test_memory_vm_probe_source.sh
 ```
 
-- [ ] **Step 3: Implement the probe**
+- [ ] **Step 3: Implement probe**
 
-Capture `sw_vers`, `uname -a`, `sysctl hw.memsize`, `sysctl vm.swapusage`, `vm_stat`, `memory_pressure`, selected read-only `vm.*` values, and three `vm_stat` captures separated by 2 seconds. Never use sudo or mutate preferences/sysctls.
+Capture `sw_vers`, `uname -a`, `sysctl hw.memsize`, `sysctl vm.swapusage`, `vm_stat`, `memory_pressure`, selected read-only `vm.*` values, and three `vm_stat` captures separated by 2 seconds. Never use sudo or write a preference/sysctl.
 
-- [ ] **Step 4: Verify source contract and commit**
+- [ ] **Step 4: Verify and commit**
 
 ```bash
 /bin/sh scripts/tests/test_memory_vm_probe_source.sh
@@ -371,14 +292,14 @@ git add scripts/memory_vm_probe.sh scripts/tests/test_memory_vm_probe_source.sh 
 git commit -m "test: add Catalina VM capability probe"
 ```
 
-- [ ] **Step 5: HARD STOP for target-Mac evidence**
+- [ ] **Step 5: HARD STOP for Catalina evidence**
 
 ```bash
 /bin/sh scripts/memory_vm_probe.sh \
   --output "$HOME/Desktop/catalina-10.15.7-memory-vm-probe.txt"
 ```
 
-Do not continue to production classifier thresholds until the evidence review records which counters exist, their units, monotonic behavior, and observed idle/pressure ranges.
+Do not continue to Task 4 until evidence review records supported counters, units, monotonic behavior, and observed idle/pressure ranges.
 
 ---
 
@@ -391,7 +312,7 @@ Do not continue to production classifier thresholds until the evidence review re
 
 **Interfaces:** Produces `CatalinaMemoryCapabilities.current` and `MemoryPressureThresholds.catalina10157`.
 
-- [ ] **Step 1: Encode only evidence-approved capabilities**
+- [ ] **Step 1: Encode capability flags only from reviewed probe evidence**
 
 ```swift
 public struct CatalinaMemoryCapabilities: Equatable {
@@ -404,7 +325,9 @@ public struct CatalinaMemoryCapabilities: Equatable {
 }
 ```
 
-- [ ] **Step 2: Test fixed percentage thresholds**
+`taskPolicy` is `false` in this task; Task 10 may change it only after independent calibration.
+
+- [ ] **Step 2: Test approved fixed percentages**
 
 ```swift
 XCTAssertEqual(profile.availableModerateFraction, 0.15)
@@ -414,17 +337,12 @@ XCTAssertEqual(profile.compressedModerateFraction, 0.20)
 XCTAssertEqual(profile.compressedStrongFraction, 0.30)
 ```
 
-For each rate-based constant, add one assertion with the exact reviewed Catalina number from the probe-evidence review commit. The implementation task must not invent a number independently.
+Each rate threshold gets an exact assertion using the reviewed value from the Task 3 evidence-review commit. The implementer must not invent an unreviewed number.
 
-- [ ] **Step 3: Implement profile and verify**
+- [ ] **Step 3: Run and commit**
 
 ```bash
 swift test --filter CatalinaMemoryCapabilitiesTests
-```
-
-- [ ] **Step 4: Commit**
-
-```bash
 git add app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/CatalinaMemoryCapabilities.swift \
   app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/CatalinaMemoryCapabilitiesTests.swift \
   docs/TESTING_CHECKLIST.md
@@ -433,17 +351,15 @@ git commit -m "feat: calibrate Catalina memory pressure profile"
 
 ---
 
-### Task 5: Implement the multi-signal classifier and five-sample recovery hysteresis
+### Task 5: Implement the multi-signal classifier and recovery hysteresis
 
 **Files:**
 - Create: `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryPressureClassifier.swift`
 - Test: `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryPressureClassifierTests.swift`
 
-**Interfaces:** Consumes `MemoryTelemetrySnapshot` + `MemoryPressureThresholds`; produces `MemoryPressureEvaluation`.
+**Interfaces:** Consumes `MemoryTelemetrySnapshot` and `MemoryPressureThresholds`; produces `MemoryPressureEvaluation`.
 
-- [ ] **Step 1: Write failing tests**
-
-Implement these exact test cases:
+- [ ] **Step 1: Write exact state-machine tests**
 
 ```swift
 func testSingleHighCandidateDoesNotIntervene()
@@ -456,7 +372,7 @@ func testStableHistoricalSwapDoesNotCreatePressureEvidence()
 func testUnavailableMetricContributesNoEvidence()
 ```
 
-- [ ] **Step 2: Implement explicit evidence flags**
+- [ ] **Step 2: Implement named evidence flags**
 
 ```swift
 public struct MemoryPressureEvidence: OptionSet, Codable {
@@ -473,7 +389,7 @@ public struct MemoryPressureEvidence: OptionSet, Codable {
 
 - [ ] **Step 3: Implement exact confirmation counters**
 
-No intervention request before 3 High or 2 Critical consecutive candidates. Any Elevated/High/Critical sample resets the Healthy recovery counter.
+No intervention request before 3 High or 2 Critical candidates. Any non-Healthy sample resets the Healthy recovery counter.
 
 - [ ] **Step 4: Run and commit**
 
@@ -493,7 +409,7 @@ git commit -m "feat: classify sustained memory pressure"
 - Create: `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryProcessFamilyAnalyzer.swift`
 - Test: `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryProcessFamilyAnalyzerTests.swift`
 
-**Interfaces:** Add `AppPriorityProcessResourceInspecting.residentBytes(pid:)`; produce `MemoryProcessFamilyCandidate` and deterministic ranked output.
+**Interfaces:** Add `AppPriorityProcessResourceInspecting.residentBytes(pid:)`; produce deterministic `[MemoryProcessFamilyCandidate]`.
 
 - [ ] **Step 1: Add focused resource protocol**
 
@@ -503,19 +419,19 @@ public protocol AppPriorityProcessResourceInspecting {
 }
 ```
 
-Make `DarwinAppPriorityProcessInspector` conform by reusing `cp_read_process_resources`.
+`DarwinAppPriorityProcessInspector` conforms using `cp_read_process_resources`.
 
-- [ ] **Step 2: Write family tests before implementation**
+- [ ] **Step 2: Write analyzer tests**
 
-Cover same-user grouping, 3-sample background eligibility, frontmost exclusion, App Priority exclusion, root exclusion, protected exact-path exclusion, significance threshold, memory-growth tie-break, deterministic ordering, maximum three families, and recently-foregrounded penalty.
+Cover same-user grouping, 3-sample background eligibility, frontmost exclusion, App Priority exclusion, root exclusion, protected exact-path exclusion, significance threshold, memory-growth tie-break, deterministic ordering, maximum three selection, and recently-foregrounded penalty.
 
-- [ ] **Step 3: Implement explicit protection policy**
+- [ ] **Step 3: Implement protection policy and family construction**
 
-Protect the approved critical names plus exact Catalina infrastructure paths. If frontmost application identity cannot be determined, refuse to admit new families.
+Use exact process identity/ancestry plus application identity; never authorize mutation from fuzzy process-name matching. If frontmost identity is unavailable, admit no new family.
 
 - [ ] **Step 4: Implement deterministic ranking**
 
-Rank by an explicit tuple of memory tier, growth tier, background sample count, then canonical family identifier. No randomization or opaque floating score.
+Use explicit ordered factors: memory tier, growth tier, sustained-background sample count, canonical family identifier. No randomization or opaque adaptive score.
 
 - [ ] **Step 5: Run and commit**
 
@@ -529,65 +445,76 @@ git commit -m "feat: rank safe background memory families"
 
 ---
 
-### Task 7: Add atomic recovery-state persistence before mutation
+### Task 7: Define desired-state and root-owned restoration-state models/stores
 
 **Files:**
-- Create: `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryManagementStateStore.swift`
-- Test: `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryManagementStateStoreTests.swift`
+- Create: `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryManagementStateModels.swift`
+- Create: `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryDesiredStateStore.swift`
+- Create: `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryAgentStateStore.swift`
+- Test: `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryDesiredStateStoreTests.swift`
+- Test: `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryAgentStateStoreTests.swift`
 
-**Interfaces:** `MemoryManagementStateStoring` with `loadActive`, `saveActive`, `complete`, `removeActiveIfResolved`.
+**Interfaces:**
+- User-owned desired-state path: `~/Library/Application Support/CatalinaPerformance/memory_management/desired-state.json`.
+- Privileged runtime root: `/var/run/CatalinaPerformance/<uid>/memory_management/`.
+- Produces `MemoryDesiredState`, `MemoryAgentRuntimeState`, `MemoryAgentStatus`.
 
-- [ ] **Step 1: Write persistence tests**
-
-Cover 0600 files, 0700 directory, temp+fsync+rename atomic write, symlink rejection, 1 MB limit, schema mismatch, corrupt active-state backup, unresolved state preventing deletion, and resolved state clearing active file.
-
-- [ ] **Step 2: Implement versioned record**
+- [ ] **Step 1: Define exact desired-state model**
 
 ```swift
-public struct MemoryManagementSessionRecord: Codable, Equatable {
+public struct MemoryDesiredState: Codable, Equatable {
     public static let currentSchemaVersion = 1
     public let schemaVersion: Int
     public let sessionIdentifier: String
     public let requestingUID: UInt32
-    public let startedAt: Date
-    public var managedFamilies: [MemoryManagedFamilyRecord]
-
-    public var hasOutstandingRestoration: Bool {
-        managedFamilies.contains { family in
-            family.processes.contains { $0.requiresRestoration }
-        }
-    }
+    public let generation: UInt64
+    public let shouldStopAndRestore: Bool
+    public let families: [MemoryDesiredFamily]
 }
 ```
 
-- [ ] **Step 3: Reuse the BackgroundServiceStateStore safety mechanics without sharing its schema/file**
+Each desired process contains PID, UID, parent PID, executable path, start seconds/microseconds, current observed nice, family identifier, and requested nice target.
 
-State path: `~/Library/Application Support/CatalinaPerformance/memory_management/active-session.json`.
+- [ ] **Step 2: Write desired-state safety tests**
 
-- [ ] **Step 4: Run and commit**
+Require 0600 file, 0700 directory, atomic temp+fsync+rename, no symlink, max 1 MB, schema validation, monotonically increasing generation, and at most three families.
+
+- [ ] **Step 3: Define root-owned runtime state**
+
+`MemoryAgentRuntimeState` stores exact original nice, applied nice, original/apply I/O policy when supported, process identity, session ID, and unresolved restoration flag for every mutation.
+
+- [ ] **Step 4: Write agent-state safety tests**
+
+Mirror existing `AppPriorityStateStore` security patterns: validated runtime root, atomic writes, lock file, status file, stop request, corrupt-state handling, unresolved state preservation.
+
+- [ ] **Step 5: Run and commit**
 
 ```bash
-swift test --filter MemoryManagementStateStoreTests
-git add app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryManagementStateStore.swift \
-  app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryManagementStateStoreTests.swift
-git commit -m "feat: persist memory intervention recovery state"
+swift test --filter MemoryDesiredStateStoreTests
+swift test --filter MemoryAgentStateStoreTests
+git add app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryManagementStateModels.swift \
+  app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryDesiredStateStore.swift \
+  app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryAgentStateStore.swift \
+  app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryDesiredStateStoreTests.swift \
+  app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryAgentStateStoreTests.swift
+git commit -m "feat: persist memory desired and restoration state"
 ```
 
 ---
 
-### Task 8: Implement exact nice `+5` intervention and restore-first replacement
+### Task 8: Implement privileged exact nice intervention and restoration
 
 **Files:**
 - Create: `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryInterventionController.swift`
 - Test: `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryInterventionControllerTests.swift`
 
-**Interfaces:** Consumes `AppPriorityProcessInspecting`, `AppPriorityPriorityMutating`, `MemoryManagementStateStoring`; produces `apply(families:)`, `restore(familyID:)`, `restoreAll()`, `recoverStaleState()`.
+**Interfaces:** Consumes `AppPriorityProcessInspecting`, `AppPriorityPriorityMutating`, `MemoryAgentStateStoring`; produces `reconcile(desired:)` and `restoreAll()`.
 
 - [ ] **Step 1: Write mutation tests**
 
-Verify: `0 -> +5 -> 0`, `+2 -> +5 -> +2`, existing `+8` unchanged, `-5 -> +5 -> -5`, PID/path/start-time mismatch refusal, save failure before write, restore-before-replacement, and partial failure retaining only unresolved obligations.
+Verify `0 -> +5 -> 0`, `+2 -> +5 -> +2`, existing `+8` unchanged, `-5 -> +5 -> -5`, PID/path/start-time mismatch refusal, state-save failure before write, restore-before-family-replacement, maximum three families, and partial failure retaining unresolved obligations.
 
-- [ ] **Step 2: Implement compare-and-verify writes**
+- [ ] **Step 2: Implement reverify-before-write**
 
 ```swift
 let current = try inspector.process(pid: recorded.pid)
@@ -596,11 +523,11 @@ guard recorded.identity.matchesForMutation(current) else {
 }
 ```
 
-After each `setPriority`, read back with `priority(pid:)` and require the exact expected value.
+The controller writes the root-owned runtime record before `setPriority`, then reads priority back after the write and requires exact confirmation.
 
-- [ ] **Step 3: Enforce the three-family cap inside the controller**
+- [ ] **Step 3: Implement restore-first reconciliation**
 
-Reject `apply(families:)` input above three even if the analyzer is wrong.
+When a previously managed family disappears from desired state, restore it before applying a replacement family. A reused PID is never restored.
 
 - [ ] **Step 4: Run and commit**
 
@@ -608,12 +535,58 @@ Reject `apply(families:)` input above three even if the analyzer is wrong.
 swift test --filter MemoryInterventionControllerTests
 git add app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryInterventionController.swift \
   app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryInterventionControllerTests.swift
-git commit -m "feat: apply reversible memory scheduling policy"
+git commit -m "feat: apply privileged reversible memory scheduling"
 ```
 
 ---
 
-### Task 9: Calibrate `taskpolicy` and gate I/O treatment
+### Task 9: Add the session-scoped privileged Memory Agent
+
+**Files:**
+- Create: `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryAgentService.swift`
+- Create: `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryAgent/main.swift`
+- Modify: `app/CatalinaPerformance/Package.swift`
+- Test: `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryAgentServiceTests.swift`
+
+**Interfaces:**
+- Commands: `validate --uid`, `start --uid`, `monitor --uid --session`, `stop-and-restore --uid`, `restore --uid`, `status --uid`.
+- Mirrors the proven `AppPriorityAgentService` lifecycle but validates Memory Management desired state and protected process policy.
+
+- [ ] **Step 1: Write command parser/service tests**
+
+Cover malformed UID/session rejection, console-UID mismatch, desired-state symlink/owner/mode rejection, start lock, monitor lock, start timeout, stop request, direct restore after monitor death, and status reporting.
+
+- [ ] **Step 2: Add executable target/product**
+
+```swift
+.executable(name: "CatalinaPerformanceMemoryAgent", targets: ["CatalinaPerformanceMemoryAgent"])
+```
+
+Target depends on `CatalinaPerformanceMemoryCore`.
+
+- [ ] **Step 3: Implement service start/monitor pattern**
+
+Use the existing App Priority agent's direct `Process` launch pattern; do not use `/usr/bin/nohup`. The monitor reads desired-state generations, validates every listed process as same-user/nonprotected, and calls `MemoryInterventionController.reconcile`.
+
+- [ ] **Step 4: Fail safe on missing/invalid desired state**
+
+If desired state becomes unreadable or invalid while mutations are outstanding, stop admitting changes and restore outstanding valid records. Never interpret missing desired state as permission to leave processes deprioritized indefinitely.
+
+- [ ] **Step 5: Run and commit**
+
+```bash
+swift test --filter MemoryAgentServiceTests
+swift build --product CatalinaPerformanceMemoryAgent
+git add app/CatalinaPerformance/Package.swift \
+  app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryAgentService.swift \
+  app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryAgent/main.swift \
+  app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryAgentServiceTests.swift
+git commit -m "feat: add session-scoped memory management agent"
+```
+
+---
+
+### Task 10: Calibrate `taskpolicy` and gate I/O treatment
 
 **Files:**
 - Create: `scripts/memory_taskpolicy_calibration.sh`
@@ -624,19 +597,19 @@ git commit -m "feat: apply reversible memory scheduling policy"
 
 **Interfaces:** Produces `MemoryIOPolicyApplying`.
 
-- [ ] **Step 1: Write source contract**
+- [ ] **Step 1: Write calibration source contract**
 
-Require a disposable child process. Reject arbitrary user PID arguments, permanent helpers, launchd writes, and unrelated process killing.
+Require a disposable child created by the script. Reject arbitrary target PID input, permanent helpers, launchd writes, and unrelated process killing.
 
 - [ ] **Step 2: Implement calibration sequence**
 
-The script must launch its own disposable process, capture policy state, apply candidate background/I/O policy, verify it, restore the captured state, verify restoration, then terminate only that disposable child and write JSON evidence.
+Launch disposable child, capture policy state, apply candidate background/I/O policy, verify, restore captured state, verify exact restoration, terminate only the disposable child, and write JSON evidence.
 
 - [ ] **Step 3: HARD STOP for Catalina evidence**
 
-If exact state capture or exact restoration cannot be proven, commit `taskPolicy: false`. Production then uses nice `+5` only.
+If exact state capture or exact restoration cannot be proven, keep `CatalinaMemoryCapabilities.current.taskPolicy == false`; production uses nice `+5` only.
 
-- [ ] **Step 4: Implement adapter only for a passed calibration**
+- [ ] **Step 4: Implement adapter only for passed calibration**
 
 ```swift
 public protocol MemoryIOPolicyApplying {
@@ -647,7 +620,7 @@ public protocol MemoryIOPolicyApplying {
 }
 ```
 
-When capability is false, return Unsupported without invoking `/usr/bin/taskpolicy`.
+Capability false returns Unsupported without invoking `/usr/bin/taskpolicy`.
 
 - [ ] **Step 5: Run and commit**
 
@@ -664,7 +637,7 @@ git commit -m "feat: gate memory I/O policy behind Catalina calibration"
 
 ---
 
-### Task 10: Integrate Memory Management with the existing 2-second session lifecycle
+### Task 11: Build the user-side Memory Management coordinator and session integration
 
 **Files:**
 - Create: `app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/MemoryManagementCoordinator.swift`
@@ -675,27 +648,27 @@ git commit -m "feat: gate memory I/O policy behind Catalina calibration"
 - Test: `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryManagementCoordinatorTests.swift`
 - Test: `app/CatalinaPerformance/Tests/CatalinaPerformanceDashboardTests/MemorySessionMetricIntegrationTests.swift`
 
-**Interfaces:** `SessionMetricSnapshot.memoryManagement` is optional for backward-compatible decoding. `PerformanceSessionCoordinator` forwards completed samples to `MemoryManagementCoordinator.ingest`.
+**Interfaces:** `SessionMetricSnapshot.memoryManagement` is optional for backward-compatible decoding. The coordinator writes validated desired state; it never writes process priorities directly.
 
 - [ ] **Step 1: Write coordinator tests**
 
-Verify Healthy no-op, 3 High apply, 2 Critical apply without escalation, 5 Healthy restore, immediate foreground restore, immediate App Priority conflict restore, OFF/Emergency Restore immediate restore, insufficient telemetry stops new admission and restores conservatively, and Background Service recheck preserves `.resumedByUser`.
+Verify Healthy no-op, 3 High desired-state admission, 2 Critical admission without escalation, 5 Healthy desired-state removal, immediate foreground removal, immediate App Priority-target removal, OFF/Emergency stop-and-restore request, insufficient telemetry causing conservative desired-state removal, and Background Service recheck preserving `.resumedByUser`.
 
-- [ ] **Step 2: Add optional memory snapshot with decoding default**
+- [ ] **Step 2: Add optional memory snapshot with decode default**
 
-Old dashboard JSON without the new field must still decode.
+Old dashboard JSON without `memoryManagement` must still decode.
 
 - [ ] **Step 3: Inject `MemoryTelemetryCollecting?` into `SessionMetricsCollector`**
 
-Capture memory telemetry in the same existing sampling call; no new timer.
+Capture memory telemetry in the same existing 2-second sample. No new VM timer.
 
-- [ ] **Step 4: Implement coordinator ingestion off the main thread**
+- [ ] **Step 4: Implement desired-state generation**
 
-UI callbacks return to main only after immutable `MemoryManagementStatusSnapshot` creation.
+Only confirmed High/Critical and verified candidates may enter desired state. Removing a foreground/App Priority family increments generation immediately so the privileged monitor restores it promptly.
 
-- [ ] **Step 5: Add a narrow Background Service recheck callback**
+- [ ] **Step 5: Add narrow Background Service recheck callback**
 
-It may ask the existing coordinator to rescan its approved catalog only; it cannot authorize new labels or reverse user resume decisions.
+It may request rescan of the existing approved catalog only; it cannot authorize new labels or reverse user resume decisions.
 
 - [ ] **Step 6: Run and commit**
 
@@ -711,7 +684,7 @@ git commit -m "feat: integrate adaptive memory management with sessions"
 
 ---
 
-### Task 11: Add session aggregates and the dedicated Memory / Swap dashboard section
+### Task 12: Add session aggregates and dedicated Memory / Swap dashboard reporting
 
 **Files:**
 - Modify: `app/CatalinaPerformance/Sources/CatalinaPerformanceDashboardCore/SessionMetricModels.swift`
@@ -725,17 +698,17 @@ git commit -m "feat: integrate adaptive memory management with sessions"
 
 - [ ] **Step 1: Write presentation tests**
 
-Active section must render State, Physical Used, Available, Compressed, Compression Growth, Swap Used, Swap Growth, Swap In, Swap Out, Page-Out Activity, Managed Workloads, and I/O Policy.
+Active rows: State, Physical Used, Available, Compressed, Compression Growth, Swap Used, Swap Growth, Swap In, Swap Out, Page-Out Activity, Managed Workloads, I/O Policy.
 
-Completed report must retain baseline/max/peak/net growth/time-in-state/intervention-count/managed-family/restoration evidence from the spec.
+Completed report: baseline/max state, baseline/peak compressed memory, peak compression growth, baseline/peak/net swap, peak swap-in/out, time Healthy/Elevated/High/Critical, intervention episodes, managed family names, longest intervention duration, restoration result.
 
-- [ ] **Step 2: Add `MemorySessionAggregate`**
+- [ ] **Step 2: Add aggregate recording without zero fabrication**
 
-Store baseline and maximum state, baseline/peak compressed bytes, peak compression rate, baseline/peak/net swap, peak swap-in/out rate, seconds Healthy/Elevated/High/Critical, intervention episode count, managed-family names, and longest intervention duration.
+Only available values contribute to peaks/rates. Use explicit `UInt64 -> Double` closures.
 
 - [ ] **Step 3: Add dedicated AppKit section**
 
-Follow the existing Graphics / WindowServer section structure; do not dump these rows into the generic System list.
+Follow the existing Graphics / WindowServer section pattern; do not overload the generic System rows.
 
 - [ ] **Step 4: Run and commit**
 
@@ -752,20 +725,73 @@ git commit -m "feat: report memory pressure management in dashboard"
 
 ---
 
-### Task 12: Wire ON/OFF, foreground protection, Advanced status, and Emergency Restore
+### Task 13: Start/stop the Memory Agent inside the existing authorized wrappers
+
+**Files:**
+- Create: `scripts/lib/memory_management_wrapper_common.sh`
+- Modify: `scripts/performance_on_with_priority.sh`
+- Modify: `scripts/performance_off_with_priority.sh`
+- Modify: `scripts/emergency_restore_with_priority.sh`
+- Create: `scripts/tests/test_memory_management_wrappers.sh`
+- Modify: `app/CatalinaPerformance/Sources/CatalinaPerformance/main.swift`
+- Modify: `scripts/package_app.sh`
+
+**Interfaces:** Environment adds `CATALINA_PERFORMANCE_MEMORY_AGENT_PATH` and `CATALINA_PERFORMANCE_MEMORY_DESIRED_STATE_FILE`.
+
+- [ ] **Step 1: Write wrapper tests before production changes**
+
+Require:
+
+```text
+ON: require memory agent -> validate -> core ON -> memory agent start
+ON rollback: if memory agent start fails, stop/restore App Priority, restore core/background state, and fail
+OFF: memory stop-and-restore runs even when App Priority is disabled
+Emergency: memory stop-and-restore is attempted even if another subsystem restore fails
+```
+
+Reject `nohup`, permanent daemon installation, arbitrary executable paths, and missing UID validation.
+
+- [ ] **Step 2: Add common wrapper helpers**
+
+Mirror `app_priority_wrapper_common.sh`: validate requesting UID, require exact executable, shell-quote environment, and invoke only documented Memory Agent commands.
+
+- [ ] **Step 3: Extend `ScriptRunner.scriptEnvironment()`**
+
+Add bundled/development resolution for `CatalinaPerformanceMemoryAgent`, matching the existing `priorityAgentURL` resolution pattern.
+
+- [ ] **Step 4: Package the memory agent**
+
+`package_app.sh` copies `CatalinaPerformanceMemoryAgent` to `Contents/Resources/bin/` and verifies it is executable.
+
+- [ ] **Step 5: Run and commit**
+
+```bash
+/bin/sh scripts/tests/test_memory_management_wrappers.sh
+cd app/CatalinaPerformance
+swift build --product CatalinaPerformanceMemoryAgent
+swift build --product CatalinaPerformance
+cd ../..
+git add scripts/lib/memory_management_wrapper_common.sh \
+  scripts/performance_on_with_priority.sh scripts/performance_off_with_priority.sh \
+  scripts/emergency_restore_with_priority.sh scripts/tests/test_memory_management_wrappers.sh \
+  app/CatalinaPerformance/Sources/CatalinaPerformance/main.swift scripts/package_app.sh
+git commit -m "feat: integrate memory agent with authorized lifecycle"
+```
+
+---
+
+### Task 14: Add Advanced status and complete foreground/App Priority lifecycle wiring
 
 **Files:**
 - Modify: `app/CatalinaPerformance/Sources/CatalinaPerformance/main.swift`
-- Modify: `app/CatalinaPerformance/Package.swift`
-- Modify: `scripts/package_app.sh`
 - Create: `scripts/tests/test_memory_management_ui_source.sh`
 - Test: `app/CatalinaPerformance/Tests/CatalinaPerformanceMemoryTests/MemoryManagementCoordinatorTests.swift`
 
-**Interfaces:** Main app constructs one `MemoryManagementCoordinator`; Advanced receives immutable status only, with no tuning sliders.
+**Interfaces:** Advanced UI receives immutable `MemoryManagementStatusSnapshot`; no tuning sliders.
 
-- [ ] **Step 1: Add source-contract assertions before AppKit edits**
+- [ ] **Step 1: Add UI source contract**
 
-Require these strings:
+Require:
 
 ```text
 Memory Pressure Management
@@ -774,36 +800,28 @@ CPU deprioritization: nice +5
 Maximum managed workloads: 3
 ```
 
-Reject UI controls for nice level, family cap, swap target, or VM thresholds.
+Reject controls for nice level, family cap, swap target, compressor target, or VM thresholds.
 
-- [ ] **Step 2: Add production construction in `main.swift`**
+- [ ] **Step 2: Add production coordinator construction**
 
-Import `CatalinaPerformanceMemoryCore`. Use:
+Desired-state directory:
 
 ```swift
 AdvancedPreferences.configDirectoryURL
     .appendingPathComponent("memory_management", isDirectory: true)
 ```
 
-for recovery state.
+Agent status path follows `/var/run/CatalinaPerformance/<uid>/memory_management/status.json`.
 
-- [ ] **Step 3: Integrate ON lifecycle**
+- [ ] **Step 3: Wire frontmost identity and App Priority conflict**
 
-Recover stale state before a new session. Permit new interventions only after Performance Mode is active and baseline/confirmation rules pass.
+Read `NSWorkspace.shared.frontmostApplication` on main, convert to immutable bundle/path identity, and notify the memory coordinator. A family removed for foreground/App Priority reasons must be absent from desired state before UI reports it eligible again.
 
-- [ ] **Step 4: Integrate OFF and Emergency Restore**
+- [ ] **Step 4: Replace old Memory / Storage explanatory text**
 
-Call `restoreAll(reason:)` before final dashboard completion. If unresolved obligations remain, retain state and surface recovery-required status.
+Memory Pressure Management becomes authoritative for memory state. Keep the existing manual storage report as a separate disk diagnostic.
 
-- [ ] **Step 5: Add foreground/App Priority conflict notifications**
-
-Read AppKit frontmost identity on main, pass immutable identity to the coordinator, and restore a managed family before it can become an App Priority target.
-
-- [ ] **Step 6: Replace the old Memory / Storage description**
-
-Make Memory Pressure Management authoritative for memory status. Keep the manual storage report button as a separate disk-space diagnostic.
-
-- [ ] **Step 7: Run and commit**
+- [ ] **Step 5: Run and commit**
 
 ```bash
 /bin/sh scripts/tests/test_memory_management_ui_source.sh
@@ -812,20 +830,19 @@ swift test --filter MemoryManagementCoordinatorTests
 swift build --product CatalinaPerformance
 cd ../..
 git add app/CatalinaPerformance/Sources/CatalinaPerformance/main.swift \
-  app/CatalinaPerformance/Package.swift scripts/package_app.sh \
   scripts/tests/test_memory_management_ui_source.sh
-git commit -m "feat: wire memory management into Performance Mode"
+git commit -m "feat: expose memory management status in Advanced"
 ```
 
 ---
 
-### Task 13: Full regression and Catalina runtime acceptance
+### Task 15: Full regression and Catalina runtime acceptance
 
 **Files:**
 - Modify: `docs/TESTING_CHECKLIST.md`
 - Create: `docs/MEMORY_PRESSURE_RUNTIME_CHECKLIST.md`
 
-**Interfaces:** Produces final evidence only; no new feature scope.
+**Interfaces:** Final evidence only; no new feature scope.
 
 - [ ] **Step 1: Run source-safety checks**
 
@@ -833,6 +850,7 @@ git commit -m "feat: wire memory management into Performance Mode"
 cd ~/Desktop/CatalinaPerformance
 /bin/sh scripts/tests/test_memory_vm_probe_source.sh
 /bin/sh scripts/tests/test_memory_taskpolicy_calibration_source.sh
+/bin/sh scripts/tests/test_memory_management_wrappers.sh
 /bin/sh scripts/tests/test_memory_management_ui_source.sh
 /bin/sh scripts/tests/test_session_dashboard_ui_source.sh
 /bin/sh scripts/tests/test_foreground_session.sh all
@@ -855,6 +873,7 @@ rm -rf .build
 swift test
 swift build --product CatalinaPerformance
 swift build --product CatalinaPerformancePriorityAgent
+swift build --product CatalinaPerformanceMemoryAgent
 cd ../..
 git diff --check
 ```
@@ -863,28 +882,33 @@ git diff --check
 
 ```bash
 pkill -x CatalinaPerformance 2>/dev/null || true
+pkill -x CatalinaPerformanceMemoryAgent 2>/dev/null || true
 rm -rf build
 ./scripts/package_app.sh
 open ./build/CatalinaPerformance.app
 ```
 
-- [ ] **Step 4: Validate no intervention under ordinary load**
+- [ ] **Step 4: Validate ordinary load does not intervene**
 
-Run Performance Mode for at least 2 minutes. Historical nonzero swap without active growth must not cause management; managed family count must remain zero when state is Healthy/Elevated.
+Run Performance Mode at least 2 minutes. Historical nonzero swap without active growth must not manage any family while state is Healthy/Elevated.
 
 - [ ] **Step 5: Validate controlled pressure lifecycle**
 
-Confirm `Healthy -> Elevated -> High`, 3 High samples before mutation, at most 3 eligible families, verified nice `+5`, immediate restoration when a managed app becomes foreground, then exact restoration after 5 Healthy samples.
+Confirm `Healthy -> Elevated -> High`, 3 High samples before desired-state admission, at most 3 families, privileged nice `+5` verification, immediate restoration when a managed app becomes foreground, and exact restoration after 5 Healthy samples.
 
-- [ ] **Step 6: Validate conflicts and recovery**
+- [ ] **Step 6: Validate privilege/restoration behavior**
 
-Confirm App Priority target exclusion, `.resumedByUser` preservation, OFF restore, Emergency Restore, PID-reuse refusal, and stale-session recovery.
+Confirm the agent can restore `+5 -> 0`, `+5 -> +2`, and `+5 -> -5` when those were the recorded originals. Confirm agent crash followed by `restore --uid` uses root-owned runtime state and does not require trusting current desired state.
 
-- [ ] **Step 7: Compare repeated performance evidence**
+- [ ] **Step 7: Validate conflicts and recovery**
+
+Confirm App Priority target exclusion, `.resumedByUser` preservation, OFF restore, Emergency Restore, PID-reuse refusal, invalid desired-state fail-safe restoration, and app relaunch/stale-session recovery.
+
+- [ ] **Step 8: Compare repeated performance evidence**
 
 Record swap growth, swap-out rate, compression growth, time High/Critical, UI responsiveness, and workload completion time. Do not claim benefit solely because intervention occurred.
 
-- [ ] **Step 8: Document actual Catalina evidence and commit**
+- [ ] **Step 9: Document actual Catalina evidence and commit**
 
 ```bash
 git add docs/TESTING_CHECKLIST.md docs/MEMORY_PRESSURE_RUNTIME_CHECKLIST.md
@@ -900,13 +924,15 @@ git commit -m "docs: validate Catalina memory pressure management"
 3. One abnormal sample cannot mutate anything.
 4. High/Critical confirmation and five-sample recovery are exact.
 5. No more than three families are managed.
-6. Foreground and App Priority conflicts restore before exclusion transitions complete.
-7. Every mutation is preceded by atomic persisted recovery state.
+6. Foreground and App Priority conflicts are removed from desired state immediately and restored by the privileged agent before replacement.
+7. The privileged agent persists root-owned exact restoration state before every mutation.
 8. Nice values restore exactly, including negative and nonzero originals.
 9. `taskpolicy` remains disabled unless exact calibration succeeds.
-10. OFF, Emergency Restore, failed activation, and stale-session recovery share restore-first logic.
-11. Unavailable telemetry is never displayed or classified as zero.
-12. Dashboard distinguishes high RAM usage from active pressure and historical swap from new swap growth.
-13. No app termination, swap disabling, `purge`, VM/kernel mutation, arbitrary daemon unloading, or protected-service mutation exists.
-14. Full Catalina tests/build/package pass and the real ON/OFF lifecycle is validated.
-15. Any performance claim is supported by repeated before/after evidence.
+10. OFF, Emergency Restore, failed activation, monitor failure, and stale-session recovery share restore-first behavior.
+11. Missing/invalid desired state never leaves outstanding valid mutations intentionally active.
+12. Unavailable telemetry is never displayed or classified as zero.
+13. Dashboard distinguishes high RAM usage from active pressure and historical swap from new swap growth.
+14. No app termination, swap disabling, `purge`, VM/kernel mutation, arbitrary daemon unloading, or protected-service mutation exists.
+15. No permanent privileged helper/LaunchDaemon is installed.
+16. Full Catalina tests/build/package pass and the real ON/OFF lifecycle is validated.
+17. Any performance claim is supported by repeated before/after evidence.
