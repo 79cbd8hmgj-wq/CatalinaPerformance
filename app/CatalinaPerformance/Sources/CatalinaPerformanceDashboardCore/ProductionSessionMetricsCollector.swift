@@ -16,6 +16,25 @@ public extension SessionMetricsCollector {
         let windowServerCollector = WindowServerMetricsCollector(
             processInspector: DarwinWindowServerProcessInspector()
         )
+        let resolvedMemoryCoordinator: MemoryManagementCoordinating
+        if let memoryManagementCoordinator = memoryManagementCoordinator {
+            resolvedMemoryCoordinator = memoryManagementCoordinator
+        } else {
+            let desiredStateDirectory = FileManager.default.homeDirectoryForCurrentUser
+                .appendingPathComponent("Library", isDirectory: true)
+                .appendingPathComponent("Application Support", isDirectory: true)
+                .appendingPathComponent("CatalinaPerformance", isDirectory: true)
+                .appendingPathComponent("memory_management", isDirectory: true)
+            resolvedMemoryCoordinator = MemoryManagementCoordinator(
+                desiredStateStore: MemoryDesiredStateStore(directoryURL: desiredStateDirectory),
+                processInspector: processInspector,
+                resourceInspector: processInspector,
+                requestingUID: currentUserProvider.uid
+            )
+        }
+        let frontmostObserver = MemoryFrontmostApplicationObserver(
+            coordinator: resolvedMemoryCoordinator
+        )
         self.init(
             nativeMetrics: nativeMetrics,
             thermalProvider: thermalProvider,
@@ -26,7 +45,8 @@ public extension SessionMetricsCollector {
             processInspector: processInspector,
             windowServerCollector: windowServerCollector,
             memoryTelemetryCollector: DarwinMemoryTelemetryCollector(),
-            memoryManagementCoordinator: memoryManagementCoordinator
+            memoryManagementCoordinator: resolvedMemoryCoordinator,
+            memoryFrontmostObserver: frontmostObserver
         )
     }
 }
