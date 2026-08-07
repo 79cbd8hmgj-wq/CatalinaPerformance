@@ -257,17 +257,7 @@ public final class SessionDashboardPresenter {
                 detailRow(label: "Post-Restore", value: percentageText(aggregate.postRestoreCPU), secondary: nil),
                 detailRow(label: "Time Normal", value: secondsText(aggregate.normalSeconds), secondary: nil),
                 detailRow(label: "Time Elevated", value: secondsText(aggregate.elevatedSeconds), secondary: nil),
-                detailRow(label: "Time High", value: secondsText(aggregate.highSeconds), secondary: nil),
-                detailRow(
-                    label: "Visual Performance Applied",
-                    value: booleanStatusText(aggregate.visualPerformanceActive, trueText: "Applied", falseText: "Not applied"),
-                    secondary: nil
-                ),
-                detailRow(
-                    label: "Visual Performance Restored",
-                    value: booleanStatusText(aggregate.visualPerformanceRestorationSucceeded, trueText: "Restored", falseText: "Not fully restored"),
-                    secondary: nil
-                )
+                detailRow(label: "Time High", value: secondsText(aggregate.highSeconds), secondary: nil)
             ]
         }
 
@@ -278,12 +268,7 @@ public final class SessionDashboardPresenter {
             detailRow(label: "Session Average", value: percentageText(aggregate.activeAverageCPU), secondary: nil),
             detailRow(label: "Session Peak", value: percentageText(aggregate.activePeakCPU), secondary: nil),
             detailRow(label: "Pre-ON Baseline", value: percentageText(aggregate.baseline?.averageCPU), secondary: baselineSecondaryText(aggregate.baseline)),
-            detailRow(label: "Change from Baseline", value: percentagePointText(aggregate.changeFromBaselinePercentagePoints), secondary: nil),
-            detailRow(
-                label: "Visual Performance",
-                value: booleanStatusText(aggregate.visualPerformanceActive, trueText: "Applied", falseText: "Not applied"),
-                secondary: nil
-            )
+            detailRow(label: "Change from Baseline", value: percentagePointText(aggregate.changeFromBaselinePercentagePoints), secondary: nil)
         ]
     }
 
@@ -328,15 +313,15 @@ public final class SessionDashboardPresenter {
 
     private func baselineSecondaryText(_ baseline: WindowServerBaselineSummary?) -> String? {
         guard let baseline = baseline else { return nil }
-        if baseline.validSampleCount < PerformanceSessionCoordinator.graphicsBaselineSampleCount {
-            return "\(baseline.validSampleCount) of \(PerformanceSessionCoordinator.graphicsBaselineSampleCount) baseline samples were valid."
+        let expectedMeasuredIntervals = max(0, PerformanceSessionCoordinator.graphicsBaselineSampleCount - 1)
+        guard baseline.validSampleCount < expectedMeasuredIntervals else { return nil }
+        if baseline.validSampleCount == 0 {
+            return "No measurable baseline CPU intervals were valid."
         }
-        return nil
-    }
-
-    private func booleanStatusText(_ value: Bool?, trueText: String, falseText: String) -> String {
-        guard let value = value else { return "Unknown" }
-        return value ? trueText : falseText
+        if expectedMeasuredIntervals == 2 && baseline.validSampleCount == 1 {
+            return "Only 1 of 2 measurable baseline CPU intervals was valid."
+        }
+        return "Only \(baseline.validSampleCount) of \(expectedMeasuredIntervals) measurable baseline CPU intervals were valid."
     }
 
     private func secondsText(_ seconds: TimeInterval) -> String {
