@@ -271,8 +271,7 @@ public final class MemoryManagementCoordinator: MemoryManagementCoordinating {
 
     private func recoverExistingSessionIfNeededLocked() {
         guard sessionIdentifier == nil else { return }
-        guard let recovered = try? desiredStateStore.load(),
-              let state = recovered,
+        guard let state = try? desiredStateStore.load(),
               state.requestingUID == requestingUID,
               !state.sessionIdentifier.isEmpty,
               state.sessionIdentifier.count <= 128,
