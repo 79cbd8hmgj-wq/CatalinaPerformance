@@ -26,4 +26,8 @@ Because the executable is unavailable on the target Catalina installation, Catal
 - Automatic intervention remains limited to the approved reversible nice `+5` scheduling policy.
 - No replacement private API, newer-macOS command, permanent helper, LaunchDaemon, kernel control, or undocumented I/O-priority mechanism is substituted.
 
-This is a capability result, not a failure of the core Memory Management feature. I/O treatment may be reconsidered only if a future Catalina-compatible mechanism can prove exact state capture and restoration under the same safety requirements.
+## Related validation finding
+
+The same target-Mac run exposed a linker regression because two C translation units both defined `cp_read_vm_memory_info`. That issue is independent of the taskpolicy capability result. The implementation branch now retains one canonical VM implementation, and the Catalina process-support source contract requires the symbol to be implemented by exactly one C translation unit.
+
+This taskpolicy result is a capability result, not a failure of the core Memory Management feature. I/O treatment may be reconsidered only if a future Catalina-compatible mechanism can prove exact state capture and restoration under the same safety requirements.
