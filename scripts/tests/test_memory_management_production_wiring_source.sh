@@ -6,10 +6,11 @@ COLLECTOR="$ROOT/app/CatalinaPerformance/Sources/CatalinaPerformanceDashboardCor
 PRODUCTION="$ROOT/app/CatalinaPerformance/Sources/CatalinaPerformanceDashboardCore/ProductionSessionMetricsCollector.swift"
 SESSION="$ROOT/app/CatalinaPerformance/Sources/CatalinaPerformanceDashboardCore/PerformanceSessionCoordinator.swift"
 FRONTMOST="$ROOT/app/CatalinaPerformance/Sources/CatalinaPerformanceDashboardCore/MemoryFrontmostApplicationObserver.swift"
+CONFIRMED="$ROOT/app/CatalinaPerformance/Sources/CatalinaPerformanceMemoryCore/AgentConfirmedMemoryManagementCoordinator.swift"
 PACKAGE="$ROOT/scripts/package_app.sh"
 COMMON="$ROOT/scripts/lib/memory_management_wrapper_common.sh"
 
-for file in "$COLLECTOR" "$PRODUCTION" "$SESSION" "$FRONTMOST" "$PACKAGE" "$COMMON"; do
+for file in "$COLLECTOR" "$PRODUCTION" "$SESSION" "$FRONTMOST" "$CONFIRMED" "$PACKAGE" "$COMMON"; do
     test -f "$file"
 done
 
@@ -19,12 +20,20 @@ grep -F 'MemoryManagementCoordinator(' "$PRODUCTION" >/dev/null
 grep -F 'MemoryDesiredStateStore(directoryURL: desiredStateDirectory)' "$PRODUCTION" >/dev/null
 grep -F 'DarwinMemoryTelemetryCollector()' "$PRODUCTION" >/dev/null
 grep -F 'MemoryFrontmostApplicationObserver(' "$PRODUCTION" >/dev/null
+grep -F 'AgentConfirmedMemoryManagementCoordinator(' "$PRODUCTION" >/dev/null
+grep -F 'FileMemoryAgentStatusProvider(statusURL: agentStatusURL)' "$PRODUCTION" >/dev/null
+grep -F '/var/run/CatalinaPerformance' "$PRODUCTION" >/dev/null
 grep -F '(collector as? MemoryManagementCoordinatorProviding)?.memoryManagementCoordinatorForSession' "$SESSION" >/dev/null
 
 grep -F 'NSWorkspace.didActivateApplicationNotification' "$FRONTMOST" >/dev/null
 grep -F 'updateFrontmostApplication' "$FRONTMOST" >/dev/null
 grep -F 'bundleIdentifier' "$FRONTMOST" >/dev/null
 grep -F 'executableURL' "$FRONTMOST" >/dev/null
+
+grep -F 'agent.sessionIdentifier == sessionIdentifier' "$CONFIRMED" >/dev/null
+grep -F 'agent.managedFamilyNames ?? []' "$CONFIRMED" >/dev/null
+grep -F 'agent.state == .active && confirmedCount > 0' "$CONFIRMED" >/dev/null
+grep -F 'has not confirmed an applied intervention yet' "$CONFIRMED" >/dev/null
 
 grep -F 'MEMORY_AGENT_NAME="CatalinaPerformanceMemoryAgent"' "$PACKAGE" >/dev/null
 grep -F 'swift build --product "$MEMORY_AGENT_NAME"' "$PACKAGE" >/dev/null
