@@ -275,6 +275,7 @@ public struct SessionMetricAggregates: Codable, Equatable {
     public var selectedAppResidentBytes: NumericMetricAggregate
     public var selectedAppVerifiedProcessCount: NumericMetricAggregate
     public var selectedAppPriorityConfirmedCount: NumericMetricAggregate
+    public var memory: MemorySessionAggregate?
 
     public init(
         systemCPUPercent: NumericMetricAggregate = NumericMetricAggregate(),
@@ -287,7 +288,8 @@ public struct SessionMetricAggregates: Codable, Equatable {
         selectedAppCPUPercent: NumericMetricAggregate = NumericMetricAggregate(),
         selectedAppResidentBytes: NumericMetricAggregate = NumericMetricAggregate(),
         selectedAppVerifiedProcessCount: NumericMetricAggregate = NumericMetricAggregate(),
-        selectedAppPriorityConfirmedCount: NumericMetricAggregate = NumericMetricAggregate()
+        selectedAppPriorityConfirmedCount: NumericMetricAggregate = NumericMetricAggregate(),
+        memory: MemorySessionAggregate? = nil
     ) {
         self.systemCPUPercent = systemCPUPercent
         self.memoryPressure = memoryPressure
@@ -300,6 +302,7 @@ public struct SessionMetricAggregates: Codable, Equatable {
         self.selectedAppResidentBytes = selectedAppResidentBytes
         self.selectedAppVerifiedProcessCount = selectedAppVerifiedProcessCount
         self.selectedAppPriorityConfirmedCount = selectedAppPriorityConfirmedCount
+        self.memory = memory
     }
 
     public mutating func recordBaseline(_ snapshot: SessionMetricSnapshot) {
@@ -314,6 +317,11 @@ public struct SessionMetricAggregates: Codable, Equatable {
         selectedAppResidentBytes.recordBaseline(snapshot.selectedAppResidentBytes.asDouble)
         selectedAppVerifiedProcessCount.recordBaseline(snapshot.selectedAppVerifiedProcessCount.asDouble)
         selectedAppPriorityConfirmedCount.recordBaseline(snapshot.selectedAppPriorityConfirmedCount.asDouble)
+        if snapshot.memoryManagement != nil {
+            var aggregate = memory ?? MemorySessionAggregate()
+            aggregate.recordBaseline(snapshot: snapshot)
+            memory = aggregate
+        }
     }
 
     public mutating func recordSample(_ snapshot: SessionMetricSnapshot) {
@@ -328,6 +336,11 @@ public struct SessionMetricAggregates: Codable, Equatable {
         selectedAppResidentBytes.recordSample(snapshot.selectedAppResidentBytes.asDouble)
         selectedAppVerifiedProcessCount.recordSample(snapshot.selectedAppVerifiedProcessCount.asDouble)
         selectedAppPriorityConfirmedCount.recordSample(snapshot.selectedAppPriorityConfirmedCount.asDouble)
+        if snapshot.memoryManagement != nil {
+            var aggregate = memory ?? MemorySessionAggregate()
+            aggregate.recordSample(snapshot: snapshot)
+            memory = aggregate
+        }
     }
 
     public mutating func recordFinalPreRestore(_ snapshot: SessionMetricSnapshot) {
@@ -342,6 +355,11 @@ public struct SessionMetricAggregates: Codable, Equatable {
         selectedAppResidentBytes.recordFinalPreRestore(snapshot.selectedAppResidentBytes.asDouble)
         selectedAppVerifiedProcessCount.recordFinalPreRestore(snapshot.selectedAppVerifiedProcessCount.asDouble)
         selectedAppPriorityConfirmedCount.recordFinalPreRestore(snapshot.selectedAppPriorityConfirmedCount.asDouble)
+        if snapshot.memoryManagement != nil {
+            var aggregate = memory ?? MemorySessionAggregate()
+            aggregate.recordFinalPreRestore(snapshot: snapshot)
+            memory = aggregate
+        }
     }
 
     public mutating func recordPostRestore(_ snapshot: SessionMetricSnapshot) {
@@ -356,6 +374,11 @@ public struct SessionMetricAggregates: Codable, Equatable {
         selectedAppResidentBytes.recordPostRestore(snapshot.selectedAppResidentBytes.asDouble)
         selectedAppVerifiedProcessCount.recordPostRestore(snapshot.selectedAppVerifiedProcessCount.asDouble)
         selectedAppPriorityConfirmedCount.recordPostRestore(snapshot.selectedAppPriorityConfirmedCount.asDouble)
+        if snapshot.memoryManagement != nil || memory != nil {
+            var aggregate = memory ?? MemorySessionAggregate()
+            aggregate.recordPostRestore(snapshot: snapshot)
+            memory = aggregate
+        }
     }
 }
 
