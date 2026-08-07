@@ -174,10 +174,14 @@ For each system tweak:
 
 - `cd app/CatalinaPerformance && swift test --filter MemoryManagementCoordinatorTests`
 - `cd app/CatalinaPerformance && swift test --filter MemorySessionMetricIntegrationTests`
+- `cd app/CatalinaPerformance && swift test --filter MemoryPerformanceSessionLifecycleTests`
+- `cd app/CatalinaPerformance && swift test --filter PerformanceSessionCoordinatorTests`
 - `cd app/CatalinaPerformance && swift build --product CatalinaPerformanceMemoryAgent`
 - `cd app/CatalinaPerformance && swift build --product CatalinaPerformance`
 - Confirm old `SessionMetricSnapshot` JSON without `memoryManagement` still decodes.
 - Confirm VM telemetry is captured only as part of the existing session sample; no second timer is introduced.
+- Confirm the Memory Management desired state is armed with the exact dashboard session identifier before the first baseline capture completes and before the authorized ON wrapper is allowed to run.
+- Confirm failed ON, normal OFF, and Emergency Restore publish an immediate stop-and-restore desired state before wrapper continuation.
 - Confirm High requires three consecutive candidates and Critical requires two.
 - Confirm a workload must remain background for three samples and exceed `max(256 MiB, 5% physical RAM)` before admission.
 - Confirm foreground and App Priority families are removed from desired state immediately.
