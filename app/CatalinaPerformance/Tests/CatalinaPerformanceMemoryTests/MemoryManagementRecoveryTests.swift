@@ -31,7 +31,7 @@ final class MemoryManagementRecoveryTests: XCTestCase {
 
         XCTAssertEqual(status.managedFamilyCount, 0)
         XCTAssertEqual(store.state?.generation, 8)
-        XCTAssertEqual(store.state?.families, [])
+        XCTAssertTrue(store.state?.families.isEmpty == true)
         XCTAssertEqual(store.state?.shouldStopAndRestore, false)
     }
 
@@ -44,7 +44,7 @@ final class MemoryManagementRecoveryTests: XCTestCase {
         XCTAssertEqual(status.sessionIdentifier, "persisted-session")
         XCTAssertEqual(status.managedFamilyCount, 0)
         XCTAssertEqual(store.state?.generation, 12)
-        XCTAssertEqual(store.state?.families, [])
+        XCTAssertTrue(store.state?.families.isEmpty == true)
         XCTAssertEqual(store.state?.shouldStopAndRestore, true)
     }
 
