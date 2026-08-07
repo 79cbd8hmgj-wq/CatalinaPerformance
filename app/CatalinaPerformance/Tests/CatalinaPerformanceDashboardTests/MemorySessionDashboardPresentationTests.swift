@@ -100,7 +100,7 @@ final class MemorySessionDashboardPresentationTests: XCTestCase {
             completionReason: nil
         )
         let presenter = SessionDashboardPresenter(nowProvider: { self.base.addingTimeInterval(6) })
-        let model = presenter.makeViewModel(from: PerformanceSessionCoordinatorState(content: .active(record), warningMessage: nil))
+        let model = presenter.makeMemoryAwareViewModel(from: PerformanceSessionCoordinatorState(content: .active(record), warningMessage: nil))
         let labels = model.memoryRows.map { $0.label }
 
         XCTAssertTrue(labels.contains("State"))
@@ -116,6 +116,7 @@ final class MemorySessionDashboardPresentationTests: XCTestCase {
         XCTAssertTrue(labels.contains("Managed Workloads"))
         XCTAssertTrue(labels.contains("I/O Policy"))
         XCTAssertEqual(model.memoryRows.first(where: { $0.label == "Swap In" })?.current, "Unavailable")
+        XCTAssertFalse(model.systemRowsWithoutMemory.contains(where: { $0.label == "Memory Used" || $0.label == "Swap Used" }))
     }
 
     func testCompletedDashboardReportsMemorySessionEvidence() {
@@ -143,7 +144,7 @@ final class MemorySessionDashboardPresentationTests: XCTestCase {
             completionReason: .normalOff
         )
         let model = SessionDashboardPresenter(nowProvider: { self.base.addingTimeInterval(4) })
-            .makeViewModel(from: PerformanceSessionCoordinatorState(content: .completed(report), warningMessage: nil))
+            .makeMemoryAwareViewModel(from: PerformanceSessionCoordinatorState(content: .completed(report), warningMessage: nil))
         let labels = model.memoryRows.map { $0.label }
 
         XCTAssertTrue(labels.contains("Maximum State"))
