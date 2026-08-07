@@ -79,6 +79,7 @@ public final class SessionMetricsCollector: SessionMetricsCollecting {
     private let statusProvider: AppPriorityStatusProviding
     private let currentUserProvider: DashboardCurrentUserProviding
     private let processInspector: AppPriorityProcessInspecting
+    private let windowServerCollector: WindowServerMetricsCollecting?
 
     private var previousHostTicks: HostCPUTicks?
     private var previousProcessCPU: [SelectedProcessKey: UInt64] = [:]
@@ -92,7 +93,8 @@ public final class SessionMetricsCollector: SessionMetricsCollecting {
         selectionProvider: AppPrioritySelectionProviding,
         statusProvider: AppPriorityStatusProviding,
         currentUserProvider: DashboardCurrentUserProviding,
-        processInspector: AppPriorityProcessInspecting
+        processInspector: AppPriorityProcessInspecting,
+        windowServerCollector: WindowServerMetricsCollecting? = nil
     ) {
         self.nativeMetrics = nativeMetrics
         self.thermalProvider = thermalProvider
@@ -101,6 +103,7 @@ public final class SessionMetricsCollector: SessionMetricsCollecting {
         self.statusProvider = statusProvider
         self.currentUserProvider = currentUserProvider
         self.processInspector = processInspector
+        self.windowServerCollector = windowServerCollector
     }
 
     public func capture(at date: Date, refreshThermal: Bool) -> SessionMetricSnapshot {
@@ -110,6 +113,7 @@ public final class SessionMetricsCollector: SessionMetricsCollecting {
         let disk = collectDisk(at: date)
         let thermal = collectThermal(at: date, refresh: refreshThermal)
         let selected = collectSelectedApplication(at: date)
+        let windowServer = windowServerCollector?.capture(at: date)
 
         return SessionMetricSnapshot(
             capturedAt: date,
@@ -124,7 +128,8 @@ public final class SessionMetricsCollector: SessionMetricsCollecting {
             selectedAppResidentBytes: selected.resident,
             selectedAppVerifiedProcessCount: selected.processCount,
             selectedAppPriorityConfirmedCount: selected.confirmedCount,
-            focusedFirefoxPriority: selected.focusedFirefox
+            focusedFirefoxPriority: selected.focusedFirefox,
+            windowServerCPU: windowServer
         )
     }
 
