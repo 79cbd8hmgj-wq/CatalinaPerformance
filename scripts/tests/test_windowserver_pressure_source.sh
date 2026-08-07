@@ -6,13 +6,14 @@ CORE="$ROOT/app/CatalinaPerformance/Sources/CatalinaPerformanceDashboardCore"
 APP="$ROOT/app/CatalinaPerformance/Sources/CatalinaPerformance"
 MODELS="$CORE/WindowServerPressureModels.swift"
 COLLECTOR="$CORE/WindowServerMetricsCollector.swift"
+INSPECTOR="$CORE/WindowServerPSProcessInspector.swift"
 PRODUCTION="$CORE/ProductionSessionMetricsCollector.swift"
 COORDINATOR="$CORE/PerformanceSessionCoordinator.swift"
 PRESENTER="$CORE/SessionDashboardPresentation.swift"
 WINDOW="$APP/SessionDashboardWindowController.swift"
 DOC="$ROOT/docs/WINDOWSERVER_GPU_PRESSURE_RUNTIME_CHECKLIST.md"
 
-for file in "$MODELS" "$COLLECTOR" "$PRODUCTION" "$COORDINATOR" "$PRESENTER" "$WINDOW" "$DOC"; do
+for file in "$MODELS" "$COLLECTOR" "$INSPECTOR" "$PRODUCTION" "$COORDINATOR" "$PRESENTER" "$WINDOW" "$DOC"; do
     test -f "$file"
 done
 
@@ -29,15 +30,26 @@ grep -F 'requiredHighCandidateCount = 2' "$MODELS" >/dev/null
 grep -F 'rollingCPUValues.count > 3' "$MODELS" >/dev/null
 grep -F 'validCPUPercent' "$MODELS" >/dev/null
 
-grep -F 'process.processName == "WindowServer"' "$COLLECTOR" >/dev/null
-grep -F 'process.executablePath.hasSuffix("/WindowServer")' "$COLLECTOR" >/dev/null
-grep -F 'cpuTimeNanoseconds' "$COLLECTOR" >/dev/null
+grep -F 'WindowServerProcessInspecting' "$COLLECTOR" >/dev/null
+grep -F 'cumulativeCPUTimeNanoseconds' "$COLLECTOR" >/dev/null
 grep -F 'date.timeIntervalSince(previous.capturedAt)' "$COLLECTOR" >/dev/null
 grep -F 'WindowServer process identity changed; a fresh CPU baseline is required.' "$COLLECTOR" >/dev/null
-! grep -F 'ps ' "$COLLECTOR" >/dev/null
+! grep -F 'AppPriorityProcessInspecting' "$COLLECTOR" >/dev/null
+! grep -F 'DashboardNativeMetricsProviding' "$COLLECTOR" >/dev/null
 ! grep -F 'Timer.' "$COLLECTOR" >/dev/null
 ! grep -F 'DispatchSource' "$COLLECTOR" >/dev/null
 
+grep -F '"/usr/bin/pgrep"' "$INSPECTOR" >/dev/null
+grep -F '["-x", "WindowServer"]' "$INSPECTOR" >/dev/null
+grep -F '"/bin/ps"' "$INSPECTOR" >/dev/null
+grep -F '"time="' "$INSPECTOR" >/dev/null
+grep -F 'LC_ALL' "$INSPECTOR" >/dev/null
+grep -F 'SkyLight.framework/' "$INSPECTOR" >/dev/null
+! grep -F '"%cpu="' "$INSPECTOR" >/dev/null
+! grep -F 'proc_pid_rusage' "$INSPECTOR" >/dev/null
+! grep -F 'PROC_PIDTBSDINFO' "$INSPECTOR" >/dev/null
+
+grep -F 'DarwinWindowServerProcessInspector()' "$PRODUCTION" >/dev/null
 grep -F 'let windowServerCollector = WindowServerMetricsCollector(' "$PRODUCTION" >/dev/null
 grep -F 'windowServerCollector: windowServerCollector' "$PRODUCTION" >/dev/null
 
@@ -60,7 +72,7 @@ if grep -R -nE 'killall[[:space:]]+WindowServer|pkill[^\n]*WindowServer|renice[^
     exit 1
 fi
 
-if grep -R -nE 'NSAppleScript|administrator privileges|AuthorizationExecuteWithPrivileges' "$MODELS" "$COLLECTOR" "$PRODUCTION"; then
+if grep -R -nE 'NSAppleScript|administrator privileges|AuthorizationExecuteWithPrivileges' "$MODELS" "$COLLECTOR" "$INSPECTOR" "$PRODUCTION"; then
     echo 'FAIL: WindowServer telemetry contains an authorization path' >&2
     exit 1
 fi
