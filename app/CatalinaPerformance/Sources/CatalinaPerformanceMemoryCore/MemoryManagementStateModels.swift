@@ -191,6 +191,7 @@ public struct MemoryAgentStatus: Codable, Equatable {
     public let sessionIdentifier: String?
     public let managedFamilyCount: Int
     public let managedProcessCount: Int
+    public let managedFamilyNames: [String]?
     public let lastAppliedGeneration: UInt64?
     public let message: String
 
@@ -199,6 +200,7 @@ public struct MemoryAgentStatus: Codable, Equatable {
         sessionIdentifier: String?,
         managedFamilyCount: Int,
         managedProcessCount: Int,
+        managedFamilyNames: [String]? = nil,
         lastAppliedGeneration: UInt64?,
         message: String
     ) {
@@ -206,6 +208,7 @@ public struct MemoryAgentStatus: Codable, Equatable {
         self.sessionIdentifier = sessionIdentifier
         self.managedFamilyCount = managedFamilyCount
         self.managedProcessCount = managedProcessCount
+        self.managedFamilyNames = managedFamilyNames
         self.lastAppliedGeneration = lastAppliedGeneration
         self.message = String(message.prefix(512))
     }
