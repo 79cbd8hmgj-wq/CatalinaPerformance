@@ -2,7 +2,11 @@
 
 require_memory_agent() {
     MEMORY_AGENT=${CATALINA_PERFORMANCE_MEMORY_AGENT_PATH:-}
-    [ -n "$MEMORY_AGENT" ] || return 1
+    if [ -z "$MEMORY_AGENT" ]; then
+        priority_path=${CATALINA_PERFORMANCE_PRIORITY_AGENT_PATH:-}
+        [ -n "$priority_path" ] || return 1
+        MEMORY_AGENT="$(dirname -- "$priority_path")/CatalinaPerformanceMemoryAgent"
+    fi
     [ "$(basename -- "$MEMORY_AGENT")" = "CatalinaPerformanceMemoryAgent" ] || return 1
     [ -f "$MEMORY_AGENT" ] || return 1
     [ -x "$MEMORY_AGENT" ] || return 1
