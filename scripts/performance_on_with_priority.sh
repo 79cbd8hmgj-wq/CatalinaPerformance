@@ -22,7 +22,6 @@ while [ "$#" -gt 0 ]; do
 done
 [ -n "$REQUESTING_UID" ] || { printf 'Missing --requesting-uid.\n' >&2; exit 2; }
 require_memory_agent || { printf 'Memory Management agent is missing, unsafe, or not executable.\n' >&2; exit 1; }
-require_memory_desired_state || { printf 'Memory Management desired state is missing or unsafe.\n' >&2; exit 1; }
 require_priority_agent || { printf 'Priority agent is missing or not executable.\n' >&2; exit 1; }
 prepare_background_service_wrapper_environment
 
