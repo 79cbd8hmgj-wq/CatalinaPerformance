@@ -21,7 +21,7 @@ require_memory_agent() {
 
 require_memory_desired_state() {
     MEMORY_DESIRED_STATE=${CATALINA_PERFORMANCE_MEMORY_DESIRED_STATE_FILE:-}
-    [ -n "$MEMORY_DESIRED_STATE" ] || return 1
+    [ -z "$MEMORY_DESIRED_STATE" ] && return 0
     [ -f "$MEMORY_DESIRED_STATE" ] || return 1
     [ ! -L "$MEMORY_DESIRED_STATE" ] || return 1
     case "$MEMORY_DESIRED_STATE" in
@@ -31,5 +31,9 @@ require_memory_desired_state() {
 }
 
 run_memory_agent() {
-    CATALINA_PERFORMANCE_MEMORY_DESIRED_STATE_FILE="$MEMORY_DESIRED_STATE" "$MEMORY_AGENT" "$@"
+    if [ -n "${MEMORY_DESIRED_STATE:-}" ]; then
+        CATALINA_PERFORMANCE_MEMORY_DESIRED_STATE_FILE="$MEMORY_DESIRED_STATE" "$MEMORY_AGENT" "$@"
+    else
+        "$MEMORY_AGENT" "$@"
+    fi
 }
