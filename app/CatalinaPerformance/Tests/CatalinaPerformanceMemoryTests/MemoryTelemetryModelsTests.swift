@@ -56,4 +56,49 @@ final class MemoryTelemetryModelsTests: XCTestCase {
         XCTAssertTrue(status.interventionActive)
         XCTAssertEqual(status.ioPolicyStatus, .unsupported)
     }
+
+    func testRateCalculatorUsesPageSizedCounterDelta() {
+        XCTAssertEqual(
+            MemoryRateCalculator.deltaRate(
+                previous: 100,
+                current: 140,
+                elapsed: 2.0,
+                unitBytes: 4096
+            ),
+            81_920
+        )
+    }
+
+    func testCounterRollbackProducesUnavailableRate() {
+        XCTAssertNil(
+            MemoryRateCalculator.deltaRate(
+                previous: 100,
+                current: 90,
+                elapsed: 2.0,
+                unitBytes: 4096
+            )
+        )
+    }
+
+    func testSwapUsageRateCanBeNegativeWhenSwapShrinks() {
+        XCTAssertEqual(
+            MemoryRateCalculator.signedByteRate(
+                previous: 300,
+                current: 100,
+                elapsed: 2.0
+            ),
+            -100
+        )
+    }
+
+    func testInvalidElapsedTimeProducesUnavailableRate() {
+        XCTAssertNil(
+            MemoryRateCalculator.deltaRate(
+                previous: 10,
+                current: 20,
+                elapsed: 0,
+                unitBytes: 4096
+            )
+        )
+    }
 }
