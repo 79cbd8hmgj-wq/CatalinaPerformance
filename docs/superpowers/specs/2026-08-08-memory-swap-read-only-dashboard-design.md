@@ -247,9 +247,9 @@ Remove the `Memory Pressure Management` intervention panel and any wording such 
 - maximum managed workloads;
 - I/O policy Supported/Unsupported/Active.
 
-The existing read-only Memory / Storage area may remain and may link conceptually to the Session Dashboard, but it must expose no memory-pressure tuning controls.
+The existing read-only Memory / Storage area remains informational and exposes no memory-pressure tuning controls.
 
-If a read-only largest-memory-users view already exists or is inexpensive to retain, it may remain informational. It must not become an automatic candidate-management UI in this revision.
+No new largest-memory-users or candidate-management UI is added in this revision. That can be designed separately later if it proves useful.
 
 ## Production packaging and lifecycle
 
@@ -342,17 +342,19 @@ On the target Mac:
 2. confirm no `CatalinaPerformanceMemoryAgent` process is started;
 3. confirm the package does not require the Memory Agent binary or memory-management wrapper dependency;
 4. run a normal Performance Session and confirm Memory / Swap telemetry updates;
-5. create bounded pressure and confirm states can progress through Elevated/High without changing process nice values;
+5. confirm observed process nice values do not change because of Memory / Swap;
 6. confirm no memory-specific privileged runtime state is created under `/var/run/CatalinaPerformance/<uid>/memory_management`;
 7. turn Performance Mode OFF and confirm Memory / Swap requires no restoration step;
 8. verify other Performance Mode restoration paths remain correct.
+
+A new synthetic pressure run is not required merely to re-prove the classifier after this revision. Existing classifier tests and prior Catalina pressure evidence cover High-state behavior; avoiding another unnecessary stress run also avoids artificially increasing swap during acceptance.
 
 ## Acceptance criteria
 
 The revision is accepted when all of the following are true:
 
 - Memory / Swap remains a useful dedicated read-only Session Dashboard section;
-- pressure classification still responds to real compression/swap activity;
+- pressure classification still responds to real compression/swap activity in tests and previously validated Catalina evidence;
 - active and completed reports retain the approved read-only metrics;
 - intervention-specific rows and wording are gone;
 - no production memory-pressure code changes process priority or I/O policy;
