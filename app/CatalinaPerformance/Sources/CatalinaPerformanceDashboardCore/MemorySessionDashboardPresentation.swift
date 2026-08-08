@@ -4,15 +4,13 @@ import CatalinaPerformanceMemoryCore
 private enum MemoryDashboardLabels {
     static let active: Set<String> = [
         "State", "Physical Used", "Available", "Compressed", "Compression Growth",
-        "Swap Used", "Swap Growth", "Swap In", "Swap Out", "Page-Out Activity",
-        "Managed Workloads", "I/O Policy"
+        "Swap Used", "Swap Growth", "Swap In", "Swap Out", "Page-Out Activity"
     ]
     static let completed: Set<String> = [
         "Baseline State", "Maximum State", "Baseline Compressed", "Peak Compressed",
         "Peak Compression Growth", "Baseline Swap", "Peak Swap", "Net Swap",
         "Peak Swap In", "Peak Swap Out", "Time Healthy", "Time Elevated", "Time High",
-        "Time Critical", "Intervention Episodes", "Managed Families",
-        "Longest Intervention", "Restoration", "I/O Policy"
+        "Time Critical"
     ]
     static let all = active.union(completed)
 }
@@ -37,11 +35,7 @@ public extension SessionDashboardPresenter {
         case .active(let record), .finalizing(let record):
             detailedMemoryRows = MemorySessionDashboardPresentation.activeRows(record.latest.memoryManagement)
         case .completed(let report), .interrupted(let report):
-            detailedMemoryRows = MemorySessionDashboardPresentation.completedRows(
-                report.aggregates.memory,
-                ioPolicy: report.postRestore?.memoryManagement?.ioPolicyStatus ??
-                    report.finalPreRestore?.memoryManagement?.ioPolicyStatus
-            )
+            detailedMemoryRows = MemorySessionDashboardPresentation.completedRows(report.aggregates.memory)
         case .empty, .preparing:
             detailedMemoryRows = []
         }
@@ -89,7 +83,7 @@ private enum MemorySessionDashboardPresentation {
         _ status: MemoryManagementStatusSnapshot?
     ) -> [SessionDashboardMetricRow] {
         guard let status = status else {
-            return [row(label: "State", value: "Unavailable", secondary: "Memory Management telemetry is unavailable.")]
+            return [row(label: "State", value: "Unavailable", secondary: "Memory / Swap telemetry is unavailable.")]
         }
         let counters = status.telemetry?.counters
         let rates = status.telemetry?.rates
@@ -101,31 +95,25 @@ private enum MemorySessionDashboardPresentation {
         } else {
             physicalUsed = nil
         }
-        let families = status.managedFamilyNames.isEmpty
-            ? nil
-            : status.managedFamilyNames.joined(separator: ", ")
         return [
             row(label: "State", value: stateText(status.pressureState), secondary: status.note),
             row(label: "Physical Used", value: bytes(physicalUsed), secondary: nil),
             row(label: "Available", value: bytes(counters?.availableBytes), secondary: nil),
             row(label: "Compressed", value: bytes(counters?.compressedBytes), secondary: nil),
             row(label: "Compression Growth", value: byteRate(rates?.compressionBytesPerSecond, signed: true), secondary: nil),
-            row(label: "Swap Used", value: bytes(counters?.swapUsedBytes), secondary: nil),
+            row(label: "Swap Used", value: bytes(counters?.swapUsedBytes), secondary: "Allocated swap is not the same as active swap growth."),
             row(label: "Swap Growth", value: byteRate(rates?.swapGrowthBytesPerSecond, signed: true), secondary: nil),
             row(label: "Swap In", value: byteRate(rates?.swapInBytesPerSecond, signed: false), secondary: nil),
             row(label: "Swap Out", value: byteRate(rates?.swapOutBytesPerSecond, signed: false), secondary: nil),
-            row(label: "Page-Out Activity", value: pageRate(rates?.pageOutsPerSecond), secondary: nil),
-            row(label: "Managed Workloads", value: String(status.managedFamilyCount), secondary: families),
-            row(label: "I/O Policy", value: ioPolicyText(status.ioPolicyStatus), secondary: status.ioPolicyStatus == .unsupported ? "taskpolicy is unavailable on the calibrated Catalina target; nice +5 CPU scheduling remains active when required." : nil)
+            row(label: "Page-Out Activity", value: pageRate(rates?.pageOutsPerSecond), secondary: nil)
         ]
     }
 
     static func completedRows(
-        _ aggregate: MemorySessionAggregate?,
-        ioPolicy: MemoryIOPolicyStatus?
+        _ aggregate: MemorySessionAggregate?
     ) -> [SessionDashboardMetricRow] {
         guard let aggregate = aggregate else {
-            return [row(label: "Maximum State", value: "Unavailable", secondary: "No Memory Management aggregate was recorded for this session.")]
+            return [row(label: "Maximum State", value: "Unavailable", secondary: "No Memory / Swap aggregate was recorded for this session.")]
         }
         let netSwap: String
         if let baseline = aggregate.baselineSwapUsedBytes,
@@ -148,12 +136,7 @@ private enum MemorySessionDashboardPresentation {
             row(label: "Time Healthy", value: seconds(aggregate.healthySeconds), secondary: nil),
             row(label: "Time Elevated", value: seconds(aggregate.elevatedSeconds), secondary: nil),
             row(label: "Time High", value: seconds(aggregate.highSeconds), secondary: nil),
-            row(label: "Time Critical", value: seconds(aggregate.criticalSeconds), secondary: nil),
-            row(label: "Intervention Episodes", value: String(aggregate.interventionEpisodes), secondary: nil),
-            row(label: "Managed Families", value: aggregate.managedFamilyNames.isEmpty ? "None" : aggregate.managedFamilyNames.joined(separator: ", "), secondary: nil),
-            row(label: "Longest Intervention", value: seconds(aggregate.longestInterventionDuration), secondary: nil),
-            row(label: "Restoration", value: restorationText(aggregate.restorationResult), secondary: restorationSecondary(aggregate.restorationResult)),
-            row(label: "I/O Policy", value: ioPolicy.map(ioPolicyText) ?? "Unsupported", secondary: nil)
+            row(label: "Time Critical", value: seconds(aggregate.criticalSeconds), secondary: nil)
         ]
     }
 
@@ -179,14 +162,6 @@ private enum MemorySessionDashboardPresentation {
     private static func optionalStateText(_ value: MemoryPressureState?) -> String {
         guard let value = value else { return "Unavailable" }
         return stateText(value)
-    }
-
-    private static func ioPolicyText(_ value: MemoryIOPolicyStatus) -> String {
-        switch value {
-        case .unsupported: return "Unsupported"
-        case .available: return "Available"
-        case .active: return "Active"
-        }
     }
 
     private static func bytes(_ value: UInt64?) -> String {
@@ -224,28 +199,5 @@ private enum MemorySessionDashboardPresentation {
             return "+" + bytes(final - baseline)
         }
         return "-" + bytes(baseline - final)
-    }
-
-    private static func restorationText(_ value: MemoryManagementRestorationResult) -> String {
-        switch value {
-        case .notRequired: return "Not required"
-        case .restoreRequested: return "Restore requested"
-        case .restored: return "Restored"
-        case .incomplete: return "Incomplete"
-        case .unavailable: return "Unavailable"
-        }
-    }
-
-    private static func restorationSecondary(_ value: MemoryManagementRestorationResult) -> String? {
-        switch value {
-        case .restoreRequested:
-            return "The session requested exact restoration; this summary does not claim agent verification unless a restored status was observed."
-        case .incomplete:
-            return "One or more managed workloads still appeared active after restoration."
-        case .unavailable:
-            return "Post-restore Memory Management evidence was unavailable."
-        case .notRequired, .restored:
-            return nil
-        }
     }
 }
