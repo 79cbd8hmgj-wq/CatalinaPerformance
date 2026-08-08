@@ -1,7 +1,6 @@
 import Foundation
 import CatalinaPerformanceCore
 import CatalinaPerformancePriorityCore
-import CatalinaPerformanceMemoryCore
 import CatalinaPerformanceDashboardCore
 import CatalinaPerformanceBackgroundServicesCore
 import CatalinaPerformanceVisualPerformanceCore
@@ -447,7 +446,6 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
     private var isDashboardTransitionInProgress = false
     private var advancedWindowController: AdvancedWindowController?
     private var sessionDashboardWindowController: SessionDashboardWindowController?
-    private var memoryStatusObserverToken: UUID?
     private lazy var performanceSessionCoordinator: PerformanceSessionCoordinator = makePerformanceSessionCoordinator()
     private lazy var backgroundServiceSuppressionCoordinator: BackgroundServiceSuppressionCoordinator = makeBackgroundServiceSuppressionCoordinator()
     private lazy var backgroundServiceActivityObserver: BackgroundServiceActivityObserving = BackgroundServiceActivityObserver(
@@ -475,7 +473,6 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
         window.delegate = self
         buildInterface()
         configureBackgroundServiceSuppressionCallbacks()
-        configureMemoryManagementStatusUpdates()
         isDashboardTransitionInProgress = true
         updateRunControls()
         performanceSessionCoordinator.recoverAtLaunch { [weak self] in
@@ -577,7 +574,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
     @objc private func runPerformanceOn() {
         confirm(
             title: "Turn Performance Mode ON?",
-            message: "This applies the automatic reversible Visual Performance bundle before the existing Performance Mode changes. Finder, Dock, Mission Control, window animations, Reduce Motion, Reduce Transparency, the Scale minimize effect, and applicable Dock auto-hide timing are handled with exact typed state capture. Manual visual-setting changes made during the session are preserved on OFF. Automatic update settings and verified nonessential user workers may also be paused. Memory Pressure Management automatically watches sustained VM contention and can temporarily deprioritize at most three verified background app families at nice +5, with exact restoration and no app killing, purge, swap disabling, or kernel VM changes. App Priority remains optional: stable Firefox uses a focused nice -1 policy for its parent/UI process, GPU helper, and one activity-selected content process; other known browsers use main-process-only nice -2; sustained non-browser workloads use the verified process family at nice -5. Fan control, cache deletion, SIP changes, kexts, undervolting, and experimental features remain excluded."
+            message: "This applies the automatic reversible Visual Performance bundle before the existing Performance Mode changes. Finder, Dock, Mission Control, window animations, Reduce Motion, Reduce Transparency, the Scale minimize effect, and applicable Dock auto-hide timing are handled with exact typed state capture. Manual visual-setting changes made during the session are preserved on OFF. Automatic update settings and verified nonessential user workers may also be paused. App Priority remains optional: stable Firefox uses a focused nice -1 policy for its parent/UI process, GPU helper, and one activity-selected content process; other known browsers use main-process-only nice -2; sustained non-browser workloads use the verified process family at nice -5. Fan control, cache deletion, SIP changes, kexts, undervolting, and experimental features remain excluded."
         ) { [weak self] in
             guard let self = self, self.beginDashboardWrappedAction() else { return }
             let foregroundEnabled = ForegroundSessionPreferences.load().featureEnabled
@@ -716,7 +713,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
     @objc private func runEmergencyRestore() {
         confirm(
             title: "Run Emergency Restore?",
-            message: "Emergency Restore stops Memory Pressure Management, App Priority, and background-service monitoring, restores recorded process priorities and core settings, then performs compare-before-restore for Visual Performance and relaunches only applications CatalinaPerformance confirmed closed. Manual visual changes are preserved. It will not delete caches, modify SIP, touch fan control, unload arbitrary services, install kexts, undervolt, disable swap, run purge, or use experimental CPU/MSR/VM changes."
+            message: "Emergency Restore stops App Priority and background-service monitoring, restores recorded core settings, then performs compare-before-restore for Visual Performance and relaunches only applications CatalinaPerformance confirmed closed. Manual visual changes are preserved. It will not delete caches, modify SIP, touch fan control, unload arbitrary services, install kexts, undervolt, or use experimental CPU/MSR changes."
         ) { [weak self] in
             guard let self = self, self.beginDashboardWrappedAction() else { return }
             self.backgroundServiceActivityObserver.stop()
@@ -853,30 +850,6 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
         }
     }
 
-    private func configureMemoryManagementStatusUpdates() {
-        guard memoryStatusObserverToken == nil else { return }
-        memoryStatusObserverToken = performanceSessionCoordinator.addObserver { [weak self] state in
-            guard let self = self else { return }
-            self.advancedWindowController?.updateMemoryManagementStatus(
-                self.memoryManagementStatus(from: state),
-                performanceModeIsOn: self.runner.performanceModeIsOn()
-            )
-        }
-    }
-
-    private func memoryManagementStatus(
-        from state: PerformanceSessionCoordinatorState
-    ) -> MemoryManagementStatusSnapshot? {
-        switch state.content {
-        case .active(let record), .finalizing(let record):
-            return record.latest.memoryManagement
-        case .completed(let report), .interrupted(let report):
-            return report.postRestore?.memoryManagement ?? report.finalPreRestore?.memoryManagement
-        case .empty, .preparing:
-            return nil
-        }
-    }
-
     private func loadBackgroundServiceSettingsStatus() -> BackgroundServiceSettingsStatus? {
         return try? BackgroundServiceSettingsStatus.load(from: backgroundServiceSettingsStatusURL)
     }
@@ -1004,11 +977,6 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
         if let visualSnapshot = latestVisualPerformanceSnapshot {
             advancedWindowController?.updateVisualPerformanceStatus(visualSnapshot)
         }
-        let currentSessionState = performanceSessionCoordinator.currentState()
-        advancedWindowController?.updateMemoryManagementStatus(
-            memoryManagementStatus(from: currentSessionState),
-            performanceModeIsOn: runner.performanceModeIsOn()
-        )
         advancedWindowController?.showWindow(nil)
         advancedWindowController?.window?.makeKeyAndOrderFront(nil)
     }
@@ -1129,10 +1097,6 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
         advancedButton.isEnabled = true
         dashboardButton.isEnabled = true
         advancedWindowController?.setScriptActionsEnabled(canStartScript, performanceModeIsOn: isOn)
-        advancedWindowController?.updateMemoryManagementStatus(
-            memoryManagementStatus(from: performanceSessionCoordinator.currentState()),
-            performanceModeIsOn: isOn
-        )
     }
 
     private func appendOutput(_ text: String) {
@@ -1150,7 +1114,6 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
 final class AdvancedWindowController: NSWindowController, NSWindowDelegate {
     private let preferences = UserDefaults.standard
     private var memoryStorageButton: NSButton?
-    private var memoryManagementPanelController: MemoryManagementPanelController?
     private var appPriorityPanelController: AppPriorityPanelController?
     private var backgroundServicePanelController: BackgroundServiceSuppressionPanelController?
     private var visualPerformancePanelController: VisualPerformancePanelController?
@@ -1217,7 +1180,6 @@ final class AdvancedWindowController: NSWindowController, NSWindowDelegate {
         visualPerformancePanel.onViewCurrentSettings = onVisualViewCurrentSettings
         visualPerformancePanel.onRetryRestoration = onVisualRetryRestoration
         self.visualPerformancePanelController = visualPerformancePanel
-        self.memoryManagementPanelController = MemoryManagementPanelController()
 
         AdvancedPreferences.registerDefaults(in: preferences)
         ForegroundSessionPreferences.registerDefaults(in: preferences)
@@ -1230,7 +1192,7 @@ final class AdvancedWindowController: NSWindowController, NSWindowDelegate {
 
         let title = NSTextField(labelWithString: "Advanced")
         title.font = NSFont.boldSystemFont(ofSize: 24)
-        let description = wrappedLabel("Configure Advanced preferences. Background-service, power-management, Visual Performance, and optional App Priority changes apply only when Performance Mode is explicitly turned ON. Memory Pressure Management is also automatic while Performance Mode is ON and can temporarily deprioritize verified background app families with exact restoration. The separate Memory / Storage check and Thermal / Fan check remain read-only; CatalinaPerformance does not use automatic cleanup, swap disabling, purge, kernel VM tuning, fan writes, or experimental system changes here.")
+        let description = wrappedLabel("Configure Advanced preferences. Background-service, power-management, and an optional App Priority boost apply only when Performance Mode is explicitly turned ON. App Priority uses main-process-only nice -2 for known browsers and verified-family nice -5 for sustained CPU workloads, then restores recorded values on OFF or Emergency Restore. Memory / Storage and Thermal / Fan remain read-only and do not delete files, clear caches, tune memory, control fans, write SMC values, or change experimental system settings.")
 
         let stack = NSStackView()
         stack.orientation = .vertical
@@ -1266,13 +1228,10 @@ final class AdvancedWindowController: NSWindowController, NSWindowDelegate {
         if let priorityView = appPriorityPanelController?.makeSectionView() {
             stack.addArrangedSubview(priorityView)
         }
-        if let memoryPanel = memoryManagementPanelController {
-            stack.addArrangedSubview(section("Memory Pressure Management", controls: memoryPanel.makeControls()))
-        }
         let memoryStorageButton = NSButton(title: "Run Memory / Storage Check", target: self, action: #selector(runMemoryStorageCheck))
         self.memoryStorageButton = memoryStorageButton
         stack.addArrangedSubview(section("Memory / Storage", controls: [
-            wrappedLabel("Manual read-only diagnostics use conservative warnings for swap, disk space, memory pressure, and memory-heavy processes. These checks do not require sudo and do not modify the system. Automatic Memory Pressure Management status is shown in the section above."),
+            wrappedLabel("Read-only warnings use conservative thresholds: swap above 1024 MB, disk free space below 10% or 10 GB, and macOS memory_pressure warn/critical output. These checks do not require sudo and do not modify the system."),
             advancedCheckbox("Show swap usage warning", key: AdvancedPreferences.showSwapUsageWarningKey),
             advancedCheckbox("Show low disk space warning", key: AdvancedPreferences.showLowDiskSpaceWarningKey),
             advancedCheckbox("Show memory pressure summary", key: AdvancedPreferences.showMemoryPressureSummaryKey),
@@ -1300,7 +1259,7 @@ final class AdvancedWindowController: NSWindowController, NSWindowDelegate {
             disabledCheckbox("Legacy kext support — Not implemented yet")
         ]))
         stack.addArrangedSubview(section("Emergency / Restore", controls: [
-            wrappedLabel("Emergency Restore remains available on the main screen. It requests Memory Pressure Management and App Priority restoration before the core restore path, then continues through the other recorded restoration subsystems even if one component reports a failure.")
+            wrappedLabel("Emergency Restore remains available on the main screen and uses scripts/emergency_restore.sh. No additional restore behavior is controlled from this Advanced panel yet.")
         ]))
 
         let scrollView = NSScrollView()
@@ -1450,16 +1409,6 @@ final class AdvancedWindowController: NSWindowController, NSWindowDelegate {
         visualPerformancePanelController?.setActionsEnabled(enabled)
         thermalFanButton?.isEnabled = enabled
         foregroundPanelController?.setActionsEnabled(enabled)
-    }
-
-    func updateMemoryManagementStatus(
-        _ status: MemoryManagementStatusSnapshot?,
-        performanceModeIsOn: Bool
-    ) {
-        memoryManagementPanelController?.update(
-            status: status,
-            performanceModeIsOn: performanceModeIsOn
-        )
     }
 
     func updateVisualPerformanceStatus(_ snapshot: VisualPerformanceStatusSnapshot) {

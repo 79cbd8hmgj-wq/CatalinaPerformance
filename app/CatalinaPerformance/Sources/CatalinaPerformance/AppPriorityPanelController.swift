@@ -33,7 +33,6 @@ final class AppPriorityPanelController: NSObject {
     private let reportButton = NSButton(title: "Run App Priority Report", target: nil, action: nil)
     private let policyLabel = NSTextField(wrappingLabelWithString: "Choose an application to see its priority policy.")
     private let statusLabel = NSTextField(wrappingLabelWithString: "Ready for Performance Mode")
-    private let memoryManagementPanelController = MemoryManagementPanelController()
     private var statusTimer: Timer?
     private var actionsEnabled = true
     private var performanceModeIsOn = false
@@ -83,18 +82,7 @@ final class AppPriorityPanelController: NSObject {
         appRow.spacing = 8
         applicationPopup.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        let appPriorityControls: [NSView] = [
-            header,
-            explanation,
-            enableCheckbox,
-            appRow,
-            policyLabel,
-            statusLabel,
-            reportButton
-        ]
-        let content = NSStackView(
-            views: appPriorityControls + memoryManagementPanelController.makeControls()
-        )
+        let content = NSStackView(views: [header, explanation, enableCheckbox, appRow, policyLabel, statusLabel, reportButton])
         content.orientation = .vertical
         content.alignment = .leading
         content.spacing = 8
