@@ -9,7 +9,6 @@ PACKAGE_DIR="$REPO_ROOT/app/CatalinaPerformance"
 APP_BUILD_DIR="$REPO_ROOT/build"
 APP_NAME="CatalinaPerformance"
 PRIORITY_AGENT_NAME="CatalinaPerformancePriorityAgent"
-MEMORY_AGENT_NAME="CatalinaPerformanceMemoryAgent"
 APP_BUNDLE="$APP_BUILD_DIR/$APP_NAME.app"
 CONTENTS_DIR="$APP_BUNDLE/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
@@ -95,9 +94,9 @@ require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceCore/ForegroundSession.swi
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceCore/ScriptSequenceCoordinator.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformancePriorityAgent/main.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformancePriorityCore/AppPriorityAgentService.swift"
-require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceMemoryAgent/main.swift"
-require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceMemoryCore/MemoryAgentService.swift"
-require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceMemoryCore/MemoryManagementCoordinator.swift"
+require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceMemoryCore/MemoryReadOnlyCoordinator.swift"
+require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceMemoryCore/MemoryTelemetryCollector.swift"
+require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceMemoryCore/MemoryPressureClassifier.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformance/SessionDashboardWindowController.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformance/VisualPerformanceDefaultsOperator.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformance/VisualPerformanceLifecycleController.swift"
@@ -143,7 +142,6 @@ for runtime_script in $RUNTIME_SCRIPTS; do
 done
 require_runtime_script "$SCRIPT_DIR/lib/foreground_session_common.sh"
 require_runtime_script "$SCRIPT_DIR/lib/app_priority_wrapper_common.sh"
-require_runtime_script "$SCRIPT_DIR/lib/memory_management_wrapper_common.sh"
 require_runtime_script "$SCRIPT_DIR/lib/background_service_settings_common.sh"
 require_runtime_script "$SCRIPT_DIR/lib/background_service_wrapper_common.sh"
 
@@ -152,11 +150,9 @@ printf 'Building CatalinaPerformance GUI package: %s\n' "$PACKAGE_DIR"
 cd "$PACKAGE_DIR" || exit 1
 swift build --product CatalinaPerformance || exit 1
 swift build --product "$PRIORITY_AGENT_NAME" || exit 1
-swift build --product "$MEMORY_AGENT_NAME" || exit 1
 
 BUILT_EXECUTABLE="$PACKAGE_DIR/.build/debug/$APP_NAME"
 BUILT_PRIORITY_AGENT="$PACKAGE_DIR/.build/debug/$PRIORITY_AGENT_NAME"
-BUILT_MEMORY_AGENT="$PACKAGE_DIR/.build/debug/$MEMORY_AGENT_NAME"
 if [ ! -x "$BUILT_EXECUTABLE" ]; then
     error "Built executable was not found or is not executable: $BUILT_EXECUTABLE"
     exit 1
@@ -165,24 +161,18 @@ if [ ! -x "$BUILT_PRIORITY_AGENT" ]; then
     error "Built priority agent was not found or is not executable: $BUILT_PRIORITY_AGENT"
     exit 1
 fi
-if [ ! -x "$BUILT_MEMORY_AGENT" ]; then
-    error "Built memory agent was not found or is not executable: $BUILT_MEMORY_AGENT"
-    exit 1
-fi
 
 printf 'Creating local app bundle: %s\n' "$APP_BUNDLE"
 rm -rf "$APP_BUNDLE"
 mkdir -p "$MACOS_DIR" "$BIN_DIR" "$BUNDLED_LIB_DIR" || exit 1
 install -m 755 "$BUILT_EXECUTABLE" "$GUI_EXECUTABLE" || exit 1
 install -m 755 "$BUILT_PRIORITY_AGENT" "$BIN_DIR/$PRIORITY_AGENT_NAME" || exit 1
-install -m 755 "$BUILT_MEMORY_AGENT" "$BIN_DIR/$MEMORY_AGENT_NAME" || exit 1
 
 for runtime_script in $RUNTIME_SCRIPTS; do
     install -m 755 "$SCRIPT_DIR/$runtime_script" "$BUNDLED_SCRIPTS_DIR/$runtime_script" || exit 1
 done
 install -m 755 "$SCRIPT_DIR/lib/foreground_session_common.sh" "$BUNDLED_LIB_DIR/foreground_session_common.sh" || exit 1
 install -m 755 "$SCRIPT_DIR/lib/app_priority_wrapper_common.sh" "$BUNDLED_LIB_DIR/app_priority_wrapper_common.sh" || exit 1
-install -m 755 "$SCRIPT_DIR/lib/memory_management_wrapper_common.sh" "$BUNDLED_LIB_DIR/memory_management_wrapper_common.sh" || exit 1
 install -m 755 "$SCRIPT_DIR/lib/background_service_settings_common.sh" "$BUNDLED_LIB_DIR/background_service_settings_common.sh" || exit 1
 install -m 755 "$SCRIPT_DIR/lib/background_service_wrapper_common.sh" "$BUNDLED_LIB_DIR/background_service_wrapper_common.sh" || exit 1
 
@@ -226,12 +216,6 @@ fi
 if [ -z "${CATALINA_PERFORMANCE_PRIORITY_AGENT_PATH:-}" ]; then
     export CATALINA_PERFORMANCE_PRIORITY_AGENT_PATH="$RESOURCE_DIR/bin/CatalinaPerformancePriorityAgent"
 fi
-if [ -z "${CATALINA_PERFORMANCE_MEMORY_AGENT_PATH:-}" ]; then
-    export CATALINA_PERFORMANCE_MEMORY_AGENT_PATH="$RESOURCE_DIR/bin/CatalinaPerformanceMemoryAgent"
-fi
-if [ -z "${CATALINA_PERFORMANCE_MEMORY_DESIRED_STATE_FILE:-}" ]; then
-    export CATALINA_PERFORMANCE_MEMORY_DESIRED_STATE_FILE="$HOME/Library/Application Support/CatalinaPerformance/memory_management/desired-state.json"
-fi
 
 exec "$(dirname "$0")/CatalinaPerformance-gui" "$@"
 EOF_LAUNCHER
@@ -239,7 +223,6 @@ chmod 755 "$BUNDLE_EXECUTABLE" || exit 1
 
 for required_runtime in \
     "$BIN_DIR/$PRIORITY_AGENT_NAME" \
-    "$BIN_DIR/$MEMORY_AGENT_NAME" \
     "$BUNDLED_SCRIPTS_DIR/performance_on_with_priority.sh" \
     "$BUNDLED_SCRIPTS_DIR/performance_off_with_priority.sh" \
     "$BUNDLED_SCRIPTS_DIR/emergency_restore_with_priority.sh" \
@@ -247,7 +230,6 @@ for required_runtime in \
     "$BUNDLED_SCRIPTS_DIR/background_service_settings_apply.sh" \
     "$BUNDLED_SCRIPTS_DIR/background_service_settings_restore.sh" \
     "$BUNDLED_SCRIPTS_DIR/background_service_settings_status.sh" \
-    "$BUNDLED_LIB_DIR/memory_management_wrapper_common.sh" \
     "$BUNDLED_LIB_DIR/background_service_settings_common.sh" \
     "$BUNDLED_LIB_DIR/background_service_wrapper_common.sh"
 do
@@ -258,11 +240,10 @@ do
 done
 
 printf 'Packaged priority agent: %s\n' "$BIN_DIR/$PRIORITY_AGENT_NAME"
-printf 'Packaged memory agent: %s\n' "$BIN_DIR/$MEMORY_AGENT_NAME"
 printf 'Packaged Performance ON wrapper: %s\n' "$BUNDLED_SCRIPTS_DIR/performance_on_with_priority.sh"
 printf 'Packaged Performance OFF wrapper: %s\n' "$BUNDLED_SCRIPTS_DIR/performance_off_with_priority.sh"
 printf 'Packaged Emergency Restore wrapper: %s\n' "$BUNDLED_SCRIPTS_DIR/emergency_restore_with_priority.sh"
 printf 'Packaged Background Service scripts: %s\n' "$BUNDLED_SCRIPTS_DIR"
 printf 'Created %s\n' "$APP_BUNDLE"
 printf 'Launch with: open %s\n' "$APP_BUNDLE"
-printf 'This bundle is unsigned, not notarized, and intended only for local development. Runtime scripts and the session-scoped priority/memory agents are bundled inside the app.\n'
+printf 'This bundle is unsigned, not notarized, and intended only for local development. Runtime scripts and the session-scoped priority agent are bundled inside the app. Memory / Swap monitoring is read-only.\n'
