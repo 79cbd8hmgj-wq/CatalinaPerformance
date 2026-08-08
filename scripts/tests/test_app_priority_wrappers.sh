@@ -10,7 +10,6 @@ cp "$ROOT/scripts/performance_on_with_priority.sh" "$TMP/"
 cp "$ROOT/scripts/performance_off_with_priority.sh" "$TMP/"
 cp "$ROOT/scripts/emergency_restore_with_priority.sh" "$TMP/"
 cp "$ROOT/scripts/lib/app_priority_wrapper_common.sh" "$TMP/lib/"
-cp "$ROOT/scripts/lib/memory_management_wrapper_common.sh" "$TMP/lib/"
 cp "$ROOT/scripts/lib/background_service_wrapper_common.sh" "$TMP/lib/"
 
 cat > "$TMP/fake-agent" <<'AGENT'
@@ -20,13 +19,6 @@ case "$1" in
     validate) exit "${FAKE_VALIDATE_EXIT:-0}" ;;
     start) exit "${FAKE_START_EXIT:-0}" ;;
     stop-and-restore) exit "${FAKE_RESTORE_EXIT:-0}" ;;
-    *) exit 1 ;;
-esac
-AGENT
-cat > "$TMP/CatalinaPerformanceMemoryAgent" <<'AGENT'
-#!/bin/sh
-case "$1" in
-    validate|start|stop-and-restore) exit 0 ;;
     *) exit 1 ;;
 esac
 AGENT
@@ -53,7 +45,7 @@ cat > "$TMP/emergency_restore.sh" <<'CORE'
 printf 'core:emergency\n' >> "$FAKE_LOG"
 exit "${FAKE_EMERGENCY_EXIT:-0}"
 CORE
-chmod +x "$TMP"/*.sh "$TMP/fake-agent" "$TMP/CatalinaPerformanceMemoryAgent" "$TMP/lib"/*.sh
+chmod +x "$TMP"/*.sh "$TMP/fake-agent" "$TMP/lib/app_priority_wrapper_common.sh" "$TMP/lib/background_service_wrapper_common.sh"
 
 PASS=0
 FAIL=0
@@ -68,7 +60,6 @@ assert_log() {
 run_wrapper() {
     : > "$FAKE_LOG"
     CATALINA_PERFORMANCE_PRIORITY_AGENT_PATH="$TMP/fake-agent" \
-    CATALINA_PERFORMANCE_MEMORY_AGENT_PATH="$TMP/CatalinaPerformanceMemoryAgent" \
     FAKE_LOG="$FAKE_LOG" FAKE_VALIDATE_EXIT=${FAKE_VALIDATE_EXIT:-0} \
     FAKE_START_EXIT=${FAKE_START_EXIT:-0} FAKE_RESTORE_EXIT=${FAKE_RESTORE_EXIT:-0} \
     FAKE_ON_EXIT=${FAKE_ON_EXIT:-0} FAKE_OFF_EXIT=${FAKE_OFF_EXIT:-0} \
@@ -115,9 +106,7 @@ assert_log 'agent:stop-and-restore
 core:emergency' "emergency priority failure still runs core emergency"
 
 : > "$FAKE_LOG"
-CATALINA_PERFORMANCE_PRIORITY_AGENT_PATH="$TMP/fake-agent" \
-CATALINA_PERFORMANCE_MEMORY_AGENT_PATH="$TMP/CatalinaPerformanceMemoryAgent" \
-FAKE_LOG="$FAKE_LOG" /bin/sh "$TMP/performance_on_with_priority.sh" --requesting-uid '501;bad' >/dev/null 2>&1; status=$?
+CATALINA_PERFORMANCE_PRIORITY_AGENT_PATH="$TMP/fake-agent" FAKE_LOG="$FAKE_LOG" /bin/sh "$TMP/performance_on_with_priority.sh" --requesting-uid '501;bad' >/dev/null 2>&1; status=$?
 [ "$status" -eq 2 ] && pass "malformed UID exits 2" || fail "malformed UID exits 2"
 [ ! -s "$FAKE_LOG" ] && pass "malformed UID runs no child" || fail "malformed UID runs no child"
 
