@@ -6,11 +6,7 @@ import CatalinaPerformanceMemoryCore
 import AppKit
 
 final class MemoryManagementPanelController {
-    private let stateLabel = NSTextField(wrappingLabelWithString: "Current state: Idle")
-    private let interventionLabel = NSTextField(wrappingLabelWithString: "Automatic intervention: Ready when Performance Mode is ON")
-    private let policyLabel = NSTextField(wrappingLabelWithString: "CPU deprioritization: nice +5")
-    private let ioPolicyLabel = NSTextField(wrappingLabelWithString: "I/O deprioritization: Unsupported on this Catalina target")
-    private let managedLabel = NSTextField(wrappingLabelWithString: "Maximum managed workloads: 3")
+    private let stateLabel = NSTextField(wrappingLabelWithString: "Current state: Unavailable")
     private let noteLabel = NSTextField(wrappingLabelWithString: "")
     private var statusTimer: Timer?
 
@@ -19,7 +15,7 @@ final class MemoryManagementPanelController {
     }
 
     func makeControls() -> [NSView] {
-        let title = NSTextField(labelWithString: "Memory Pressure Management")
+        let title = NSTextField(labelWithString: "Memory / Swap")
         title.font = NSFont.boldSystemFont(ofSize: 16)
         let divider = NSBox()
         divider.boxType = .separator
@@ -29,11 +25,10 @@ final class MemoryManagementPanelController {
         header.spacing = 6
 
         let explanation = secondaryLabel(
-            "Automatically active with Performance Mode. CatalinaPerformance watches sustained VM contention and may temporarily deprioritize at most three verified background application families. Foreground apps, App Priority targets, CatalinaPerformance, AirDrop/networking, Bluetooth, audio, security infrastructure, root-owned processes, and unverifiable identities remain excluded."
+            "Read-only monitoring. CatalinaPerformance reports memory pressure, compression, swap, and paging activity but does not change process priority, I/O policy, applications, swap, or VM settings. Detailed metrics are available in Session Dashboard."
         )
-        for label in [stateLabel, interventionLabel, policyLabel, ioPolicyLabel, managedLabel, noteLabel] {
-            label.maximumNumberOfLines = 0
-        }
+        stateLabel.maximumNumberOfLines = 0
+        noteLabel.maximumNumberOfLines = 0
         noteLabel.textColor = .secondaryLabelColor
         noteLabel.font = NSFont.systemFont(ofSize: 11)
         noteLabel.isHidden = true
@@ -45,40 +40,26 @@ final class MemoryManagementPanelController {
             self?.refreshFromPersistedSession()
         }
 
-        return [header, explanation, stateLabel, interventionLabel, policyLabel, ioPolicyLabel, managedLabel, noteLabel]
+        return [header, explanation, stateLabel, noteLabel]
     }
 
     func update(status: MemoryManagementStatusSnapshot?, performanceModeIsOn: Bool) {
         guard performanceModeIsOn else {
             stateLabel.stringValue = "Current state: Idle"
-            interventionLabel.stringValue = "Automatic intervention: Ready when Performance Mode is ON"
-            policyLabel.stringValue = "CPU deprioritization: nice +5 when sustained pressure is confirmed"
-            ioPolicyLabel.stringValue = "I/O deprioritization: Unsupported on this Catalina target"
-            managedLabel.stringValue = "Maximum managed workloads: 3"
-            noteLabel.stringValue = ""
-            noteLabel.isHidden = true
+            noteLabel.stringValue = "Memory / Swap monitoring is read-only."
+            noteLabel.isHidden = false
             return
         }
 
         guard let status = status else {
             stateLabel.stringValue = "Current state: Unavailable"
-            interventionLabel.stringValue = "Automatic intervention: Unavailable"
-            policyLabel.stringValue = "CPU deprioritization: nice +5 policy; no mutation occurs without valid telemetry and recovery state"
-            ioPolicyLabel.stringValue = "I/O deprioritization: Unsupported on this Catalina target"
-            managedLabel.stringValue = "Managed workloads: Unavailable (maximum 3)"
-            noteLabel.stringValue = "Memory Management session telemetry is unavailable."
+            noteLabel.stringValue = "Memory / Swap session telemetry is unavailable."
             noteLabel.isHidden = false
             return
         }
 
         stateLabel.stringValue = "Current state: \(pressureText(status.pressureState))"
-        interventionLabel.stringValue = status.interventionActive
-            ? "Automatic intervention: Deprioritizing \(status.managedFamilyCount) verified background workload\(status.managedFamilyCount == 1 ? "" : "s")"
-            : "Automatic intervention: Monitoring"
-        policyLabel.stringValue = "CPU deprioritization: nice +5 when active"
-        ioPolicyLabel.stringValue = "I/O deprioritization: \(ioPolicyText(status.ioPolicyStatus))"
-        managedLabel.stringValue = "Managed workloads: \(status.managedFamilyCount) / 3"
-        noteLabel.stringValue = status.note ?? ""
+        noteLabel.stringValue = status.note ?? "Memory / Swap monitoring is read-only."
         noteLabel.isHidden = noteLabel.stringValue.isEmpty
     }
 
@@ -120,14 +101,6 @@ final class MemoryManagementPanelController {
         case .elevated: return "Elevated"
         case .high: return "High"
         case .critical: return "Critical"
-        }
-    }
-
-    private func ioPolicyText(_ status: MemoryIOPolicyStatus) -> String {
-        switch status {
-        case .unsupported: return "Unsupported on this Catalina target"
-        case .available: return "Available"
-        case .active: return "Active"
         }
     }
 }
