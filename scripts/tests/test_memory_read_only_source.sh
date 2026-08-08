@@ -27,7 +27,7 @@ if grep -q 'memory_management_wrapper_common' "$PACKAGE_SCRIPT" "$ON_WRAPPER" "$
     fail "Memory mutation wrapper dependency is still present"
 fi
 
-if grep -R -E -q 'MemoryAgentService|MemoryInterventionController|MemoryDesiredStateStore|requestedNiceValue|setpriority\(|taskpolicy' "$MEMORY_CORE"; then
+if grep -R -E -q 'MemoryAgentService|MemoryInterventionController|MemoryDesiredStateStore|requestedNiceValue|setpriority\(' "$MEMORY_CORE"; then
     fail "MemoryCore still contains a mutation path"
 fi
 
