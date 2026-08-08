@@ -4,7 +4,6 @@ set -u
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd -P)
 . "$SCRIPT_DIR/lib/app_priority_wrapper_common.sh"
 . "$SCRIPT_DIR/lib/background_service_wrapper_common.sh"
-. "$SCRIPT_DIR/lib/memory_management_wrapper_common.sh"
 
 REQUESTING_UID=
 ASSUME_YES=0
@@ -21,16 +20,8 @@ while [ "$#" -gt 0 ]; do
     esac
 done
 [ -n "$REQUESTING_UID" ] || { printf 'Missing --requesting-uid.\n' >&2; exit 2; }
-require_memory_agent || { printf 'Memory Management agent is missing, unsafe, or not executable.\n' >&2; exit 1; }
 require_priority_agent || { printf 'Priority agent is missing or not executable.\n' >&2; exit 1; }
 prepare_background_service_wrapper_environment
-
-run_memory_agent validate --uid "$REQUESTING_UID"
-memory_validate_status=$?
-[ "$memory_validate_status" -eq 0 ] || {
-    printf 'Memory Management desired-state validation failed.\n' >&2
-    exit "$memory_validate_status"
-}
 
 run_priority_agent validate --uid "$REQUESTING_UID"
 validate_status=$?
@@ -67,18 +58,5 @@ if [ "$priority_enabled" -eq 1 ]; then
         restore_background_service_settings >/dev/null 2>&1 || true
         exit "$start_status"
     fi
-fi
-
-run_memory_agent start --uid "$REQUESTING_UID"
-memory_start_status=$?
-if [ "$memory_start_status" -ne 0 ]; then
-    printf 'Memory Management monitor failed to start; rolling Performance Mode back.\n' >&2
-    run_memory_agent stop-and-restore --uid "$REQUESTING_UID" >/dev/null 2>&1 || true
-    if [ "$priority_enabled" -eq 1 ]; then
-        run_priority_agent stop-and-restore --uid "$REQUESTING_UID" >/dev/null 2>&1 || true
-    fi
-    /bin/sh "$SCRIPT_DIR/performance_off.sh" --force >/dev/null 2>&1 || true
-    restore_background_service_settings >/dev/null 2>&1 || true
-    exit "$memory_start_status"
 fi
 exit 0
