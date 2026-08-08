@@ -16,36 +16,8 @@ public extension SessionMetricsCollector {
         let windowServerCollector = WindowServerMetricsCollector(
             processInspector: DarwinWindowServerProcessInspector()
         )
-        let resolvedMemoryCoordinator: MemoryManagementCoordinating
-        if let memoryManagementCoordinator = memoryManagementCoordinator {
-            resolvedMemoryCoordinator = memoryManagementCoordinator
-        } else {
-            let desiredStateDirectory = FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent("Library", isDirectory: true)
-                .appendingPathComponent("Application Support", isDirectory: true)
-                .appendingPathComponent("CatalinaPerformance", isDirectory: true)
-                .appendingPathComponent("memory_management", isDirectory: true)
-            let baseCoordinator = MemoryManagementCoordinator(
-                desiredStateStore: MemoryDesiredStateStore(directoryURL: desiredStateDirectory),
-                processInspector: processInspector,
-                resourceInspector: processInspector,
-                requestingUID: currentUserProvider.uid
-            )
-            let agentStatusURL = URL(
-                fileURLWithPath: "/var/run/CatalinaPerformance",
-                isDirectory: true
-            )
-                .appendingPathComponent(String(currentUserProvider.uid), isDirectory: true)
-                .appendingPathComponent("memory_management", isDirectory: true)
-                .appendingPathComponent("status.json")
-            resolvedMemoryCoordinator = AgentConfirmedMemoryManagementCoordinator(
-                base: baseCoordinator,
-                agentStatusProvider: FileMemoryAgentStatusProvider(statusURL: agentStatusURL)
-            )
-        }
-        let frontmostObserver = MemoryFrontmostApplicationObserver(
-            coordinator: resolvedMemoryCoordinator
-        )
+        let memoryCoordinator = memoryManagementCoordinator ?? MemoryManagementCoordinator()
+
         self.init(
             nativeMetrics: nativeMetrics,
             thermalProvider: thermalProvider,
@@ -56,8 +28,8 @@ public extension SessionMetricsCollector {
             processInspector: processInspector,
             windowServerCollector: windowServerCollector,
             memoryTelemetryCollector: DarwinMemoryTelemetryCollector(),
-            memoryManagementCoordinator: resolvedMemoryCoordinator,
-            memoryFrontmostObserver: frontmostObserver
+            memoryManagementCoordinator: memoryCoordinator,
+            memoryFrontmostObserver: nil
         )
     }
 }
