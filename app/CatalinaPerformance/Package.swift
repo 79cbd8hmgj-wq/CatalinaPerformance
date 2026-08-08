@@ -21,10 +21,18 @@ let package = Package(
             dependencies: ["CatalinaProcessSupport"]
         ),
         .target(
+            name: "CatalinaPerformanceMemoryCore",
+            dependencies: [
+                "CatalinaPerformancePriorityCore",
+                "CatalinaProcessSupport"
+            ]
+        ),
+        .target(
             name: "CatalinaPerformanceDashboardCore",
             dependencies: [
                 "CatalinaPerformanceCore",
                 "CatalinaPerformancePriorityCore",
+                "CatalinaPerformanceMemoryCore",
                 "CatalinaProcessSupport"
             ]
         ),
@@ -37,6 +45,7 @@ let package = Package(
             dependencies: [
                 "CatalinaPerformanceCore",
                 "CatalinaPerformancePriorityCore",
+                "CatalinaPerformanceMemoryCore",
                 "CatalinaPerformanceDashboardCore",
                 "CatalinaPerformanceBackgroundServicesCore",
                 "CatalinaPerformanceVisualPerformanceCore"
@@ -55,10 +64,19 @@ let package = Package(
             dependencies: ["CatalinaPerformancePriorityCore", "CatalinaProcessSupport"]
         ),
         .testTarget(
+            name: "CatalinaPerformanceMemoryTests",
+            dependencies: [
+                "CatalinaPerformanceMemoryCore",
+                "CatalinaPerformancePriorityCore",
+                "CatalinaProcessSupport"
+            ]
+        ),
+        .testTarget(
             name: "CatalinaPerformanceDashboardTests",
             dependencies: [
                 "CatalinaPerformanceDashboardCore",
                 "CatalinaPerformancePriorityCore",
+                "CatalinaPerformanceMemoryCore",
                 "CatalinaProcessSupport"
             ]
         ),

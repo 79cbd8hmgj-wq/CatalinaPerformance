@@ -100,10 +100,10 @@ final class SessionDashboardWindowController: NSWindowController, NSWindowDelega
         if observerToken == nil {
             observerToken = coordinator.addObserver { [weak self] state in
                 guard let self = self else { return }
-                self.render(self.presenter.makeViewModel(from: state))
+                self.render(self.presenter.makeMemoryAwareViewModel(from: state))
             }
         }
-        render(presenter.makeViewModel(from: coordinator.currentState()))
+        render(presenter.makeMemoryAwareViewModel(from: coordinator.currentState()))
     }
 
     private func buildWindow() {
@@ -230,9 +230,14 @@ final class SessionDashboardWindowController: NSWindowController, NSWindowDelega
             contentStack.addArrangedSubview(empty)
         }
 
-        if !viewModel.systemRows.isEmpty {
+        if !viewModel.systemRowsWithoutMemory.isEmpty {
             addFullWidthArrangedSubview(
-                section(title: "System", metricRows: viewModel.systemRows)
+                section(title: "System", metricRows: viewModel.systemRowsWithoutMemory)
+            )
+        }
+        if !viewModel.memoryRows.isEmpty {
+            addFullWidthArrangedSubview(
+                section(title: "Memory / Swap", metricRows: viewModel.memoryRows)
             )
         }
         if !viewModel.graphicsRows.isEmpty {

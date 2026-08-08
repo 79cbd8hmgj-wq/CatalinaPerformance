@@ -1,5 +1,6 @@
 import Foundation
 import CatalinaPerformancePriorityCore
+import CatalinaPerformanceMemoryCore
 
 public protocol PerformanceSessionScheduling: AnyObject {
     func scheduleOnce(after interval: TimeInterval, _ action: @escaping () -> Void)
@@ -114,6 +115,7 @@ public final class PerformanceSessionCoordinator {
     private let callbackQueue: DispatchQueue
     private let stateQueue: DispatchQueue
     private let collectionQueue: DispatchQueue
+    private let memoryManagementCoordinator: MemoryManagementCoordinating?
 
     private var stateValue = PerformanceSessionCoordinatorState(content: .empty, warningMessage: nil)
     private var observers: [UUID: (PerformanceSessionCoordinatorState) -> Void] = [:]
@@ -127,6 +129,7 @@ public final class PerformanceSessionCoordinator {
         graphicsSampleCount: PerformanceSessionCoordinator.graphicsBaselineSampleCount,
         message: "Preparing graphics baseline…"
     )
+    private var preparationWarningValue: String?
     private var preRestoreCompletionUsed = false
 
     public init(
@@ -139,7 +142,8 @@ public final class PerformanceSessionCoordinator {
         clock: PerformanceSessionClock = SystemPerformanceSessionClock(),
         callbackQueue: DispatchQueue = .main,
         stateQueue: DispatchQueue = DispatchQueue(label: "local.CatalinaPerformance.session-coordinator", qos: .utility),
-        collectionQueue: DispatchQueue = DispatchQueue(label: "local.CatalinaPerformance.session-collector", qos: .utility)
+        collectionQueue: DispatchQueue = DispatchQueue(label: "local.CatalinaPerformance.session-collector", qos: .utility),
+        memoryManagementCoordinator: MemoryManagementCoordinating? = nil
     ) {
         self.collector = collector
         self.recorder = recorder
@@ -151,6 +155,8 @@ public final class PerformanceSessionCoordinator {
         self.callbackQueue = callbackQueue
         self.stateQueue = stateQueue
         self.collectionQueue = collectionQueue
+        self.memoryManagementCoordinator = memoryManagementCoordinator ??
+            (collector as? MemoryManagementCoordinatorProviding)?.memoryManagementCoordinatorForSession
     }
 
     public func prepareForOn(selectedApplication: AppPriorityApplication?, completion: @escaping () -> Void) {
@@ -160,6 +166,7 @@ public final class PerformanceSessionCoordinator {
             self.preparationGeneration += 1
             let generation = self.preparationGeneration
             self.pendingFinalizationReason = nil
+            self.preparationWarningValue = nil
             self.preparationProgressValue = PerformancePreparationProgress(
                 graphicsSampleIndex: 0,
                 graphicsSampleCount: Self.graphicsBaselineSampleCount,
@@ -167,6 +174,15 @@ public final class PerformanceSessionCoordinator {
             )
             self.publish(content: .preparing(self.preparationProgressValue), warning: nil)
             let startedAt = self.clock.currentDate()
+            let sessionIdentifier = UUID().uuidString
+            if let memoryCoordinator = self.memoryManagementCoordinator {
+                do {
+                    _ = try memoryCoordinator.prepareSession(identifier: sessionIdentifier, at: startedAt)
+                } catch {
+                    self.preparationWarningValue = "Memory Pressure Management could not be armed: \(error)"
+                    self.publish(content: .preparing(self.preparationProgressValue), warning: self.preparationWarningValue)
+                }
+            }
             self.isSampleInFlight = true
             self.collectionQueue.async {
                 let baseline = self.collector.capture(at: startedAt, refreshThermal: true)
@@ -175,7 +191,7 @@ public final class PerformanceSessionCoordinator {
                     guard generation == self.preparationGeneration else { return }
                     self.lastThermalRefreshAt = startedAt
                     self.recorder.begin(
-                        identifier: UUID().uuidString,
+                        identifier: sessionIdentifier,
                         startedAt: startedAt,
                         baseline: baseline,
                         selectedApplication: selectedApplication
@@ -197,8 +213,10 @@ public final class PerformanceSessionCoordinator {
             if !succeeded {
                 self.scheduler.cancel()
                 self.preparationGeneration += 1
+                _ = self.memoryManagementCoordinator?.requestImmediateRestore(at: self.clock.currentDate())
                 self.recorder.discard()
                 try? self.store.removeActive()
+                self.preparationWarningValue = nil
                 self.publishLoadedCompletedOrEmpty(warning: nil)
                 return
             }
@@ -207,7 +225,8 @@ public final class PerformanceSessionCoordinator {
             self.recorder.replaceSubsystemStatuses(self.evidenceProvider.activationStatuses(at: now))
             let warning = self.persistActiveRecord()
             if let record = self.recorder.activeRecord() {
-                self.publish(content: .active(record), warning: warning)
+                self.publish(content: .active(record), warning: warning ?? self.preparationWarningValue)
+                self.preparationWarningValue = nil
                 self.startScheduler()
             } else {
                 self.publish(content: .empty, warning: "Dashboard active record was unavailable after Performance Mode started.")
@@ -419,7 +438,7 @@ public final class PerformanceSessionCoordinator {
             graphicsSampleCount: Self.graphicsBaselineSampleCount,
             message: "Measuring graphics baseline… \(sampleIndex)/\(Self.graphicsBaselineSampleCount)"
         )
-        var warning = persistActiveRecord()
+        var warning = preparationWarningValue ?? persistActiveRecord()
         publish(content: .preparing(preparationProgressValue), warning: warning)
 
         guard sampleIndex < Self.graphicsBaselineSampleCount else {
@@ -486,6 +505,7 @@ public final class PerformanceSessionCoordinator {
         if let snapshot = snapshot {
             recorder.markFinalizing(preRestore: snapshot, at: snapshot.capturedAt)
         }
+        _ = memoryManagementCoordinator?.requestImmediateRestore(at: clock.currentDate())
         let warning = persistActiveRecord()
         if let record = recorder.activeRecord() {
             publish(content: .finalizing(record), warning: warning)

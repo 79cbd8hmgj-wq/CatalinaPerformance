@@ -42,7 +42,6 @@ For each system tweak:
 - No code path modifies SIP.
 - No code path automatically deletes caches.
 
-
 ## Foreground Performance Session Automated Checks
 
 - `/bin/sh -n scripts/*.sh scripts/lib/*.sh scripts/tests/*.sh`
@@ -68,7 +67,6 @@ For each system tweak:
 - Verify Finder/Dock are not killed, signaled, or forcibly restarted.
 - Verify no foreground-session or UI-responsiveness script requests administrator authorization.
 - Verify Performance ON/OFF and Emergency Restore authorization behavior is unchanged.
-
 
 ## Background Service Suppression Automated Checks
 
@@ -158,3 +156,45 @@ For each system tweak:
 - Confirm the completed dashboard retains baseline, active, pre-restore, post-restore, maximum-pressure, and time-in-state data when available.
 - Confirm the **Graphics / WindowServer** advisory remains diagnostic and causal-neutral; do not infer that Visual Performance caused a before/after change.
 - Confirm no resolution, scaling, refresh-rate, display-profile, wallpaper, desktop-icon, Quartz-debug, private graphics-driver, WindowServer, Finder, Dock, or SystemUIServer mutation is introduced.
+
+## Memory Pressure / Swap Management Capability Checks
+
+- `/bin/sh scripts/tests/test_memory_vm_probe_source.sh`
+- `/bin/sh scripts/tests/test_memory_taskpolicy_calibration_source.sh`
+- `/bin/sh scripts/tests/test_catalina_process_support_source.sh`
+- `cd app/CatalinaPerformance && swift test --filter MemoryTelemetryModelsTests`
+- Confirm `CPVMMemoryInfo.availabilityMask` distinguishes unsupported counters from supported counters whose current value is zero.
+- Confirm `cp_read_vm_memory_info` is implemented by exactly one C translation unit; duplicate definitions must fail the process-support source contract before linking.
+- Confirm counter rollback/reset produces an unavailable interval rather than `0` activity.
+- Confirm VM sampling remains on the existing two-second Performance Session cadence; no second VM timer is introduced.
+- Confirm the capability probe is read-only: no `sudo`, `purge`, `sysctl -w`, defaults mutation, process termination, service unloading, or swap-file mutation.
+- Target-Mac rebuild gate on Catalina 10.15.7 build 19H15 passed on 2026-08-07 after removing the duplicate VM C implementation. Both source contracts passed and all eight focused Memory Core/Agent test groups completed with zero failures; existing unrelated XCTest compiler warnings remained warning-only.
+
+## Memory Pressure / Swap Management Session Integration Checks
+
+- `cd app/CatalinaPerformance && swift test --filter MemoryManagementCoordinatorTests`
+- `cd app/CatalinaPerformance && swift test --filter MemorySessionMetricIntegrationTests`
+- `cd app/CatalinaPerformance && swift test --filter MemoryPerformanceSessionLifecycleTests`
+- `cd app/CatalinaPerformance && swift test --filter PerformanceSessionCoordinatorTests`
+- `cd app/CatalinaPerformance && swift build --product CatalinaPerformanceMemoryAgent`
+- `cd app/CatalinaPerformance && swift build --product CatalinaPerformance`
+- Confirm old `SessionMetricSnapshot` JSON without `memoryManagement` still decodes.
+- Confirm VM telemetry is captured only as part of the existing session sample; no second timer is introduced.
+- Confirm the Memory Management desired state is armed with the exact dashboard session identifier before the first baseline capture completes and before the authorized ON wrapper is allowed to run.
+- Confirm failed ON, normal OFF, and Emergency Restore publish an immediate stop-and-restore desired state before wrapper continuation.
+- Confirm High requires three consecutive candidates and Critical requires two.
+- Confirm a workload must remain background for three samples and exceed `max(256 MiB, 5% physical RAM)` before admission.
+- Confirm foreground and App Priority families are removed from desired state immediately.
+- Confirm unavailable VM/process telemetry removes active desired families conservatively rather than fabricating healthy zero values.
+- Confirm desired-state generations increase monotonically and no process priority is written by the user-side coordinator.
+- Confirm Background Service Suppression recheck can only revisit the existing approved catalog and cannot reverse `.resumedByUser`.
+
+## Memory Pressure / Swap Management Catalina Evidence Gate
+
+- On macOS Catalina 10.15.7, run: `/bin/sh scripts/memory_vm_probe.sh --output "$HOME/Desktop/catalina-10.15.7-memory-vm-probe.txt"`.
+- Record `sw_vers`, `uname -a`, `hw.memsize`, `hw.pagesize`, `vm.swapusage`, `memory_pressure`, selected read-only `vm.*` values, and three `vm_stat` samples two seconds apart.
+- Verify counter names and units against the native `host_statistics64` fields used by CatalinaPerformance.
+- Verify compression, page-in/page-out, and swap-in/swap-out counters are monotonic during ordinary sampling or explicitly document resets/rollbacks.
+- The target Catalina 10.15.7 installation reports `/usr/bin/taskpolicy` unavailable; keep `CatalinaMemoryCapabilities.current.taskPolicy == false` and report I/O policy as **Unsupported**.
+- Do not substitute a private API, newer-macOS command, permanent helper, or undocumented I/O-priority mechanism for missing `taskpolicy` in 1.0.
+- Exercise a controlled memory-heavy workload during final runtime validation before tightening any currently unapproved swap-growth/churn rate thresholds.

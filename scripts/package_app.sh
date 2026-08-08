@@ -87,12 +87,16 @@ fi
 
 require_file "$PACKAGE_DIR/Package.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformance/main.swift"
+require_file "$PACKAGE_DIR/Sources/CatalinaPerformance/MemoryManagementPanelController.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformance/ForegroundSessionPanelController.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformance/AppPriorityPanelController.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceCore/ForegroundSession.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceCore/ScriptSequenceCoordinator.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformancePriorityAgent/main.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformancePriorityCore/AppPriorityAgentService.swift"
+require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceMemoryCore/MemoryReadOnlyCoordinator.swift"
+require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceMemoryCore/MemoryTelemetryCollector.swift"
+require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceMemoryCore/MemoryPressureClassifier.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformance/SessionDashboardWindowController.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformance/VisualPerformanceDefaultsOperator.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformance/VisualPerformanceLifecycleController.swift"
@@ -108,6 +112,8 @@ require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceDashboardCore/SessionMetri
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceDashboardCore/SessionMetricsCollector.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceDashboardCore/PerformanceSessionCoordinator.swift"
 require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceDashboardCore/PerformanceSessionStore.swift"
+require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceDashboardCore/MemorySessionAggregate.swift"
+require_file "$PACKAGE_DIR/Sources/CatalinaPerformanceDashboardCore/MemorySessionDashboardPresentation.swift"
 
 RUNTIME_SCRIPTS="
 status_report.sh
@@ -228,7 +234,7 @@ for required_runtime in \
     "$BUNDLED_LIB_DIR/background_service_wrapper_common.sh"
 do
     if [ ! -x "$required_runtime" ]; then
-        error "Packaged priority resource is missing or not executable: $required_runtime"
+        error "Packaged runtime resource is missing or not executable: $required_runtime"
         exit 1
     fi
 done
@@ -240,4 +246,4 @@ printf 'Packaged Emergency Restore wrapper: %s\n' "$BUNDLED_SCRIPTS_DIR/emergenc
 printf 'Packaged Background Service scripts: %s\n' "$BUNDLED_SCRIPTS_DIR"
 printf 'Created %s\n' "$APP_BUNDLE"
 printf 'Launch with: open %s\n' "$APP_BUNDLE"
-printf 'This bundle is unsigned, not notarized, and intended only for local development. Runtime scripts and the session-scoped priority agent are bundled inside the app.\n'
+printf 'This bundle is unsigned, not notarized, and intended only for local development. Runtime scripts and the session-scoped priority agent are bundled inside the app. Memory / Swap monitoring is read-only.\n'
